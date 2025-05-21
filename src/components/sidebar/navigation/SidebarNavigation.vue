@@ -9,6 +9,16 @@ function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value;
 }
 
+// Close mobile menu when any link is clicked (only on mobile)
+function handleNavClick(event: MouseEvent) {
+  if (window.innerWidth < 1024) {
+    const link = (event.target as HTMLElement).closest('a');
+    if (link) {
+      isMenuOpen.value = false;
+    }
+  }
+}
+
 const route = useRoute();
 const menuItems = [
   { label: 'Home', to: '/' },
@@ -30,8 +40,8 @@ watch(route, () => {
 <template>
   <div class="sidebar-navigation">
     <button class="menu-button" @click="toggleMenu">{{ currentItem.label }}</button>
-    <nav :class="{ open: isMenuOpen }">
-      <RouterLink v-for="item in menuItems" :key="item.to" :to="item.to" @click="toggleMenu">
+    <nav :class="{ open: isMenuOpen }" @click="handleNavClick">
+      <RouterLink v-for="item in menuItems" :key="item.to" :to="item.to">
         {{ item.label }}
       </RouterLink>
     </nav>
