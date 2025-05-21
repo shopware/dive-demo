@@ -11,13 +11,11 @@ import SidebarHeader from './header/SidebarHeader.vue';
 </template>
 
 <style scoped>
-
 .sidebar {
   display: flex;
   align-items: flex-start;
   flex-direction: column;
   line-height: 1.5;
-  padding: 0 2rem 0 2rem;
 }
 
 .logo-wrapper {
@@ -26,6 +24,7 @@ import SidebarHeader from './header/SidebarHeader.vue';
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  padding: 0 2rem 0 2rem;
 }
 
 .logo {
@@ -176,9 +175,11 @@ nav a:first-of-type {
     width: 100%;
     overflow: hidden;
   }
+
   .sidebar {
     flex: 0 0 350px;
   }
+
   .content {
     flex: 1;
     overflow: auto;

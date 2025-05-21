@@ -28,48 +28,43 @@ watch(route, () => {
 
 </script>
 <template>
-    <div class="sidebar-navigation">
-        <button class="menu-button" @click="toggleMenu">{{ currentItem.label }}</button>
-        <nav :class="{ open: isMenuOpen }">
-            <RouterLink
-                v-for="item in menuItems"
-                :key="item.to"
-                :to="item.to"
-                @click="toggleMenu">
-                {{ item.label }}
-            </RouterLink>
-        </nav>
-    </div>
+  <div class="sidebar-navigation">
+    <button class="menu-button" @click="toggleMenu">{{ currentItem.label }}</button>
+    <nav :class="{ open: isMenuOpen }">
+      <RouterLink v-for="item in menuItems" :key="item.to" :to="item.to" @click="toggleMenu">
+        {{ item.label }}
+      </RouterLink>
+    </nav>
+  </div>
 </template>
 
 <style scoped>
-
+/* Base sidebar styles */
 .sidebar-navigation {
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    line-height: 1.5;
-    padding: 0 2rem 0 2rem;
-}
-
-.logo-wrapper {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+  position: relative;
+  align-items: flex-start;
+  flex-direction: column;
+  line-height: 1.5;
   width: 100%;
 }
 
-.logo {
-  display: block;
-  text-align: center;
-  margin-right: 2rem;
-}
-
+/* Base nav styles */
 nav {
   width: 100%;
   font-size: 12px;
   text-align: center;
+}
+
+/* Nav link states */
+nav a {
+  display: inline-block;
+  padding: 0 1rem;
+  border-left: 1px solid var(--color-border);
+}
+
+nav a:first-of-type {
+  border: none;
 }
 
 nav a.router-link-exact-active {
@@ -80,37 +75,63 @@ nav a.router-link-exact-active:hover {
   background-color: transparent;
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+/* Mobile: menu button and dropdown */
+.menu-button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--color-text);
+  background-color: #e0f2ff;
+  text-align: left;
+  line-height: 1.5;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-nav a:first-of-type {
-  border: 0;
+.sidebar-navigation nav {
+  display: none;
 }
 
-.info {
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  margin-right: 2rem;
-
-  .info_title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin: 0;
-  }
-
-  .info_using {
-    font-size: 0.75rem;
-    color: rgb(121, 121, 121)
-  }
+.sidebar-navigation nav.open {
+  display: block;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: white;
+  z-index: 1000;
 }
 
+.sidebar-navigation nav.open a {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  text-align: left;
+  font-size: 1rem;
+}
+
+.sidebar-navigation nav.open a.router-link-exact-active {
+  background-color: #e0f2ff;
+}
+
+/* Desktop styles */
 @media (min-width: 1024px) {
+
+  /* Hide mobile menu button */
+  .menu-button {
+    display: none;
+  }
+
+  /* Sidebar layout */
   .sidebar-navigation {
     display: flex;
+    flex: 1;
   }
 
   .sidebar-navigation img {
@@ -133,6 +154,7 @@ nav a:first-of-type {
     border: none;
     border-top: 1px solid var(--color-border);
     text-align: left;
+    font-size: 1rem;
   }
 
   .sidebar-navigation nav a:first-of-type {
@@ -141,79 +163,6 @@ nav a:first-of-type {
 
   .sidebar-navigation nav a.router-link-exact-active {
     background-color: #e0f2ff;
-  }
-
-  .logo {
-    margin: 0;
-  }
-
-  .info {
-    margin: 0;
-  }
-}
-
-/* Mobile: hide nav and show burger button */
-.menu-button {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  padding: 0.5rem;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.sidebar-navigation nav {
-  display: none;
-}
-
-.sidebar-navigation nav.open {
-  display: block;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background-color: white;
-  z-index: 1000;
-}
-
-/* Full-width dropdown items */
-.sidebar-navigation nav.open a {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-top: 1px solid var(--color-border);
-  text-align: left;
-}
-
-/* Highlight the active entry */
-.sidebar-navigation nav.open a.router-link-exact-active {
-  background-color: #e0f2ff;
-}
-
-/* Desktop: hide burger button */
-@media (min-width: 1024px) {
-  .menu-button {
-    display: none;
-  }
-}
-
-/* Desktop layout: sidebar-navigation and content split */
-@media (min-width: 1024px) {
-  .app-container {
-    display: flex;
-    height: 100vh;
-    width: 100%;
-    overflow: hidden;
-  }
-  .sidebar-navigation {
-    flex: 0 0 350px;
-  }
-  .content {
-    flex: 1;
-    overflow: auto;
   }
 }
 </style>
