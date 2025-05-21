@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@shopware-ag/dive": "file:.yalc/@shopware-ag/dive",
+    "monaco-editor": "^0.52.2",
+    "monaco-editor-vue3": "^0.1.10",
     "pinia": "^2.1.7",
     "three": "^0.168.0",
     "vue": "^3.4.29",
