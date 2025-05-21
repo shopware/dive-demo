@@ -1,25 +1,3 @@
-<template>
-  <div class="canvasWrapper" ref="canvasWrapper">
-    <button ref="showHideButton">Show/Hide Gizmo</button>
-    <!-- the canvas will be attached here on mount -->
-  </div>
-</template>
-
-<style scoped lang="scss">
-.canvasWrapper {
-  display: flex;
-  height: 100%;
-  width: 100%;
-
-  button {
-    position: absolute;
-    bottom: 0px;
-    left: 0px;
-    margin: 10px
-  }
-}
-</style>
-
 <script setup lang="ts">
 import { ref, onMounted, type Ref } from 'vue';
 import { DIVE, type COMModel, type COMPrimitive } from '@shopware-ag/dive';
@@ -100,3 +78,26 @@ defineProps<{
   msg: string
 }>()
 </script>
+
+
+<template>
+  <div class="canvasWrapper" ref="canvasWrapper">
+    <button ref="showHideButton">Show/Hide Gizmo</button>
+    <!-- the canvas will be attached here on mount -->
+  </div>
+</template>
+
+<style scoped lang="scss">
+.canvasWrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
+
+  button {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    margin: 10px
+  }
+}
+</style>

@@ -1,17 +1,3 @@
-<template>
-  <div class="canvasWrapper" ref="canvasWrapper">
-    <!-- the canvas will be attached here on mount -->
-  </div>
-</template>
-
-<style scoped>
-.canvasWrapper {
-  display: flex;
-  height: 100%;
-  width: 100%;
-}
-</style>
-
 <script setup lang="ts">
 import { ref, onMounted, type Ref } from 'vue';
 import { DIVE } from '@shopware-ag/dive';
@@ -56,3 +42,18 @@ defineProps<{
   msg: string
 }>()
 </script>
+
+
+<template>
+  <div class="canvasWrapper" ref="canvasWrapper">
+    <!-- the canvas will be attached here on mount -->
+  </div>
+</template>
+
+<style scoped>
+.canvasWrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+</style>
