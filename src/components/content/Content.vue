@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import CodeEditor from '@/components/codeeditor/CodeEditor.vue';
 
 // toggle visibility of code panel
@@ -36,14 +36,27 @@ function onMouseUp() {
   document.removeEventListener('mousemove', onMouseMove);
   document.removeEventListener('mouseup', onMouseUp);
 }
+
+// mobile detection for modal
+const isMobile = ref(window.innerWidth <= 768);
+function onResize() {
+  isMobile.value = window.innerWidth <= 768;
+}
+onMounted(() => window.addEventListener('resize', onResize));
+onUnmounted(() => window.removeEventListener('resize', onResize));
 </script>
 
 <template>
   <div class="content">
     <RouterView class="router-view" />
-    <div class="splitter" @mousedown="onSplitterMouseDown" :class="{ hidden: !showCode }" />
-    <div ref="codePane" class="code-view" :style="{ width: showCode ? codeWidth + 'px' : '0px', flex: 'none' }">
+    <div v-if="!isMobile" class="splitter" @mousedown="onSplitterMouseDown" :class="{ hidden: !showCode }" />
+    <div v-if="!isMobile" ref="codePane" class="code-view"
+      :style="{ width: showCode ? codeWidth + 'px' : '0px', flex: 'none' }">
       <CodeEditor language="typescript" theme="vs-dark" class="full-editor" />
+    </div>
+    <div v-if="isMobile && showCode" class="code-modal">
+      <CodeEditor language="typescript" theme="vs-dark" class="full-editor" />
+      <button class="close-modal" @click="toggleCode()">&times;</button>
     </div>
     <button class="code-button" @click="toggleCode()">&lt;/&gt;</button>
   </div>
@@ -104,5 +117,36 @@ function onMouseUp() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Modal overlay on mobile */
+@media (max-width: 768px) {
+  .code-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #1e1e1e;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .code-modal .full-editor {
+    flex: 1;
+  }
+
+  .close-modal {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 1001;
+  }
 }
 </style>
