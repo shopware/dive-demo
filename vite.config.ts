@@ -5,12 +5,13 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { resolve } from 'path'; // Import resolve
 import fs from 'fs'; // Import fs
+import { createRequire } from 'module';
 
 // Helper to find the real path if a package is symlinked
 function findLinkedPackagePath(packageName: string, projectRoot: string) {
   try {
     const packageNodeModulesPath = resolve(projectRoot, 'node_modules', packageName);
-    if (fs.existsSync(packageNodeModulesPath) && fs.lstatSync(packageNodeModulesPath).isSymbolicLink()) {
+    if (fs.existsSync(packageNodeModulesPath)) {
       return fs.realpathSync(packageNodeModulesPath);
     }
   } catch (e) {
@@ -30,11 +31,17 @@ export default defineConfig(({ command, mode }) => {
     console.log('@shopware-ag/dive is not linked or not found.');
   }
 
+  const require = createRequire(import.meta.url);
+  const monacoEditorPlugin = require('vite-plugin-monaco-editor').default;
+
   return {
     plugins: [
       nodePolyfills(),
       vue(),
       basicSsl(),
+      monacoEditorPlugin({
+        languageWorkers: ['editorWorkerService', 'typescript', 'css', 'html', 'json'],
+      }),
     ],
     resolve: {
       // *** ESSENTIAL for npm link to work correctly ***
