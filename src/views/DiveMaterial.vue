@@ -1,33 +1,26 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref } from 'vue';
-import { DIVE, type COMEntity } from '@shopware-ag/dive';
-import { Color } from 'three';
+import { DIVE } from '@shopware-ag/dive';
+import { Color, Mesh, MeshStandardMaterial } from 'three';
+import type { DIVEModel } from 'node_modules/@shopware-ag/dive/build/src/components/model/Model';
 
-// declare a ref to hold the element reference
-// the name must match template ref value
-const canvasWrapper: Ref<HTMLDivElement | null> = ref(null)
+const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 
-onMounted(() => {
-  if (!canvasWrapper.value) {
+onMounted(async () => {
+  if (!canvas.value) {
     return;
   }
 
-  const { Canvas, Communication } = DIVE.QuickView('suzanne.glb');
-  canvasWrapper.value.appendChild(Canvas);
-
-  let map = new Map<string, COMEntity>();
-  map = Communication.PerformAction('GET_ALL_OBJECTS', map);
-
-  const [light, suzanne] = map.values();
+  const dive = await DIVE.QuickView('suzanne.glb', { canvas: canvas.value });
 
   setInterval(() => {
-    Communication.PerformAction('UPDATE_OBJECT', {
-      id: suzanne.id,
-      material: {
-        color: '#' + new Color(Math.random(), Math.random(), Math.random()).getHexString(),
-        roughness: Math.random(),
-        metalness: Math.random(),
-      }
+    const sceneChildren = dive.engine.scene.root.children;
+    const index = sceneChildren.length - 1;
+    const suzanne = sceneChildren[index] as DIVEModel;
+    suzanne.setMaterial({
+      color: '#' + new Color(Math.random(), Math.random(), Math.random()).getHexString(),
+      roughness: Math.random(),
+      metalness: Math.random(),
     });
   }, 1000);
 })
@@ -39,8 +32,8 @@ defineProps<{
 
 
 <template>
-  <div class="canvasWrapper" ref="canvasWrapper">
-    <!-- the canvas will be attached here on mount -->
+  <div class="canvasWrapper">
+    <canvas ref="canvas" />
   </div>
 </template>
 
