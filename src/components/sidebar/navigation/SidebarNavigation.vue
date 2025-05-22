@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { RouterLink } from 'vue-router';
+import { ref, computed } from 'vue';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
+import { watch } from 'vue';
 
 const isMenuOpen = ref(false);
 function toggleMenu() {
@@ -20,17 +19,15 @@ function handleNavClick(event: MouseEvent) {
 }
 
 const route = useRoute();
-const menuItems = [
-  { label: 'Home', to: '/' },
-  { label: 'AR', to: '/ar' },
-  { label: 'Material', to: '/material' },
-  { label: 'Primitives', to: '/primitives' },
-  { label: 'Groups', to: '/groups' },
-  { label: 'Transform', to: '/transform' },
-  { label: 'Asset Loader', to: '/asset-loader' },
-  { label: 'Asset Exporter', to: '/asset-exporter' }
-];
-const currentItem = computed(() => menuItems.find(item => item.to === route.path) ?? menuItems[0]);
+const router = useRouter();
+
+const menuItems = computed(() =>
+  router.getRoutes()
+    .filter(r => typeof r.path === 'string' && !r.path.includes(':') && !r.path.includes('*'))
+    .map(r => ({ label: r.name, to: r.path }))
+);
+
+const currentItem = computed(() => menuItems.value.find(item => item.to === route.path) ?? menuItems.value[0]);
 
 watch(route, () => {
   isMenuOpen.value = false;
