@@ -1,7 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { resolve } from 'path'; // Import resolve
 import fs from 'fs'; // Import fs
@@ -20,7 +19,7 @@ function findLinkedPackagePath(packageName: string, projectRoot: string) {
   return null;
 }
 
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(() => {
   const projectRoot = __dirname;
   const divePath = findLinkedPackagePath('@shopware-ag/dive', projectRoot);
 
@@ -35,11 +34,10 @@ export default defineConfig(({ command, mode }) => {
   const monacoEditorPlugin = require('vite-plugin-monaco-editor').default;
 
   return {
-    base: '/dive-demo/',
+    base: '/',
     plugins: [
       nodePolyfills(),
       vue(),
-      basicSsl(),
       monacoEditorPlugin({
         languageWorkers: ['editorWorkerService', 'typescript', 'css', 'html', 'json'],
       }),
@@ -61,8 +59,6 @@ export default defineConfig(({ command, mode }) => {
           ...(divePath ? [divePath] : []), // Conditionally add linked path
         ],
       },
-      cors: true,
-      https: {}
     },
     optimizeDeps: {
       // Might still be needed to prevent pre-bundling issues with linked deps

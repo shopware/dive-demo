@@ -40,7 +40,7 @@ defineProps<{
 
 
 <template>
-  <div class="canvasWrapper" id="canvasWrapper">
+  <div class="canvasWrapper">
     <canvas ref="canvasRef"></canvas>
     <!-- Dropdown controls for placement and scale -->
     <div class="controls">
@@ -107,7 +107,7 @@ defineProps<{
 }
 
 .arbutton {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
