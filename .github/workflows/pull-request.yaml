@@ -1,8 +1,8 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Pull Request
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pull requests targeting the default branch
   pull_request:
     branches: ["trunk"]
 
@@ -26,7 +26,7 @@ jobs:
   install:
       runs-on: ubuntu-latest
       steps:
-          - name: Checkout DIVE
+          - name: Checkout DIVE-Demo
             uses: actions/checkout@main
           - name: Setup Node.js
             uses: actions/setup-node@main
@@ -39,12 +39,25 @@ jobs:
           - name: Install DIVE-Demo dependencies (if cache not found)
             if: steps.yarn-cache.outputs.cache-hit != 'true'
             run: yarn
+          - name: Cache Playwright browsers
+            uses: actions/cache@main
+            id: playwright-cache
+            with:
+                path: ~/.cache/ms-playwright
+                key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+                restore-keys: |
+                  playwright-browsers-${{ runner.os }}-
+          - name: Install Playwright
+            if: steps.playwright-cache.outputs.cache-hit != 'true'
+            env:
+                PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+            run: yarn playwright install
   # Build job
   build:
     runs-on: ubuntu-latest
     needs: install
     steps:
-      - name: Checkout DIVE
+      - name: Checkout DIVE-Demo
         uses: actions/checkout@main
       - name: Search for cached dependencies
         uses: actions/cache@main
@@ -57,33 +70,20 @@ jobs:
         run: yarn
       - name: Build
         run: yarn build
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout DIVE-Demo
+        uses: actions/checkout@main
+      - name: Search for cached dependencies
+        uses: actions/cache@main
+        id: yarn-cache
+        with:
+            path: node_modules
+            key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+      - name: Install DIVE-Demo dependencies (if cache not found)
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn
       - name: e2e
         run: yarn test:e2e
-  # Deploy job
-  deploy-dry-run:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-      - name: Dry-run Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: './dist'          # your build output
-          dry-run: true             # ← this passes “--dry-run” to git push
-          git-config-name: 'CI Bot'
-          git-config-email: 'ci@my.org'
