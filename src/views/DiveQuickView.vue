@@ -9,7 +9,7 @@ onMounted(async () => {
     return;
   }
 
-  const dive = await DIVE.QuickView('sofa_B.glb', { canvas: canvas.value });
+  await DIVE.QuickView('sofa_B.glb', { canvas: canvas.value });
 })
 
 defineProps<{
@@ -19,7 +19,7 @@ defineProps<{
 
 <template>
   <div class="canvasWrapper">
-    <canvas id="canvas" ref="canvas"></canvas>
+    <canvas ref="canvas"></canvas>
   </div>
 </template>
 

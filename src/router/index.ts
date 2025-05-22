@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DiveInit from '@/views/DiveInit.vue'
+import DiveQuickView from '@/views/DiveQuickView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: DiveInit
+      name: 'quick view',
+      component: DiveQuickView
     },
     {
       path: '/ar',
