@@ -35,12 +35,12 @@ const options = {
 };
 
 // import all view source files as raw text
-const viewFiles = import.meta.glob('/src/views/*.vue', { query: '?raw', import: 'default' });
+const viewFiles = import.meta.glob<boolean, string, string>('/src/views/*.vue', { query: '?raw', import: 'default' });
 
 // watch for route changes and load the matching file using router lookup
 watch(() => route.name, async (name) => {
     const record = router.getRoutes().find(r => r.name === name);
-    if (!record) {
+    if (!record || !record.components) {
         currentCode.value = '';
         return;
     }
