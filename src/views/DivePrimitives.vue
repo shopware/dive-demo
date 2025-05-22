@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref } from 'vue';
-import { DIVE, type COMModel, type COMPrimitive } from '@shopware-ag/dive';
+import { DIVE } from '@shopware-ag/dive';
+import { State, type COMModel, type COMPrimitive } from '@shopware-ag/dive/modules/State';
 
-// declare a ref to hold the element reference
-// the name must match template ref value
-const canvasWrapper: Ref<HTMLDivElement | null> = ref(null)
+const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 
 onMounted(() => {
-  if (!canvasWrapper.value) {
+  if (!canvas.value) {
     return;
   }
 
-  const { Canvas, Communication } = new DIVE();
-  canvasWrapper.value.appendChild(Canvas);
+  const dive = new DIVE({ canvas: canvas.value });
+  const state = new State(dive.engine, dive['orbitController']);
 
-  Communication.PerformAction('ADD_OBJECT', {
+  state.performAction('ADD_OBJECT', {
     entityType: 'light',
     type: 'scene',
     name: 'light',
@@ -26,20 +25,20 @@ onMounted(() => {
     position: { x: 0, y: 0, z: 0 },
   });
 
-  Communication.PerformAction('UPDATE_SCENE', {
+  state.performAction('UPDATE_SCENE', {
     backgroundColor: 0xfc3588,
     gridEnabled: false,
     floorEnabled: true,
     floorColor: 0xdc87a1,
   });
 
-  Communication.PerformAction('SET_CAMERA_TRANSFORM', {
+  state.performAction('SET_CAMERA_TRANSFORM', {
     position: { x: 0, y: 1, z: 1.4 },
     target: { x: 0, y: 0.7, z: 0 },
   });
 
   // object
-  Communication.PerformAction('ADD_OBJECT', {
+  state.performAction('ADD_OBJECT', {
     id: 'chair',
     name: 'chair',
     entityType: 'model',
@@ -50,7 +49,7 @@ onMounted(() => {
     visible: true,
   } as COMModel);
 
-  Communication.PerformAction('ADD_OBJECT', {
+  state.performAction('ADD_OBJECT', {
     id: 'cylinder0',
     name: 'PlainCyliner',
     entityType: 'primitive',
@@ -70,7 +69,7 @@ onMounted(() => {
     }
   } as COMPrimitive);
 
-  Communication.PerformAction('ADD_OBJECT', {
+  state.performAction('ADD_OBJECT', {
     id: 'cylinder1',
     name: 'PlainCyliner',
     entityType: 'primitive',
@@ -90,7 +89,7 @@ onMounted(() => {
     }
   } as COMPrimitive);
 
-  Communication.PerformAction('ADD_OBJECT', {
+  state.performAction('ADD_OBJECT', {
     id: 'cylinder2',
     name: 'PlainCyliner',
     entityType: 'primitive',
@@ -110,7 +109,7 @@ onMounted(() => {
     }
   } as COMPrimitive);
 
-  Communication.PerformAction('ADD_OBJECT', {
+  state.performAction('ADD_OBJECT', {
     id: 'cylinder3',
     name: 'PlainCyliner',
     entityType: 'primitive',
@@ -130,7 +129,7 @@ onMounted(() => {
     }
   } as COMPrimitive);
 
-  Communication.PerformAction('ADD_OBJECT', {
+  state.performAction('ADD_OBJECT', {
     id: 'cylinder4',
     name: 'PlainCyliner',
     entityType: 'primitive',
@@ -158,7 +157,8 @@ defineProps<{
 
 
 <template>
-  <div class="canvasWrapper" ref="canvasWrapper">
+  <div class="canvasWrapper">
+    <canvas ref="canvas" />
     <!-- the canvas will be attached here on mount -->
   </div>
 </template>
