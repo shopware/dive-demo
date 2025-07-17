@@ -34,7 +34,7 @@ export default defineConfig(() => {
   const monacoEditorPlugin = require('vite-plugin-monaco-editor').default;
 
   return {
-    base: '/dive-demo/',
+    base: '/',
     plugins: [
       nodePolyfills(),
       vue(),
