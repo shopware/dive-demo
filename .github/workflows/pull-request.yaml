@@ -67,7 +67,7 @@ jobs:
             if: steps.playwright-cache.outputs.cache-hit != 'true'
             env:
                 PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
-            run: yarn playwright install --with-deps
+            run: npx playwright install --with-deps
   # Build job
   build:
     runs-on: ubuntu-latest
@@ -108,7 +108,9 @@ jobs:
             key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
             restore-keys: |
               playwright-browsers-${{ runner.os }}-
+      - name: Run yarn build
+        run: yarn build
+      - name: Install Playwright
+        run: npx playwright install --with-deps
       - name: Run playwright tests
-        env:
-            PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
-        run: yarn test:e2e
+        run: npx playwright test --workers 8 --reporter=github --trace=on-first-retry

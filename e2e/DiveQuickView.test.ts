@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const ROUTE = '/';
 
 test('shows model', async ({ page }) => {
-    await page.goto(ROUTE);
+    await page.goto(ROUTE, { waitUntil: 'networkidle' });
     await expect(page.locator('div.app-container')).toBeVisible();
     await expect(page.locator('div.sidebar')).toBeVisible();
     await expect(page.locator('div.content')).toBeVisible();
@@ -13,7 +13,7 @@ test('shows model', async ({ page }) => {
 });
 
 test('click', async ({ page }) => {
-    await page.goto(ROUTE);
+    await page.goto(ROUTE, { waitUntil: 'networkidle' });
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible();
     const boundingBox = await canvas.boundingBox();
