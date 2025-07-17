@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, onUnmounted } from 'vue';
 import { DIVE } from '@shopware-ag/dive';
-import { ARSystem } from '@shopware-ag/dive/modules/ARSystem';
+import { ARSystem } from '@shopware-ag/dive/ar';
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const arbuttonRef: Ref<HTMLButtonElement | null> = ref(null);
