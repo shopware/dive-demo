@@ -1,6 +1,6 @@
 # dive-demo
 
-This template should help get you started developing with Vue 3 in Vite.
+This demo is based on [DIVE](https://github.com/shopware/dive), a spatial framework made by and optimized for Shopware. This template should help you get started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup
 
