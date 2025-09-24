@@ -14,6 +14,11 @@ const router = createRouter({
       name: 'ar',
       component: () => import('../views/DiveAR.vue')
     },
+    {
+      path: '/switch-canvas',
+      name: 'switch-canvas',
+      component: () => import('../views/DiveSwitchCanvas.vue')
+    }
   ]
 })
 
