@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref } from 'vue';
-import { DIVE } from '@shopware-ag/dive';
+import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 
@@ -9,7 +9,7 @@ onMounted(async () => {
     return;
   }
 
-  await DIVE.QuickView('sofa_B.glb', { canvas: canvas.value });
+  await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true, displayAxes: true });
 })
 
 defineProps<{
