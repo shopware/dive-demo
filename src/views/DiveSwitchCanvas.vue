@@ -1,27 +1,36 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref } from 'vue';
-import { DIVE } from '@shopware-ag/dive';
-import { Color } from 'three';
+import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
 const canvas2 = ref<HTMLCanvasElement | null>(null);
 const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
 
-const dive: Ref<DIVE | null> = ref(null)
+const dive: Ref<QuickView | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
 
 onMounted(async () => {
-  if (!canvas0.value || !canvas1.value) {
+  if (!canvas0.value || !canvas1.value || !canvas2.value) {
     return;
   }
 
-  dive.value = await DIVE.QuickView('sofa_B.glb', { canvas: canvas0.value });
+  dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas0.value }));
 });
 
 const switchCanvasTo = (canvas: HTMLCanvasElement, index: number) => {
+  if (!dive.value) {
+    return;
+  }
+
+  // set active canvas index
   activeCanvas.value = index;
-  dive.value?.setCanvas(canvas);
+
+  // replace canvas in main view
+  dive.value.mainView.setCanvas(canvas);
+
+  // set dom element to orbit controller
+  dive.value.orbitController.setDomElements(canvas);
 }
 
 defineProps<{
@@ -113,6 +122,8 @@ button {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+
+  pointer-events: none;
 
   p {
     color: white;
