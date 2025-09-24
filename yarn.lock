@@ -3640,6 +3640,13 @@ vite-plugin-node-polyfills@^0.22.0:
     "@rollup/plugin-inject" "^5.0.5"
     node-stdlib-browser "^1.2.0"
 
+vite-plugin-restart@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/vite-plugin-restart/-/vite-plugin-restart-1.0.0.tgz#922ff027f9406e95cd8be27147c92b2a0c70a293"
+  integrity sha512-t2ktkTOa+DQX05TEZm/3FE0DyrYEyFXdhG5gLcta5p71zOpg9yG3DeRcHWJVLJgWNoaVtOr4fUlr1kKu+WfXyQ==
+  dependencies:
+    micromatch "^4.0.8"
+
 vite@^5.0.0, vite@^5.3.1:
   version "5.4.19"
   resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.19.tgz#20efd060410044b3ed555049418a5e7d1998f959"

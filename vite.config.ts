@@ -5,6 +5,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { resolve } from 'path'; // Import resolve
 import fs from 'fs'; // Import fs
 import { createRequire } from 'module';
+import restart from 'vite-plugin-restart';
 
 // Helper to find the real path if a package is symlinked
 function findLinkedPackagePath(packageName: string, projectRoot: string) {
@@ -34,12 +35,17 @@ export default defineConfig(() => {
   const monacoEditorPlugin = require('vite-plugin-monaco-editor').default;
 
   return {
-    base: '/dive-demo/',
+    base: '/',
     plugins: [
       nodePolyfills(),
       vue(),
       monacoEditorPlugin({
         languageWorkers: ['editorWorkerService', 'typescript', 'css', 'html', 'json'],
+      }),
+      restart({
+        restart: [
+          '.yalc/**',
+        ],
       }),
     ],
     resolve: {
