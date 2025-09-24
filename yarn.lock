@@ -427,10 +427,10 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.11.0.tgz#75dce8e972f90bba488e2b0cc677fb233aa357ab"
   integrity sha512-zxnHvoMQVqewTJr/W4pKjF0bMGiKJv1WX7bSrkl46Hg0QjESbzBROWK0Wg4RphzSOS5Jiy7eFimmM3UgMrMZbQ==
 
-"@shopware-ag/dive@2.0.1-beta.4":
-  version "2.0.1-beta.4"
-  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-2.0.1-beta.4.tgz#bd2745cb4e7cfba5f8e5f218c999bb4809f061c8"
-  integrity sha512-O51tW1/nqo3W1IBUZgetkJ+TAeH8pgcUIJLwJUX70AL0c8ND8BUMpqJ3VT+OC9o9f0tthQQlVRJeOqPN20OTpg==
+"@shopware-ag/dive@2.2.2":
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-2.2.2.tgz#a4133caa12b53ab39e80d760286894b987105be9"
+  integrity sha512-B3p0U5KMhRQknxXnp3IaN4JsOxDLynhuGg5BWppdOYx9N3rZgUq1rJU/JAyrCH3kFxqfER+dMd2mwrfm3H1qEw==
   dependencies:
     "@tweenjs/tween.js" "^23.1.1"
     lodash "^4.17.21"
