@@ -1,0 +1,79 @@
+<script setup lang="ts">
+import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { DIVEModel, BoundingBox } from '@shopware-ag/dive';
+import { QuickView } from '@shopware-ag/dive/quickview';
+import { Toolbox } from '@shopware-ag/dive/toolbox';
+
+const canvas: Ref<HTMLCanvasElement | null> = ref(null)
+const dive: Ref<QuickView | null> = ref(null);
+
+onMounted(async () => {
+    if (!canvas.value) {
+        return;
+    }
+
+    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true, displayAxes: true }));
+
+    const toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
+    toolbox.useTool('select');
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'a') {
+            toolbox.selectTool.setGizmoMode('translate');
+        }
+        if (event.key === 's') {
+            toolbox.selectTool.setGizmoMode('rotate');
+        }
+        if (event.key === 'd') {
+            toolbox.selectTool.setGizmoMode('scale');
+        }
+    });
+
+
+
+    dive.value.scene.root.children.forEach((child) => {
+        if (child instanceof DIVEModel) {
+            console.log("DIVEModel", child);
+
+            const bb = new BoundingBox(child);
+            bb.setBoxHelperVisible(false);
+            child.add(bb);
+        }
+    });
+})
+
+const placeOnFloor = () => {
+    dive.value?.scene.root.children.forEach((child) => {
+        if (child instanceof DIVEModel) {
+            child.dropIt();
+        }
+    });
+}
+
+defineProps<{
+    msg: string
+}>()
+</script>
+
+<template>
+    <div class="canvasWrapper">
+        <canvas ref="canvas"></canvas>
+        <button @click="placeOnFloor">Place on floor</button>
+    </div>
+</template>
+
+<style scoped>
+.canvasWrapper {
+    display: flex;
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+}
+
+button {
+    position: absolute;
+    bottom: 20px;
+}
+</style>
