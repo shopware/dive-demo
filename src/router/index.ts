@@ -28,6 +28,11 @@ const router = createRouter({
       path: '/place-on-floor',
       name: 'place-on-floor',
       component: () => import('../views/DivePlaceOnFloor.vue')
+    },
+    {
+      path: '/focus-object',
+      name: 'focus-object',
+      component: () => import('../views/DiveFocusObject.vue')
     }
   ]
 })
