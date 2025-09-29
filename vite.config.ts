@@ -34,8 +34,16 @@ export default defineConfig(() => {
   const require = createRequire(import.meta.url);
   const monacoEditorPlugin = require('vite-plugin-monaco-editor').default;
 
+  // Determine correct base for GitHub Pages project site deployments
+  // In GitHub Actions, repository is in the form "owner/repo". For Pages project sites,
+  // assets must be served from "/repo/" instead of "/".
+  const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+  const repository = process.env.GITHUB_REPOSITORY || '';
+  const repoName = (repository.split('/')[1] || '').trim();
+  const baseForGhPages = repoName ? `/${repoName}/` : '/';
+
   return {
-    base: '/',
+    base: isGitHubActions ? baseForGhPages : '/',
     plugins: [
       nodePolyfills(),
       vue(),
