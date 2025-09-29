@@ -194,30 +194,4 @@ onBeforeUnmount(() => {
 .gutter.gutter-y {
     cursor: row-resize;
 }
-
-.gutter.gutter-x::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 2px;
-    height: 24px;
-    background-color: rgba(0, 0, 0, 0.35);
-    border-radius: 1px;
-    box-shadow: -4px 0 0 rgba(0, 0, 0, 0.25), 4px 0 0 rgba(0, 0, 0, 0.25);
-}
-
-.gutter.gutter-y::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 24px;
-    height: 2px;
-    background-color: rgba(0, 0, 0, 0.35);
-    border-radius: 1px;
-    box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.25), 0 4px 0 rgba(0, 0, 0, 0.25);
-}
 </style>
