@@ -31,8 +31,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'yarn'
+          node-version: "20"
+          cache: "yarn"
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Build
@@ -60,10 +60,12 @@ jobs:
         with:
           name: dist
           path: dist
+      - name: Add SPA fallback (404.html)
+        run: cp dist/index.html dist/404.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: "./dist"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
