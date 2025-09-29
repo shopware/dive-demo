@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, markRaw } from 'vue';
+import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
@@ -39,29 +40,36 @@ defineProps<{
 </script>
 
 <template>
-  <div class="wrapper">
-    <div class="canvasWrapper0">
-      <div class="overlay" v-if="activeCanvas !== 0">
-        <p>Deactivated</p>
+  <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]" :min-size="10"
+    orientation="horizontal">
+    <template #panel-0>
+      <div class="canvasWrapper0">
+        <div class="overlay" v-if="activeCanvas !== 0">
+          <p>Deactivated</p>
+        </div>
+        <canvas ref="canvas0"></canvas>
+        <button :disabled="activeCanvas === 0" @click="switchCanvasTo(canvases[0].value!, 0)">Use this</button>
       </div>
-      <canvas ref="canvas0"></canvas>
-      <button :disabled="activeCanvas === 0" @click="switchCanvasTo(canvases[0].value!, 0)">Use this</button>
-    </div>
-    <div class="canvasWrapper1">
-      <div class="overlay" v-if="activeCanvas !== 1">
-        <p>Deactivated</p>
+    </template>
+    <template #panel-1>
+      <div class="canvasWrapper1">
+        <div class="overlay" v-if="activeCanvas !== 1">
+          <p>Deactivated</p>
+        </div>
+        <canvas ref="canvas1"></canvas>
+        <button :disabled="activeCanvas === 1" @click="switchCanvasTo(canvases[1].value!, 1)">Use this</button>
       </div>
-      <canvas ref="canvas1"></canvas>
-      <button :disabled="activeCanvas === 1" @click="switchCanvasTo(canvases[1].value!, 1)">Use this</button>
-    </div>
-    <div class="canvasWrapper2">
-      <div class="overlay" v-if="activeCanvas !== 2">
-        <p>Deactivated</p>
+    </template>
+    <template #panel-2>
+      <div class="canvasWrapper2">
+        <div class="overlay" v-if="activeCanvas !== 2">
+          <p>Deactivated</p>
+        </div>
+        <canvas ref="canvas2"></canvas>
+        <button :disabled="activeCanvas === 2" @click="switchCanvasTo(canvases[2].value!, 2)">Use this</button>
       </div>
-      <canvas ref="canvas2"></canvas>
-      <button :disabled="activeCanvas === 2" @click="switchCanvasTo(canvases[2].value!, 2)">Use this</button>
-    </div>
-  </div>
+    </template>
+  </ResizablePanels>
 
 </template>
 

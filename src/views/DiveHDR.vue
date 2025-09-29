@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, markRaw } from 'vue';
+import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { DIVEMath } from '@shopware-ag/dive';
 
@@ -54,42 +55,41 @@ defineProps<{
 </script>
 
 <template>
-    <div class="splitWrapper">
-        <div class="canvasWrapper">
-            <div class="overlay">
-                <p>Classic</p>
-            </div>
-            <canvas ref="canvas"></canvas>
-        </div>
-        <div class="canvasWrapper">
-            <div class="overlay">
-                <p>HDR</p>
-                <div class="controls">
-                    <label>
-                        HDR Texture
-                        <select v-model="imageurl" @change="switchImage(imageurl)">
-                            <option v-for="option in hdrOptions" :key="option" :value="option">{{ option }}</option>
-                        </select>
-                    </label>
+    <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length]" :min-size="10"
+        orientation="horizontal">
+        <template #panel-0>
+            <div class="canvasWrapper">
+                <div class="overlay">
+                    <p>Classic</p>
                 </div>
+                <canvas ref="canvas"></canvas>
             </div>
-            <canvas ref="canvasHDR"></canvas>
-        </div>
-    </div>
+        </template>
+        <template #panel-1>
+            <div class="canvasWrapper">
+                <div class="overlay">
+                    <p>HDR</p>
+                    <div class="controls">
+                        <label>
+                            HDR Texture
+                            <select v-model="imageurl" @change="switchImage(imageurl)">
+                                <option v-for="option in hdrOptions" :key="option" :value="option">{{ option }}</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <canvas ref="canvasHDR"></canvas>
+            </div>
+        </template>
+    </ResizablePanels>
 </template>
 
 <style scoped>
-.splitWrapper {
-    display: flex;
-    height: 100%;
-    width: 100%;
-}
-
 .canvasWrapper {
     position: relative;
     display: flex;
     height: 100%;
-    width: calc(100% / v-bind('canvases.length'));
+    width: 100%;
 
     justify-content: center;
     align-items: center;
