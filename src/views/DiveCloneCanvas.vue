@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, markRaw } from 'vue';
+import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 
 
@@ -34,38 +35,34 @@ defineProps<{
 </script>
 
 <template>
-    <div class="wrapper">
-        <div class="canvasWrapper">
-            <div class="overlay">
-                <p>Original</p>
+    <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length]" :min-size="10"
+        orientation="horizontal">
+        <template #panel-0>
+            <div class="canvasWrapper">
+                <div class="overlay">
+                    <p>Original</p>
+                </div>
+                <canvas ref="canvas0"></canvas>
             </div>
-            <canvas ref="canvas0"></canvas>
-
-        </div>
-        <div class="canvasWrapper">
-            <div class="overlay">
-                <p>Clone</p>
+        </template>
+        <template #panel-1>
+            <div class="canvasWrapper">
+                <div class="overlay">
+                    <p>Clone</p>
+                </div>
+                <canvas ref="canvas1"></canvas>
             </div>
-            <canvas ref="canvas1"></canvas>
-        </div>
-    </div>
+        </template>
+    </ResizablePanels>
 
 </template>
 
 <style scoped lang="scss">
-.wrapper {
-    display: flex;
-    height: 100%;
-    width: 100%;
-}
-
 .canvasWrapper {
     position: relative;
     display: flex;
     height: 100%;
-    width: calc(100% / v-bind('canvases.length'));
-
-    border: 1px solid grey;
+    width: 100%;
 
     justify-content: center;
     align-items: center;
