@@ -33,6 +33,11 @@ const router = createRouter({
       path: '/focus-object',
       name: 'focus-object',
       component: () => import('../views/DiveFocusObject.vue')
+    },
+    {
+      path: '/hdr',
+      name: 'hdr',
+      component: () => import('../views/DiveHDR.vue')
     }
   ]
 })
