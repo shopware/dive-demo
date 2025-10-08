@@ -38,6 +38,11 @@ const router = createRouter({
       path: '/hdr',
       name: 'hdr',
       component: () => import('../views/DiveHDR.vue')
+    },
+    {
+      path: '/orientation-display',
+      name: 'orientation-display',
+      component: () => import('../views/DiveOD.vue')
     }
   ]
 })
