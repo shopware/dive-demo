@@ -1,9 +1,33 @@
 import { test, expect } from '@playwright/test';
 
 test('shows model', async ({ page }) => {
-    // Add error listener to catch JavaScript errors
+    // Suppress Monaco editor worker errors and stack traces (harmless, from CodeEditor component)
+    // Must be set up BEFORE navigation to catch all errors
     page.on('pageerror', error => {
+        // Ignore Monaco Editor worker errors - don't log them
+        if (error.message.includes('Unexpected usage') ||
+            error.message.includes('loadForeignModule') ||
+            error.stack?.includes('tsMode') ||
+            error.stack?.includes('monaco')) {
+            return; // Suppress
+        }
+        // Log other errors
         console.error('Page error:', error.message);
+    });
+
+    // Suppress console errors from Monaco Editor (including stack traces)
+    page.on('console', msg => {
+        const text = msg.text();
+        // Suppress Monaco Editor related console errors
+        if (msg.type() === 'error' && (
+            text.includes('Unexpected usage') ||
+            text.includes('loadForeignModule') ||
+            text.includes('tsMode') ||
+            text.includes('/assets/index-') ||
+            text.includes('/assets/tsMode-'))) {
+            // Suppress - don't process the message
+            return;
+        }
     });
 
     // Navigate to root first (this will always work)
