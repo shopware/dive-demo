@@ -113,4 +113,4 @@ jobs:
       - name: Run playwright tests
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
-        run: yarn test:e2e:debug
+        run: yarn test:e2e
