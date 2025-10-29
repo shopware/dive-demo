@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const ROUTE = '/';
 
 test('shows model', async ({ page }) => {
-    await page.goto(ROUTE, { waitUntil: 'networkidle' });
+    await page.goto(ROUTE, { waitUntil: 'load' });
     // Wait for Vue app to mount
     await page.waitForSelector('div.app-container', { state: 'attached' });
     await expect(page.locator('div.app-container')).toBeVisible();
@@ -21,7 +21,7 @@ test('shows model', async ({ page }) => {
 });
 
 test('click', async ({ page }) => {
-    await page.goto(ROUTE, { waitUntil: 'networkidle' });
+    await page.goto(ROUTE, { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
     const canvas = page.locator('div.canvasWrapper > canvas');

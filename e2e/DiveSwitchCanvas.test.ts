@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('shows canvas', async ({ page }) => {
-    await page.goto('/switch-canvas', { waitUntil: 'networkidle' });
+    await page.goto('/switch-canvas', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper0', { state: 'attached' });
 
@@ -17,7 +17,7 @@ test('shows canvas', async ({ page }) => {
 });
 
 test('click button to switch canvas', async ({ page }) => {
-    await page.goto('/switch-canvas', { waitUntil: 'networkidle' });
+    await page.goto('/switch-canvas', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper1', { state: 'attached' });
 

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('shows orientation display', async ({ page }) => {
-    await page.goto('/orientation-display', { waitUntil: 'networkidle' });
+    await page.goto('/orientation-display', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvases to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
 

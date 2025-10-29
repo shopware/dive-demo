@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('shows model', async ({ page }) => {
-    await page.goto('/focus-object', { waitUntil: 'networkidle' });
+    await page.goto('/focus-object', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
     await expect(page.locator('div.canvasWrapper')).toBeVisible();
@@ -22,7 +22,7 @@ test('shows model', async ({ page }) => {
 });
 
 test('switch to different object', async ({ page }) => {
-    await page.goto('/focus-object', { waitUntil: 'networkidle' });
+    await page.goto('/focus-object', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
     const canvas = page.locator('div.canvasWrapper > canvas');

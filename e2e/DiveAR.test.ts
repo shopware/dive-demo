@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('shows model', async ({ page }) => {
-    await page.goto('/ar', { waitUntil: 'networkidle' });
+    await page.goto('/ar', { waitUntil: 'load' });
     // Wait for Vue app to mount
     await page.waitForSelector('div.app-container', { state: 'attached' });
     await expect(page.locator('div.app-container')).toBeVisible();

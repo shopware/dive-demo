@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('shows model', async ({ page }) => {
-    await page.goto('/place-on-floor', { waitUntil: 'networkidle' });
+    await page.goto('/place-on-floor', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
     await expect(page.locator('div.canvasWrapper')).toBeVisible();
@@ -21,7 +21,7 @@ test('shows model', async ({ page }) => {
 });
 
 test('click button', async ({ page }) => {
-    await page.goto('/place-on-floor', { waitUntil: 'networkidle' });
+    await page.goto('/place-on-floor', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
     const canvas = page.locator('div.canvasWrapper > canvas');

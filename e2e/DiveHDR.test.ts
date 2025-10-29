@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('shows HDR comparison', async ({ page }) => {
-    await page.goto('/hdr', { waitUntil: 'networkidle' });
+    await page.goto('/hdr', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvases to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
 
@@ -22,7 +22,7 @@ test('shows HDR comparison', async ({ page }) => {
 });
 
 test('change HDR texture', async ({ page }) => {
-    await page.goto('/hdr', { waitUntil: 'networkidle' });
+    await page.goto('/hdr', { waitUntil: 'load' });
     // Wait for Vue app to mount and canvas to be created
     await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
 
