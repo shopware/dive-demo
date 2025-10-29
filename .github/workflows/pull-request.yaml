@@ -24,22 +24,22 @@ concurrency:
 jobs:
   # Install job
   yarn-install:
-      name: yarn install
-      runs-on: ubuntu-latest
-      steps:
-          - name: Checkout DIVE-Demo
-            uses: actions/checkout@main
-          - name: Setup Node.js
-            uses: actions/setup-node@main
-          - name: Search for cached node_modules
-            uses: actions/cache@main
-            id: yarn-cache
-            with:
-                path: node_modules
-                key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-          - name: Install DIVE-Demo dependencies (if cache not found)
-            if: steps.yarn-cache.outputs.cache-hit != 'true'
-            run: yarn
+    name: yarn install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DIVE-Demo
+        uses: actions/checkout@main
+      - name: Setup Node.js
+        uses: actions/setup-node@main
+      - name: Search for cached node_modules
+        uses: actions/cache@main
+        id: yarn-cache
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+      - name: Install DIVE-Demo dependencies (if cache not found)
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile
   # Build job
   build:
     runs-on: ubuntu-latest
