@@ -40,7 +40,6 @@ test('shows model', async ({ page }) => {
     // Use a longer fixed wait since canvas continuously renders
     await page.waitForTimeout(5000);
 
-    // For 3D canvas that continuously renders, use longer timeout
-    // The timeout here applies to the entire screenshot operation including stability check
-    await expect(canvas).toHaveScreenshot('dive-ar-model-visible.png');
+    // Screenshot the entire page (including sidebar, controls, etc.)
+    await expect(page).toHaveScreenshot('dive-ar-model-visible.png');
 });
