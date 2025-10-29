@@ -14,6 +14,11 @@ export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
   timeout: 60 * 1000, // Increased for 3D canvas rendering tests
+  /* Use platform-agnostic snapshot names so they work on both macOS and Linux
+   * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
+   * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}
+   */
+  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}',
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
@@ -52,6 +57,9 @@ export default defineConfig({
 
     /* Ignore HTTPS errors */
     ignoreHTTPSErrors: true,
+
+    /* Set consistent viewport size for screenshots across all browsers */
+    viewport: { width: 1280, height: 720 },
   },
 
   /* Configure projects for major browsers */
