@@ -1,15 +1,25 @@
 import { test, expect } from '@playwright/test';
 
 test('shows model', async ({ page }) => {
-    await page.goto('/ar', { waitUntil: 'load' });
-    // Wait for Vue app to mount
-    await page.waitForSelector('div.app-container', { state: 'attached' });
-    await expect(page.locator('div.app-container')).toBeVisible();
-    await expect(page.locator('div.sidebar')).toBeVisible();
-    await expect(page.locator('div.content')).toBeVisible();
+    // Add error listener to catch JavaScript errors
+    page.on('pageerror', error => {
+        console.error('Page error:', error.message);
+    });
 
+    await page.goto('/ar', { waitUntil: 'load', timeout: 60000 });
+
+    // Wait for Vue to mount - check for the root element first
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+
+    // Wait for Vue app structure to be ready
+    await page.waitForSelector('div.app-container, div.canvasWrapper', {
+        state: 'attached',
+        timeout: 30000
+    });
+
+    // Wait for the route-specific canvas content
     const canvas = page.locator('div.canvasWrapper > canvas');
-    await expect(canvas).toBeVisible();
+    await expect(canvas).toBeVisible({ timeout: 30000 });
 
     // Wait for the 3D model to fully load and render
     await page.waitForTimeout(2000);

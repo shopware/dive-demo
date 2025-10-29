@@ -113,10 +113,11 @@ export default defineConfig({
      * Use the dev server by default for faster feedback loop.
      * Use the preview server on CI for more realistic testing.
      * Playwright will re-use the local server if there is already a dev-server running.
+     * Note: preview requires a build first, so we ensure dist/ exists.
      */
-    command: process.env.CI ? 'yarn preview -- --port 5173' : 'yarn dev',
+    command: process.env.CI ? 'yarn build && yarn preview -- --port 5173' : 'yarn dev',
     port: 5173,
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000, // Give the server 2 minutes to start (important for CI)
+    timeout: 180 * 1000, // Give the server 3 minutes to build and start (important for CI)
   }
 })
