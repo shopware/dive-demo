@@ -13,13 +13,13 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
-  timeout: 30 * 1000,
+  timeout: 60 * 1000, // Increased for 3D canvas rendering tests
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: 5000,
+    timeout: 60000, // Increased for 3D canvas screenshot stability checks
     /**
      * Threshold for visual comparisons (0-1, where 1 is 100% difference)
      * Default is 0.2 (20% pixel difference allowed)

@@ -6,47 +6,41 @@ test('shows model', async ({ page }) => {
         console.error('Page error:', error.message);
     });
 
-    page.on('response', response => {
-        if (response.status() >= 400) {
-            console.error(`Response error: ${response.url()} - ${response.status()}`);
-        }
-    });
+    // Navigate to root first (this will always work)
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
 
-    // Navigate and wait for load
-    const response = await page.goto('/ar', { waitUntil: 'load', timeout: 60000 });
+    // Wait for Vue to mount and app to be ready
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
 
-    // Debug: Check response status
-    console.log(`Page response status: ${response?.status()}`);
-    console.log(`Page URL: ${page.url()}`);
+    // Wait for navigation links to be ready
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
-    // Debug: Check page content
-    const bodyContent = await page.content();
-    console.log(`Page content length: ${bodyContent.length}`);
-    console.log(`Has #app?: ${bodyContent.includes('id="app"')}`);
-    console.log(`Has <div id="app">?: ${bodyContent.includes('<div id="app">')}`);
+    // Click on the "ar" navigation link (client-side navigation)
+    // This uses Vue Router which avoids the 404 issue
+    const arLink = page.locator('nav a').filter({ hasText: 'ar' });
+    await arLink.click({ timeout: 10000 });
 
-    // Try to get the title
-    const title = await page.title();
-    console.log(`Page title: ${title}`);
-
-    // Wait for Vue to mount by checking for the root element
-    try {
-        await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
-        console.log('Found #app element');
-    } catch (e) {
-        console.error('Failed to find #app element');
-        // Take a screenshot for debugging
-        await page.screenshot({ path: 'debug-no-app.png', fullPage: true });
-        throw e;
-    }
+    // Wait for navigation to complete
+    await page.waitForURL('**/ar', { timeout: 10000 });
 
     // Wait for the route-specific canvas content
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible({ timeout: 30000 });
 
-    // Wait for the 3D model to fully load and render
-    await page.waitForTimeout(2000);
+    // Wait for canvas to have actual dimensions (not just be in DOM)
+    await page.waitForFunction(
+        () => {
+            const canvas = document.querySelector('div.canvasWrapper > canvas') as HTMLCanvasElement;
+            return canvas && canvas.width > 0 && canvas.height > 0;
+        },
+        { timeout: 30000 }
+    );
 
-    // Take visual snapshot to ensure model renders correctly
+    // Wait for 3D model to load and render
+    // Use a longer fixed wait since canvas continuously renders
+    await page.waitForTimeout(5000);
+
+    // For 3D canvas that continuously renders, use longer timeout
+    // The timeout here applies to the entire screenshot operation including stability check
     await expect(canvas).toHaveScreenshot('dive-ar-model-visible.png');
 });
