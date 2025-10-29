@@ -6,16 +6,39 @@ test('shows model', async ({ page }) => {
         console.error('Page error:', error.message);
     });
 
-    await page.goto('/ar', { waitUntil: 'load', timeout: 60000 });
-
-    // Wait for Vue to mount - check for the root element first
-    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
-
-    // Wait for Vue app structure to be ready
-    await page.waitForSelector('div.app-container, div.canvasWrapper', {
-        state: 'attached',
-        timeout: 30000
+    page.on('response', response => {
+        if (response.status() >= 400) {
+            console.error(`Response error: ${response.url()} - ${response.status()}`);
+        }
     });
+
+    // Navigate and wait for load
+    const response = await page.goto('/ar', { waitUntil: 'load', timeout: 60000 });
+
+    // Debug: Check response status
+    console.log(`Page response status: ${response?.status()}`);
+    console.log(`Page URL: ${page.url()}`);
+
+    // Debug: Check page content
+    const bodyContent = await page.content();
+    console.log(`Page content length: ${bodyContent.length}`);
+    console.log(`Has #app?: ${bodyContent.includes('id="app"')}`);
+    console.log(`Has <div id="app">?: ${bodyContent.includes('<div id="app">')}`);
+
+    // Try to get the title
+    const title = await page.title();
+    console.log(`Page title: ${title}`);
+
+    // Wait for Vue to mount by checking for the root element
+    try {
+        await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+        console.log('Found #app element');
+    } catch (e) {
+        console.error('Failed to find #app element');
+        // Take a screenshot for debugging
+        await page.screenshot({ path: 'debug-no-app.png', fullPage: true });
+        throw e;
+    }
 
     // Wait for the route-specific canvas content
     const canvas = page.locator('div.canvasWrapper > canvas');
