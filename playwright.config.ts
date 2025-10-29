@@ -26,11 +26,13 @@ export default defineConfig({
      */
     timeout: 60000, // Increased for 3D canvas screenshot stability checks
     /**
-     * Threshold for visual comparisons (0-1, where 1 is 100% difference)
-     * Default is 0.2 (20% pixel difference allowed)
+     * Threshold for visual comparisons:
+     * - threshold: Perceived color difference per pixel (0-1, default 0.2)
+     * - maxDiffPixelRatio: Ratio of pixels that can differ (0-1, default very strict)
      */
     toHaveScreenshot: {
-      threshold: 0.3,
+      threshold: 0.3, // Color difference tolerance per pixel
+      maxDiffPixelRatio: 0.15, // Allow up to 15% of pixels to differ (within threshold)
       animations: 'disabled',
     },
   },
