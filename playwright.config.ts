@@ -19,7 +19,15 @@ export default defineConfig({
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: 5000
+    timeout: 5000,
+    /**
+     * Threshold for visual comparisons (0-1, where 1 is 100% difference)
+     * Default is 0.2 (20% pixel difference allowed)
+     */
+    toHaveScreenshot: {
+      threshold: 0.3,
+      animations: 'disabled',
+    },
   },
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,

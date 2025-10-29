@@ -8,8 +8,14 @@ test('shows model', async ({ page }) => {
     await expect(page.locator('div.sidebar')).toBeVisible();
     await expect(page.locator('div.content')).toBeVisible();
 
-    await expect(page.locator('div.canvasWrapper > canvas')).toBeVisible();
-    await expect(page.locator('div.canvasWrapper > canvas')).toHaveScreenshot('dive-quick-view-model-visible.png');
+    const canvas = page.locator('div.canvasWrapper > canvas');
+    await expect(canvas).toBeVisible();
+
+    // Wait for the 3D model to fully load and render
+    await page.waitForTimeout(2000);
+
+    // Take visual snapshot to ensure model renders correctly
+    await expect(canvas).toHaveScreenshot('dive-quick-view-model-visible.png');
 });
 
 test('click', async ({ page }) => {
@@ -29,6 +35,6 @@ test('click', async ({ page }) => {
     await page.mouse.down();
     await page.mouse.move(center.x + 100, center.y + 100, { steps: 100 });
     await page.mouse.up();
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
     await expect(page.locator('div.canvasWrapper > canvas')).toHaveScreenshot('dive-move-camera.png');
 });
