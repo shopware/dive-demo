@@ -108,6 +108,8 @@ jobs:
           key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
           restore-keys: |
             playwright-browsers-${{ runner.os }}-
+      - name: Install Playwright system dependencies
+        run: yarn playwright install-deps webkit
       - name: Run playwright tests
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
