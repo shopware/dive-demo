@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type ConsoleMessage } from '@playwright/test';
 
 // Helper function to suppress Monaco Editor errors
-function setupErrorSuppression(page: any) {
-    page.on('pageerror', error => {
+function setupErrorSuppression(page: Page) {
+    page.on('pageerror', (error: Error) => {
         if (error.message.includes('Unexpected usage') ||
             error.message.includes('loadForeignModule') ||
             error.stack?.includes('tsMode') ||
@@ -12,7 +12,7 @@ function setupErrorSuppression(page: any) {
         console.error('Page error:', error.message);
     });
 
-    page.on('console', msg => {
+    page.on('console', (msg: ConsoleMessage) => {
         const text = msg.text();
         if (msg.type() === 'error' && (
             text.includes('Unexpected usage') ||

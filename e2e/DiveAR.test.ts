@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type ConsoleMessage } from '@playwright/test';
 
 test('shows model', async ({ page }) => {
     // Suppress Monaco editor worker errors and stack traces (harmless, from CodeEditor component)
     // Must be set up BEFORE navigation to catch all errors
-    page.on('pageerror', error => {
+    page.on('pageerror', (error: Error) => {
         // Ignore Monaco Editor worker errors - don't log them
         if (error.message.includes('Unexpected usage') ||
             error.message.includes('loadForeignModule') ||
@@ -16,7 +16,7 @@ test('shows model', async ({ page }) => {
     });
 
     // Suppress console errors from Monaco Editor (including stack traces)
-    page.on('console', msg => {
+    page.on('console', (msg: ConsoleMessage) => {
         const text = msg.text();
         // Suppress Monaco Editor related console errors
         if (msg.type() === 'error' && (
