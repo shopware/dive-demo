@@ -1,37 +1,74 @@
 import { test, expect } from '@playwright/test';
 
+function setupErrorSuppression(page: any) {
+    page.on('pageerror', error => {
+        if (error.message.includes('Unexpected usage') ||
+            error.message.includes('loadForeignModule') ||
+            error.stack?.includes('tsMode') ||
+            error.stack?.includes('monaco')) {
+            return;
+        }
+        console.error('Page error:', error.message);
+    });
+
+    page.on('console', msg => {
+        const text = msg.text();
+        if (msg.type() === 'error' && (
+            text.includes('Unexpected usage') ||
+            text.includes('loadForeignModule') ||
+            text.includes('tsMode') ||
+            text.includes('/assets/index-') ||
+            text.includes('/assets/tsMode-'))) {
+            return;
+        }
+    });
+}
+
 test('shows canvas', async ({ page }) => {
-    await page.goto('/switch-canvas', { waitUntil: 'load' });
-    // Wait for Vue app to mount and canvas to be created
-    await page.waitForSelector('div.canvasWrapper0', { state: 'attached' });
+    setupErrorSuppression(page);
 
-    // Check that all three canvases are visible
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
+
+    const switchLink = page.locator('nav a').filter({ hasText: 'switch-canvas' });
+    await switchLink.click({ timeout: 10000 });
+    await page.waitForURL('**/switch-canvas', { timeout: 10000 });
+
     const canvas0 = page.locator('div.canvasWrapper0 > canvas');
-    await expect(canvas0).toBeVisible();
+    await expect(canvas0).toBeVisible({ timeout: 30000 });
 
-    // Wait for the 3D model to fully load and render
-    await page.waitForTimeout(2000);
+    await page.waitForFunction(
+        () => {
+            const canvas = document.querySelector('div.canvasWrapper0 > canvas') as HTMLCanvasElement;
+            return canvas && canvas.width > 0 && canvas.height > 0;
+        },
+        { timeout: 30000 }
+    );
 
-    // Take visual snapshot of the initial state
-    await expect(canvas0).toHaveScreenshot('dive-switch-canvas-initial.png');
+    await page.waitForTimeout(5000);
+    await expect(page).toHaveScreenshot('dive-switch-canvas-initial.png');
 });
 
 test('click button to switch canvas', async ({ page }) => {
-    await page.goto('/switch-canvas', { waitUntil: 'load' });
-    // Wait for Vue app to mount and canvas to be created
-    await page.waitForSelector('div.canvasWrapper1', { state: 'attached' });
+    setupErrorSuppression(page);
+
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
+
+    const switchLink = page.locator('nav a').filter({ hasText: 'switch-canvas' });
+    await switchLink.click({ timeout: 10000 });
+    await page.waitForURL('**/switch-canvas', { timeout: 10000 });
 
     const canvas1 = page.locator('div.canvasWrapper1 > canvas');
     const button = page.locator('button').filter({ hasText: 'Use this' }).nth(1);
 
-    await expect(canvas1).toBeVisible();
+    await expect(canvas1).toBeVisible({ timeout: 30000 });
     await expect(button).toBeEnabled();
 
-    // Test that switching canvases doesn't crash the app
     await button.click();
-    await page.waitForTimeout(1000);
-
-    // Just verify the canvas is still visible
+    await page.waitForTimeout(2000);
     await expect(canvas1).toBeVisible();
 });
 

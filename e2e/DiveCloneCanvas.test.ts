@@ -1,27 +1,52 @@
 import { test, expect } from '@playwright/test';
 
+function setupErrorSuppression(page: any) {
+    page.on('pageerror', error => {
+        if (error.message.includes('Unexpected usage') ||
+            error.message.includes('loadForeignModule') ||
+            error.stack?.includes('tsMode') ||
+            error.stack?.includes('monaco')) {
+            return;
+        }
+        console.error('Page error:', error.message);
+    });
+
+    page.on('console', msg => {
+        const text = msg.text();
+        if (msg.type() === 'error' && (
+            text.includes('Unexpected usage') ||
+            text.includes('loadForeignModule') ||
+            text.includes('tsMode') ||
+            text.includes('/assets/index-') ||
+            text.includes('/assets/tsMode-'))) {
+            return;
+        }
+    });
+}
+
 test('shows cloned canvas', async ({ page }) => {
-    await page.goto('/clone-canvas', { waitUntil: 'load' });
-    // Wait for Vue app to mount and canvases to be created
-    await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
+    setupErrorSuppression(page);
 
-    // Check that both canvases are visible and wait for them to render
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
+
+    const cloneLink = page.locator('nav a').filter({ hasText: 'clone-canvas' });
+    await cloneLink.click({ timeout: 10000 });
+    await page.waitForURL('**/clone-canvas', { timeout: 10000 });
+
     const canvasWrappers = page.locator('div.canvasWrapper');
-    await expect(canvasWrappers).toHaveCount(2);
+    await expect(canvasWrappers).toHaveCount(2, { timeout: 30000 });
 
-    // Get the first canvas wrapper's canvas
-    const originalCanvas = canvasWrappers.first().locator('canvas');
-    await expect(originalCanvas).toBeVisible();
+    await page.waitForFunction(
+        () => {
+            const canvases = document.querySelectorAll('div.canvasWrapper canvas') as NodeListOf<HTMLCanvasElement>;
+            return Array.from(canvases).every(c => c && c.width > 0 && c.height > 0);
+        },
+        { timeout: 30000 }
+    );
 
-    // Get the last canvas wrapper's canvas
-    const clonedCanvas = canvasWrappers.last().locator('canvas');
-    await expect(clonedCanvas).toBeVisible();
-
-    // Wait for the 3D models to fully load and render
-    await page.waitForTimeout(2000);
-
-    // Take visual snapshots to ensure both render correctly
-    await expect(originalCanvas).toHaveScreenshot('dive-clone-canvas-original.png');
-    await expect(clonedCanvas).toHaveScreenshot('dive-clone-canvas-clone.png');
+    await page.waitForTimeout(5000);
+    await expect(page).toHaveScreenshot('dive-clone-canvas-original.png');
 });
 

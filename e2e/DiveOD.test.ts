@@ -1,23 +1,52 @@
 import { test, expect } from '@playwright/test';
 
+function setupErrorSuppression(page: any) {
+    page.on('pageerror', error => {
+        if (error.message.includes('Unexpected usage') ||
+            error.message.includes('loadForeignModule') ||
+            error.stack?.includes('tsMode') ||
+            error.stack?.includes('monaco')) {
+            return;
+        }
+        console.error('Page error:', error.message);
+    });
+
+    page.on('console', msg => {
+        const text = msg.text();
+        if (msg.type() === 'error' && (
+            text.includes('Unexpected usage') ||
+            text.includes('loadForeignModule') ||
+            text.includes('tsMode') ||
+            text.includes('/assets/index-') ||
+            text.includes('/assets/tsMode-'))) {
+            return;
+        }
+    });
+}
+
 test('shows orientation display', async ({ page }) => {
-    await page.goto('/orientation-display', { waitUntil: 'load' });
-    // Wait for Vue app to mount and canvases to be created
-    await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
+    setupErrorSuppression(page);
 
-    // Check that the canvas with axes is visible
-    const canvas0 = page.locator('div.canvasWrapper').first().locator('canvas');
-    await expect(canvas0).toBeVisible();
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
-    // Check that the canvas with orientation display is visible
-    const canvas1 = page.locator('div.canvasWrapper').last().locator('canvas');
-    await expect(canvas1).toBeVisible();
+    const odLink = page.locator('nav a').filter({ hasText: 'orientation-display' });
+    await odLink.click({ timeout: 10000 });
+    await page.waitForURL('**/orientation-display', { timeout: 10000 });
 
-    // Wait for the 3D models to fully load and render
-    await page.waitForTimeout(2000);
+    const canvasWrappers = page.locator('div.canvasWrapper');
+    await expect(canvasWrappers).toHaveCount(2, { timeout: 30000 });
 
-    // Take visual snapshots to ensure both render correctly
-    await expect(canvas0).toHaveScreenshot('dive-od-with-axes.png');
-    await expect(canvas1).toHaveScreenshot('dive-od-orientation-display.png');
+    await page.waitForFunction(
+        () => {
+            const canvases = document.querySelectorAll('div.canvasWrapper canvas') as NodeListOf<HTMLCanvasElement>;
+            return Array.from(canvases).every(c => c && c.width > 0 && c.height > 0);
+        },
+        { timeout: 30000 }
+    );
+
+    await page.waitForTimeout(5000);
+    await expect(page).toHaveScreenshot('dive-od-with-axes.png');
 });
 

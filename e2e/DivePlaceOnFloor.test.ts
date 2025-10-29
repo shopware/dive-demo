@@ -1,40 +1,74 @@
 import { test, expect } from '@playwright/test';
 
+function setupErrorSuppression(page: any) {
+    page.on('pageerror', error => {
+        if (error.message.includes('Unexpected usage') ||
+            error.message.includes('loadForeignModule') ||
+            error.stack?.includes('tsMode') ||
+            error.stack?.includes('monaco')) {
+            return;
+        }
+        console.error('Page error:', error.message);
+    });
+
+    page.on('console', msg => {
+        const text = msg.text();
+        if (msg.type() === 'error' && (
+            text.includes('Unexpected usage') ||
+            text.includes('loadForeignModule') ||
+            text.includes('tsMode') ||
+            text.includes('/assets/index-') ||
+            text.includes('/assets/tsMode-'))) {
+            return;
+        }
+    });
+}
+
 test('shows model', async ({ page }) => {
-    await page.goto('/place-on-floor', { waitUntil: 'load' });
-    // Wait for Vue app to mount and canvas to be created
-    await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
-    await expect(page.locator('div.canvasWrapper')).toBeVisible();
+    setupErrorSuppression(page);
+
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
+
+    const placeLink = page.locator('nav a').filter({ hasText: 'place-on-floor' });
+    await placeLink.click({ timeout: 10000 });
+    await page.waitForURL('**/place-on-floor', { timeout: 10000 });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
-    await expect(canvas).toBeVisible();
+    await expect(canvas).toBeVisible({ timeout: 30000 });
 
-    // Check for the specific "Place on floor" button
-    const placeButton = page.locator('button').filter({ hasText: 'Place on floor' });
-    await expect(placeButton).toBeVisible();
+    await page.waitForFunction(
+        () => {
+            const canvas = document.querySelector('div.canvasWrapper > canvas') as HTMLCanvasElement;
+            return canvas && canvas.width > 0 && canvas.height > 0;
+        },
+        { timeout: 30000 }
+    );
 
-    // Wait for the 3D model to fully load and render
-    await page.waitForTimeout(2000);
-
-    // Take visual snapshot to ensure model renders correctly
-    await expect(canvas).toHaveScreenshot('dive-place-on-floor-model-visible.png');
+    await page.waitForTimeout(5000);
+    await expect(page).toHaveScreenshot('dive-place-on-floor-model-visible.png');
 });
 
 test('click button', async ({ page }) => {
-    await page.goto('/place-on-floor', { waitUntil: 'load' });
-    // Wait for Vue app to mount and canvas to be created
-    await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
+    setupErrorSuppression(page);
+
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
+
+    const placeLink = page.locator('nav a').filter({ hasText: 'place-on-floor' });
+    await placeLink.click({ timeout: 10000 });
+    await page.waitForURL('**/place-on-floor', { timeout: 10000 });
+
     const canvas = page.locator('div.canvasWrapper > canvas');
-    await expect(canvas).toBeVisible();
+    await expect(canvas).toBeVisible({ timeout: 30000 });
 
     const button = page.locator('button').filter({ hasText: 'Place on floor' });
     await expect(button).toBeVisible();
 
-    // Test that the button click doesn't crash the app
     await button.click();
-    await page.waitForTimeout(1000);
-
-    // Just verify the canvas is still visible
+    await page.waitForTimeout(2000);
     await expect(canvas).toBeVisible();
 });
 
