@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test('shows HDR comparison', async ({ page }) => {
-    await page.goto('/hdr');
+    await page.goto('/hdr', { waitUntil: 'networkidle' });
+    // Wait for Vue app to mount and canvases to be created
+    await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
 
     // Check that the classic canvas is visible
     const classicCanvas = page.locator('div.canvasWrapper').first().locator('canvas');
@@ -20,7 +22,9 @@ test('shows HDR comparison', async ({ page }) => {
 });
 
 test('change HDR texture', async ({ page }) => {
-    await page.goto('/hdr');
+    await page.goto('/hdr', { waitUntil: 'networkidle' });
+    // Wait for Vue app to mount and canvas to be created
+    await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
 
     const hdrCanvas = page.locator('div.canvasWrapper').last().locator('canvas');
     await expect(hdrCanvas).toBeVisible();

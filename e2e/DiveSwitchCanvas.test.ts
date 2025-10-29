@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test('shows canvas', async ({ page }) => {
-    await page.goto('/switch-canvas');
+    await page.goto('/switch-canvas', { waitUntil: 'networkidle' });
+    // Wait for Vue app to mount and canvas to be created
+    await page.waitForSelector('div.canvasWrapper0', { state: 'attached' });
 
     // Check that all three canvases are visible
     const canvas0 = page.locator('div.canvasWrapper0 > canvas');
@@ -15,7 +17,9 @@ test('shows canvas', async ({ page }) => {
 });
 
 test('click button to switch canvas', async ({ page }) => {
-    await page.goto('/switch-canvas');
+    await page.goto('/switch-canvas', { waitUntil: 'networkidle' });
+    // Wait for Vue app to mount and canvas to be created
+    await page.waitForSelector('div.canvasWrapper1', { state: 'attached' });
 
     const canvas1 = page.locator('div.canvasWrapper1 > canvas');
     const button = page.locator('button').filter({ hasText: 'Use this' }).nth(1);

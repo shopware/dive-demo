@@ -116,6 +116,7 @@ export default defineConfig({
      */
     command: process.env.CI ? 'yarn preview -- --port 5173' : 'yarn dev',
     port: 5173,
-    reuseExistingServer: !process.env.CI
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000, // Give the server 2 minutes to start (important for CI)
   }
 })

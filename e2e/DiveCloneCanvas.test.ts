@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test('shows cloned canvas', async ({ page }) => {
-    await page.goto('/clone-canvas');
+    await page.goto('/clone-canvas', { waitUntil: 'networkidle' });
+    // Wait for Vue app to mount and canvases to be created
+    await page.waitForSelector('div.canvasWrapper', { state: 'attached' });
 
     // Check that both canvases are visible and wait for them to render
     const canvasWrappers = page.locator('div.canvasWrapper');
