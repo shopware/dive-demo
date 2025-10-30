@@ -34,8 +34,8 @@ test('shows model', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const focusLink = page.locator('nav a').filter({ hasText: 'focus-object' });
-    await focusLink.click({ timeout: 10000 });
-    await page.waitForURL('**/focus-object', { timeout: 10000 });
+    await focusLink.click({ timeout: 30000 });
+    await page.waitForURL('**/focus-object', { timeout: 30000 });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible({ timeout: 30000 });
@@ -60,8 +60,8 @@ test('switch to different object', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const focusLink = page.locator('nav a').filter({ hasText: 'focus-object' });
-    await focusLink.click({ timeout: 10000 });
-    await page.waitForURL('**/focus-object', { timeout: 10000 });
+    await focusLink.click({ timeout: 30000 });
+    await page.waitForURL('**/focus-object', { timeout: 30000 });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible({ timeout: 30000 });

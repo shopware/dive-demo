@@ -34,8 +34,8 @@ test('shows HDR comparison', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const hdrLink = page.locator('nav a').filter({ hasText: 'hdr' });
-    await hdrLink.click({ timeout: 10000 });
-    await page.waitForURL('**/hdr', { timeout: 10000 });
+    await hdrLink.click({ timeout: 30000 });
+    await page.waitForURL('**/hdr', { timeout: 30000 });
 
     const canvasWrappers = page.locator('div.canvasWrapper');
     await expect(canvasWrappers).toHaveCount(2, { timeout: 30000 });
@@ -60,8 +60,8 @@ test('change HDR texture', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const hdrLink = page.locator('nav a').filter({ hasText: 'hdr' });
-    await hdrLink.click({ timeout: 10000 });
-    await page.waitForURL('**/hdr', { timeout: 10000 });
+    await hdrLink.click({ timeout: 30000 });
+    await page.waitForURL('**/hdr', { timeout: 30000 });
 
     const hdrCanvas = page.locator('div.canvasWrapper').last().locator('canvas');
     await expect(hdrCanvas).toBeVisible({ timeout: 30000 });

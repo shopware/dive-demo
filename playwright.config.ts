@@ -41,8 +41,9 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Run tests in parallel. Use 2 workers on CI for better performance. */
-  /* Default (undefined) auto-detects CPU cores, which is good for local development */
-  workers: process.env.CI ? 4 : undefined,
+  /* 4 workers with 3 browsers = 12 concurrent instances, which can overwhelm CI resources */
+  /* 2 workers = 6 concurrent instances is a safer balance */
+  workers: process.env.CI ? 2 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

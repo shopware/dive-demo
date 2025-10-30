@@ -89,6 +89,9 @@ jobs:
     name: e2e
     runs-on: ubuntu-latest
     needs: [playwright-install, build]
+    strategy:
+      matrix:
+        shard: [1, 2]
     steps:
       - name: Checkout DIVE-Demo
         uses: actions/checkout@main
@@ -113,4 +116,5 @@ jobs:
       - name: Run playwright tests
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
-        run: yarn test:e2e
+          CI: true
+        run: yarn test:e2e --shard=${{ matrix.shard }}/2

@@ -44,10 +44,9 @@ test('shows model', async ({ page }) => {
     // Click on the "ar" navigation link (client-side navigation)
     // This uses Vue Router which avoids the 404 issue
     const arLink = page.locator('nav a').filter({ hasText: 'ar' });
-    await arLink.click({ timeout: 10000 });
-
-    // Wait for navigation to complete
-    await page.waitForURL('**/ar', { timeout: 10000 });
+    // Click and wait for navigation with longer timeout to handle slow navigation under load
+    await arLink.click({ timeout: 30000 });
+    await page.waitForURL('**/ar', { timeout: 30000 });
 
     // Wait for the route-specific canvas content
     const canvas = page.locator('div.canvasWrapper > canvas');

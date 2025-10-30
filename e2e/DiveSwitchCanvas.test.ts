@@ -34,8 +34,8 @@ test('shows canvas', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const switchLink = page.locator('nav a').filter({ hasText: 'switch-canvas' });
-    await switchLink.click({ timeout: 10000 });
-    await page.waitForURL('**/switch-canvas', { timeout: 10000 });
+    await switchLink.click({ timeout: 30000 });
+    await page.waitForURL('**/switch-canvas', { timeout: 30000 });
 
     const canvas0 = page.locator('div.canvasWrapper0 > canvas');
     await expect(canvas0).toBeVisible({ timeout: 30000 });
@@ -60,8 +60,8 @@ test('click button to switch canvas', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const switchLink = page.locator('nav a').filter({ hasText: 'switch-canvas' });
-    await switchLink.click({ timeout: 10000 });
-    await page.waitForURL('**/switch-canvas', { timeout: 10000 });
+    await switchLink.click({ timeout: 30000 });
+    await page.waitForURL('**/switch-canvas', { timeout: 30000 });
 
     const canvas1 = page.locator('div.canvasWrapper1 > canvas');
     const button = page.locator('button').filter({ hasText: 'Use this' }).nth(1);

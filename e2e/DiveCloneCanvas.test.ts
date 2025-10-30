@@ -34,8 +34,8 @@ test('shows cloned canvas', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const cloneLink = page.locator('nav a').filter({ hasText: 'clone-canvas' });
-    await cloneLink.click({ timeout: 10000 });
-    await page.waitForURL('**/clone-canvas', { timeout: 10000 });
+    await cloneLink.click({ timeout: 30000 });
+    await page.waitForURL('**/clone-canvas', { timeout: 30000 });
 
     const canvasWrappers = page.locator('div.canvasWrapper');
     await expect(canvasWrappers).toHaveCount(2, { timeout: 30000 });

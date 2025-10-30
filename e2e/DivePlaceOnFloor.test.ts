@@ -34,8 +34,8 @@ test('shows model', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const placeLink = page.locator('nav a').filter({ hasText: 'place-on-floor' });
-    await placeLink.click({ timeout: 10000 });
-    await page.waitForURL('**/place-on-floor', { timeout: 10000 });
+    await placeLink.click({ timeout: 30000 });
+    await page.waitForURL('**/place-on-floor', { timeout: 30000 });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible({ timeout: 30000 });
@@ -60,8 +60,8 @@ test('click button', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const placeLink = page.locator('nav a').filter({ hasText: 'place-on-floor' });
-    await placeLink.click({ timeout: 10000 });
-    await page.waitForURL('**/place-on-floor', { timeout: 10000 });
+    await placeLink.click({ timeout: 30000 });
+    await page.waitForURL('**/place-on-floor', { timeout: 30000 });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible({ timeout: 30000 });

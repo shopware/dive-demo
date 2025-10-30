@@ -34,8 +34,8 @@ test('shows orientation display', async ({ page }) => {
     await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
 
     const odLink = page.locator('nav a').filter({ hasText: 'orientation-display' });
-    await odLink.click({ timeout: 10000 });
-    await page.waitForURL('**/orientation-display', { timeout: 10000 });
+    await odLink.click({ timeout: 30000 });
+    await page.waitForURL('**/orientation-display', { timeout: 30000 });
 
     const canvasWrappers = page.locator('div.canvasWrapper');
     await expect(canvasWrappers).toHaveCount(2, { timeout: 30000 });
