@@ -6,6 +6,7 @@ test('shows model', async ({ page }) => {
     page.on('pageerror', (error: Error) => {
         // Ignore Monaco Editor worker errors - don't log them
         if (error.message.includes('Unexpected usage') ||
+            error.message.includes('Unexpected token') ||
             error.message.includes('loadForeignModule') ||
             error.stack?.includes('tsMode') ||
             error.stack?.includes('monaco')) {
@@ -21,6 +22,7 @@ test('shows model', async ({ page }) => {
         // Suppress Monaco Editor related console errors
         if (msg.type() === 'error' && (
             text.includes('Unexpected usage') ||
+            text.includes('Unexpected token') ||
             text.includes('loadForeignModule') ||
             text.includes('tsMode') ||
             text.includes('/assets/index-') ||

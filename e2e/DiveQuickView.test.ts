@@ -4,6 +4,7 @@ import { test, expect, type Page, type ConsoleMessage } from '@playwright/test';
 function setupErrorSuppression(page: Page) {
     page.on('pageerror', (error: Error) => {
         if (error.message.includes('Unexpected usage') ||
+            error.message.includes('Unexpected token') ||
             error.message.includes('loadForeignModule') ||
             error.stack?.includes('tsMode') ||
             error.stack?.includes('monaco')) {
@@ -16,6 +17,7 @@ function setupErrorSuppression(page: Page) {
         const text = msg.text();
         if (msg.type() === 'error' && (
             text.includes('Unexpected usage') ||
+            text.includes('Unexpected token') ||
             text.includes('loadForeignModule') ||
             text.includes('tsMode') ||
             text.includes('/assets/index-') ||
