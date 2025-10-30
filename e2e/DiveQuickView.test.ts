@@ -73,7 +73,8 @@ test('click', async ({ page }) => {
 
     await page.mouse.move(center.x, center.y);
     await page.mouse.down();
-    await page.mouse.move(center.x + 100, center.y + 100, { steps: 100 });
+    // Use fewer steps to avoid timeout - 10 steps is sufficient to simulate drag
+    await page.mouse.move(center.x + 100, center.y + 100, { steps: 10 });
     await page.mouse.up();
     await page.waitForTimeout(5000);
     await expect(page).toHaveScreenshot('dive-move-camera.png');
