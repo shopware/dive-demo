@@ -80,7 +80,7 @@ jobs:
           key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
           restore-keys: |
             playwright-browsers-${{ runner.os }}-
-      - name: Install Playwright
+      - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
@@ -91,7 +91,7 @@ jobs:
     needs: [playwright-install, build]
     strategy:
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout DIVE-Demo
         uses: actions/checkout@main
@@ -112,9 +112,13 @@ jobs:
           restore-keys: |
             playwright-browsers-${{ runner.os }}-
       - name: Install Playwright system dependencies
-        run: yarn playwright install-deps webkit
+        run: |
+          # System dependencies must be installed in each job since each job runs on a fresh runner
+          # and system packages can't be cached between jobs. This is minimal overhead.
+          sudo apt-get --yes remove --purge man-db
+          yarn playwright install-deps webkit
       - name: Run playwright tests
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
           CI: true
-        run: yarn test:e2e --shard=${{ matrix.shard }}/2
+        run: yarn test:e2e --shard=${{ matrix.shard }}/4
