@@ -20,7 +20,29 @@ jobs:
             - name: Install DIVE from PR
               run: |
                   # Install DIVE from the PR branch being tested
+                  # This will replace the npm version with the git version
+                  # Note: This will update yarn.lock, which is expected
                   yarn add git+https://github.com/shopware/dive.git#${{ github.event.client_payload.dive_ref }}
+
+            - name: Build DIVE package (if needed)
+              run: |
+                  # Check if the dive package has a build script and run it
+                  # This ensures the package exports are properly set up for subpath imports
+                  DIVE_PATH="node_modules/@shopware-ag/dive"
+                  if [ -d "$DIVE_PATH" ] && [ -f "$DIVE_PATH/package.json" ]; then
+                    if grep -q '"build"' "$DIVE_PATH/package.json"; then
+                      echo "Building DIVE package..."
+                      cd "$DIVE_PATH"
+                      yarn install --frozen-lockfile 2>/dev/null || yarn install || npm install
+                      yarn build || npm run build || echo "Build step completed (may have failed)"
+                    else
+                      echo "No build script found in DIVE package, skipping build"
+                    fi
+                  else
+                    echo "DIVE package not found, skipping build"
+                  fi
+              continue-on-error: true
+              working-directory: .
 
             - name: Run E2E tests
               run: |
