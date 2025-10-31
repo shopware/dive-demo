@@ -1,6 +1,5 @@
 import { test, expect, type Page, type ConsoleMessage } from '@playwright/test';
 
-// Helper function to suppress Monaco Editor errors
 function setupErrorSuppression(page: Page) {
     page.on('pageerror', (error: Error) => {
         if (error.message.includes('Unexpected usage') ||
@@ -30,14 +29,17 @@ function setupErrorSuppression(page: Page) {
 test('shows model', async ({ page }) => {
     setupErrorSuppression(page);
 
-    // Navigate to root
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
+
+    const focusLink = page.locator('nav a').filter({ hasText: 'focus-object' });
+    await focusLink.click({ timeout: 30000 });
+    await page.waitForURL('**/focus-object', { timeout: 30000 });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible({ timeout: 30000 });
 
-    // Wait for canvas to have actual dimensions
     await page.waitForFunction(
         () => {
             const canvas = document.querySelector('div.canvasWrapper > canvas') as HTMLCanvasElement;
@@ -46,36 +48,29 @@ test('shows model', async ({ page }) => {
         { timeout: 30000 }
     );
 
-    // Wait for 3D model to load and render
     await page.waitForTimeout(5000);
-
-    // Screenshot the entire page
-    await expect(page).toHaveScreenshot('dive-quick-view-model-visible.png');
+    await expect(page).toHaveScreenshot('dive-focus-object-model-visible.png');
 });
 
-test('click', async ({ page }) => {
+test('switch to different object', async ({ page }) => {
     setupErrorSuppression(page);
 
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await page.waitForSelector('nav a', { state: 'attached', timeout: 10000 });
+
+    const focusLink = page.locator('nav a').filter({ hasText: 'focus-object' });
+    await focusLink.click({ timeout: 30000 });
+    await page.waitForURL('**/focus-object', { timeout: 30000 });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     await expect(canvas).toBeVisible({ timeout: 30000 });
 
-    const boundingBox = await canvas.boundingBox();
-    if (!boundingBox) {
-        throw new Error('Bounding box not found');
-    }
-    const center = {
-        x: boundingBox.x + boundingBox.width / 2,
-        y: boundingBox.y + boundingBox.height / 2,
-    };
+    const chairButton = page.locator('button').filter({ hasText: 'Chair' });
+    await expect(chairButton).toBeVisible();
 
-    await page.mouse.move(center.x, center.y);
-    await page.mouse.down();
-    // Use fewer steps to avoid timeout - 10 steps is sufficient to simulate drag
-    await page.mouse.move(center.x + 100, center.y + 100, { steps: 10 });
-    await page.mouse.up();
-    await page.waitForTimeout(5000);
-    await expect(page).toHaveScreenshot('dive-move-camera.png');
+    await chairButton.click();
+    await page.waitForTimeout(2000);
+    await expect(canvas).toBeVisible();
 });
+

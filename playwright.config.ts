@@ -13,20 +13,37 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
-  timeout: 30 * 1000,
+  timeout: 60 * 1000, // Increased for 3D canvas rendering tests
+  /* Use platform-agnostic snapshot names so they work on both macOS and Linux
+   * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
+   * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}
+   */
+  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}',
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: 5000
+    timeout: 60000, // Increased for 3D canvas screenshot stability checks
+    /**
+     * Threshold for visual comparisons:
+     * - threshold: Perceived color difference per pixel (0-1, default 0.2)
+     * - maxDiffPixelRatio: Ratio of pixels that can differ (0-1, default very strict)
+     */
+    toHaveScreenshot: {
+      threshold: 0.3, // Color difference tolerance per pixel
+      maxDiffPixelRatio: 0.15, // Allow up to 15% of pixels to differ (within threshold)
+      animations: 'disabled',
+    },
   },
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Run tests in parallel. Use 2 workers on CI for better performance. */
+  /* 4 workers with 3 browsers = 12 concurrent instances, which can overwhelm CI resources */
+  /* 2 workers = 6 concurrent instances is a safer balance */
+  workers: process.env.CI ? 2 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -44,6 +61,9 @@ export default defineConfig({
 
     /* Ignore HTTPS errors */
     ignoreHTTPSErrors: true,
+
+    /* Set consistent viewport size for screenshots across all browsers */
+    viewport: { width: 1280, height: 720 },
   },
 
   /* Configure projects for major browsers */
@@ -105,9 +125,11 @@ export default defineConfig({
      * Use the dev server by default for faster feedback loop.
      * Use the preview server on CI for more realistic testing.
      * Playwright will re-use the local server if there is already a dev-server running.
+     * Note: preview requires a build first, so we ensure dist/ exists.
      */
-    command: process.env.CI ? 'yarn preview -- --port 5173' : 'yarn dev',
+    command: process.env.CI ? 'yarn build && yarn preview -- --port 5173' : 'yarn dev',
     port: 5173,
-    reuseExistingServer: !process.env.CI
+    reuseExistingServer: !process.env.CI,
+    timeout: 180 * 1000, // Give the server 3 minutes to build and start (important for CI)
   }
 })

@@ -1,0 +1,32 @@
+name: "Test with DIVE PR"
+
+on:
+    repository_dispatch:
+        types: [dive-pr-e2e]
+
+jobs:
+    test-with-pr:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout demo app
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Install DIVE from PR
+              run: |
+                  # Install DIVE from the PR branch being tested
+                  yarn add git+https://github.com/shopware/dive.git#${{ github.event.client_payload.dive_ref }}
+
+            - name: Run E2E tests
+              run: |
+                  yarn test:e2e
+
+            - name: Notify result
+              if: always()
+              run: |
+                  echo "E2E tests ${{ job.status }}"
