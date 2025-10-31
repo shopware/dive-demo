@@ -1,54 +1,139 @@
 name: "Test with DIVE PR"
 
 on:
-    repository_dispatch:
-        types: [dive-pr-e2e]
+  repository_dispatch:
+    types: [dive-pr-e2e]
 
 jobs:
-    test-with-pr:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout demo app
-              uses: actions/checkout@v4
+  install-dive:
+    name: install dive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DIVE-Demo
+        uses: actions/checkout@main
+      - name: Setup Node.js
+        uses: actions/setup-node@main
+      - name: Search for cached node_modules
+        uses: actions/cache@main
+        id: yarn-cache
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+      - name: Install DIVE-Demo dependencies (if cache not found)
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
+      - name: Install DIVE from PR
+        run: |
+          # Install DIVE from the PR branch being tested
+          # This will replace the npm version with the git version
+          # Note: This will update yarn.lock, which is expected
+          yarn add git+https://github.com/shopware/dive.git#${{ github.event.client_payload.dive_ref }}
 
-            - name: Install dependencies
-              run: yarn install --frozen-lockfile
+      - name: Build DIVE package (if needed)
+        run: |
+          # Check if the dive package has a build script and run it
+          # This ensures the package exports are properly set up for subpath imports
+          DIVE_PATH="node_modules/@shopware-ag/dive"
+          if [ -d "$DIVE_PATH" ] && [ -f "$DIVE_PATH/package.json" ]; then
+            if grep -q '"build"' "$DIVE_PATH/package.json"; then
+              echo "Building DIVE package..."
+              cd "$DIVE_PATH"
+              yarn install --frozen-lockfile 2>/dev/null || yarn install || npm install
+              yarn build || npm run build || echo "Build step completed (may have failed)"
+            else
+              echo "No build script found in DIVE package, skipping build"
+            fi
+          else
+            echo "DIVE package not found, skipping build"
+          fi
+        continue-on-error: true
+        working-directory: .
 
-            - name: Install DIVE from PR
-              run: |
-                  # Install DIVE from the PR branch being tested
-                  # This will replace the npm version with the git version
-                  # Note: This will update yarn.lock, which is expected
-                  yarn add git+https://github.com/shopware/dive.git#${{ github.event.client_payload.dive_ref }}
+  build:
+    runs-on: ubuntu-latest
+    needs: install-dive
+    steps:
+      - name: Checkout DIVE-Demo
+        uses: actions/checkout@main
+      - name: Setup Node.js
+        uses: actions/setup-node@main
+      - name: Load node-modules from cache
+        uses: actions/cache@main
+        id: yarn-cache
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+      - name: Build
+        run: yarn build
 
-            - name: Build DIVE package (if needed)
-              run: |
-                  # Check if the dive package has a build script and run it
-                  # This ensures the package exports are properly set up for subpath imports
-                  DIVE_PATH="node_modules/@shopware-ag/dive"
-                  if [ -d "$DIVE_PATH" ] && [ -f "$DIVE_PATH/package.json" ]; then
-                    if grep -q '"build"' "$DIVE_PATH/package.json"; then
-                      echo "Building DIVE package..."
-                      cd "$DIVE_PATH"
-                      yarn install --frozen-lockfile 2>/dev/null || yarn install || npm install
-                      yarn build || npm run build || echo "Build step completed (may have failed)"
-                    else
-                      echo "No build script found in DIVE package, skipping build"
-                    fi
-                  else
-                    echo "DIVE package not found, skipping build"
-                  fi
-              continue-on-error: true
-              working-directory: .
+  playwright-install:
+    name: playwright install
+    runs-on: ubuntu-latest
+    needs: [install-dive]
+    steps:
+      - name: Checkout DIVE-Demo
+        uses: actions/checkout@main
+      - name: Setup Node.js
+        uses: actions/setup-node@main
+      - name: Load node-modules from cache
+        uses: actions/cache@main
+        id: yarn-cache
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+      - name: Search for cached playwright browsers
+        uses: actions/cache@main
+        id: playwright-cache
+        with:
+          path: .playwright-cache
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            playwright-browsers-${{ runner.os }}-
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
+        run: yarn playwright install --with-deps
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    needs: [playwright-install, build]
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout DIVE-Demo
+        uses: actions/checkout@main
+      - name: Setup Node.js
+        uses: actions/setup-node@main
+      - name: Load node-modules from cache
+        uses: actions/cache@main
+        id: yarn-cache
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+      - name: Load playwright browsers from cache
+        uses: actions/cache@main
+        id: playwright-cache
+        with:
+          path: .playwright-cache
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            playwright-browsers-${{ runner.os }}-
+      - name: Install Playwright system dependencies
+        run: |
+          # System dependencies must be installed in each job since each job runs on a fresh runner
+          # and system packages can't be cached between jobs. This is minimal overhead.
+          sudo apt-get --yes remove --purge man-db
+          yarn playwright install-deps webkit
+      - name: Run playwright tests
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
+          CI: true
+        run: yarn test:e2e --shard=${{ matrix.shard }}/4
 
-            - name: Run E2E tests
-              run: |
-                  yarn test:e2e
-
-            - name: Notify result
-              if: always()
-              run: |
-                  echo "E2E tests ${{ job.status }}"
+      - name: Notify result
+        if: always()
+        run: |
+          echo "E2E tests ${{ job.status }}"
