@@ -20,11 +20,6 @@ const router = createRouter({
       component: () => import('../views/DiveSwitchCanvas.vue')
     },
     {
-      path: '/clone-canvas',
-      name: 'clone-canvas',
-      component: () => import('../views/DiveCloneCanvas.vue')
-    },
-    {
       path: '/place-on-floor',
       name: 'place-on-floor',
       component: () => import('../views/DivePlaceOnFloor.vue')
