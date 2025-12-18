@@ -92,7 +92,7 @@ nav a.router-link-exact-active:hover {
   font-size: 1rem;
   cursor: pointer;
   color: var(--color-text);
-  background-color: #e0f2ff;
+  background-color: var(--color-background-active);
   text-align: left;
   line-height: 1.5;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -108,7 +108,7 @@ nav a.router-link-exact-active:hover {
   top: 100%;
   left: 0;
   width: 100%;
-  background-color: white;
+  background-color: var(--color-background);
   z-index: 1000;
 }
 
@@ -124,7 +124,7 @@ nav a.router-link-exact-active:hover {
 }
 
 .sidebar-navigation nav.open a.router-link-exact-active {
-  background-color: #e0f2ff;
+  background-color: var(--color-background-active);
 }
 
 /* Desktop styles */
@@ -169,7 +169,7 @@ nav a.router-link-exact-active:hover {
   }
 
   .sidebar-navigation nav a.router-link-exact-active {
-    background-color: #e0f2ff;
+    background-color: var(--color-background-active);
   }
 }
 </style>

@@ -42,4 +42,14 @@ a,
     padding: 0;
     flex-direction: row;
   }
+
+  button {
+    margin: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-background-active);
+    color: var(--color-text);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
 }
