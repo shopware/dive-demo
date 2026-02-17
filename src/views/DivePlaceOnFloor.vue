@@ -15,17 +15,16 @@ onMounted(async () => {
     dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
 
     const toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
-    toolbox.useTool('select');
 
     window.addEventListener('keydown', (event) => {
         if (event.key === 'a') {
-            toolbox.selectTool.setGizmoMode('translate');
+            toolbox.getTool('transform').setGizmoMode('translate');
         }
         if (event.key === 's') {
-            toolbox.selectTool.setGizmoMode('rotate');
+            toolbox.getTool('transform').setGizmoMode('rotate');
         }
         if (event.key === 'd') {
-            toolbox.selectTool.setGizmoMode('scale');
+            toolbox.getTool('transform').setGizmoMode('scale');
         }
     });
 
