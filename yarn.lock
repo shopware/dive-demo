@@ -526,13 +526,14 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.12.0.tgz#326a7b46f6d4cfa54ae25bb888551697873069b4"
   integrity sha512-5EwMtOqvJMMa3HbmxLlF74e+3/HhwBTMcvt3nqVJgGCozO6hzIPOBlwm8mGVNR9SN2IJpxSnlxczyDjcn7qIyw==
 
-"@shopware-ag/dive@2.2.18":
-  version "2.2.18"
-  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-2.2.18.tgz#a870be11d34760a02c52174166e6396414a40705"
-  integrity sha512-AwwqTvbDZrrGqGkGgInibB70orbSP0/xIz9QUuGmU9/Y38wim9xah4jmUJJ3G/UaL+hi3+z9QZ4kyp6nJleztw==
+"@shopware-ag/dive@2.2.30":
+  version "2.2.30"
+  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-2.2.30.tgz#6d6f8186b47ca70bc3247ab29fe92abbf9c40b31"
+  integrity sha512-xz4A+d4c9AmIlBbRy32nIBebBApr5/VGuGGxIww83Up2NAQRHhvp5zSr1U3/kv7EfNq+3NxN6o3QZ74kJrWRWA==
   dependencies:
     "@tweenjs/tween.js" "^23.1.1"
     lodash "^4.17.21"
+    occt-import-js "^0.0.23"
     three "^0.163.0"
     three-spritetext "^1.8.2"
 
@@ -2682,6 +2683,11 @@ object.assign@^4.1.4:
     es-object-atoms "^1.0.0"
     has-symbols "^1.1.0"
     object-keys "^1.1.1"
+
+occt-import-js@^0.0.23:
+  version "0.0.23"
+  resolved "https://registry.yarnpkg.com/occt-import-js/-/occt-import-js-0.0.23.tgz#1916aacd5b228e92da5de631ae048ca152281778"
+  integrity sha512-RFfYQXYFX5C1mB1Aywm0ShcUKzXOr/VzTnlzhBSDJOR6YCAPt1HYCzeXWg1vwwjn/cUxwqRNhhtf1dlewoZYCQ==
 
 once@^1.3.0:
   version "1.4.0"
