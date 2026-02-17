@@ -15,6 +15,10 @@ onMounted(async () => {
     dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
 
     const toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
+    toolbox.enableTool('transform');
+
+    const model = dive.value.scene.root.children.find((child) => 'isDIVEModel' in child) as DIVEModel;
+    toolbox.selectionState.select(model);
 
     window.addEventListener('keydown', (event) => {
         if (event.key === 'a') {
@@ -32,8 +36,6 @@ onMounted(async () => {
 
     dive.value.scene.root.children.forEach((child) => {
         if (child instanceof DIVEModel) {
-            console.log("DIVEModel", child);
-
             const bb = new BoundingBox(child);
             bb.setBoxHelperVisible(false);
             child.add(bb);
