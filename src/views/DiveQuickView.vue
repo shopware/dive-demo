@@ -9,7 +9,7 @@ onMounted(async () => {
     return;
   }
 
-  await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true });
+  await QuickView('sofa_B.glb', { canvas: canvas.value });
 })
 
 defineProps<{

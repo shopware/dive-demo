@@ -1,7 +1,12 @@
 # dive-demo
 
-This demo is based on [DIVE](https://github.com/shopware/dive), a spatial framework made by and optimized for Shopware. 
+This demo is based on [DIVE](https://github.com/shopware/dive), a spatial framework made by and optimized for Shopware.
 The template should help you get started developing with Vue 3 in Vite.
+
+## Examples
+
+- **Quick View** – Load and view 3D models (GLB, GLTF, USDZ)
+- **STEP Viewer** – View CAD files (STEP, STP, IGES, IGS) using the built-in CAD loader. Includes a sample cube and upload support for your own files.
 
 ## Recommended IDE Setup
 

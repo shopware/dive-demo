@@ -98,7 +98,7 @@ defineProps<{
   height: 50px;
   border: none;
   border-radius: 0.5rem;
-  background-color: #e0f2ff;
+  background-color: var(--color-background-active);
   color: var(--color-text);
   font-size: 1rem;
   cursor: pointer;
@@ -113,7 +113,7 @@ defineProps<{
   transform: translateX(-50%);
   margin: 1rem;
   padding: 0.5rem 1rem;
-  background-color: #e0f2ff;
+  background-color: var(--color-background-active);
   color: var(--color-text);
   border: none;
   border-radius: 0.5rem;

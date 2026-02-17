@@ -19,7 +19,7 @@ onMounted(async () => {
         return;
     }
 
-    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: false }));
+    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value }));
 
     dive.value.scene.root.children.forEach((model) => {
         if (model instanceof DIVEModel) {
