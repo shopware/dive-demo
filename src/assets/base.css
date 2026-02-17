@@ -32,6 +32,7 @@
 
   --color-heading: var(--vt-c-text-light-1);
   --color-text: var(--vt-c-text-light-1);
+  --color-background-active: #e0f2ff;
 
   --section-gap: 160px;
 }
@@ -47,6 +48,7 @@
 
     --color-heading: var(--vt-c-text-dark-1);
     --color-text: var(--vt-c-text-dark-2);
+    --color-background-active: #1e3044;
   }
 }
 

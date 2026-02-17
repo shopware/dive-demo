@@ -6,6 +6,7 @@ import { resolve } from 'path'; // Import resolve
 import fs from 'fs'; // Import fs
 import { createRequire } from 'module';
 import restart from 'vite-plugin-restart';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 // Helper to find the real path if a package is symlinked
 function findLinkedPackagePath(packageName: string, projectRoot: string) {
@@ -55,6 +56,7 @@ export default defineConfig(() => {
           '.yalc/**',
         ],
       }),
+      basicSsl(),
     ],
     resolve: {
       // *** ESSENTIAL for npm link to work correctly ***

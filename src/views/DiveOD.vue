@@ -17,12 +17,12 @@ onMounted(async () => {
   }
 
   // with displayAxes
-  dive0.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas0.value, displayFloor: true, displayAxes: true }));
+  dive0.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas0.value, displayAxes: true }));
 
   // OR
 
   // without displayAxes
-  dive1.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas1.value, displayFloor: true }));
+  dive1.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas1.value }));
 
   const orientationDisplay = new OrientationDisplay(dive1.value.mainView.renderer, dive1.value.scene, dive1.value.mainView.camera);
   dive1.value.clock.addTicker(orientationDisplay);

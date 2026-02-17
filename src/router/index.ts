@@ -33,6 +33,11 @@ const router = createRouter({
       path: '/orientation-display',
       name: 'orientation-display',
       component: () => import('../views/DiveOD.vue')
+    },
+    {
+      path: '/step-loader',
+      name: 'STEP loader',
+      component: () => import('../views/DiveStepLoader.vue')
     }
   ]
 })
