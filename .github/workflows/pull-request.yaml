@@ -122,3 +122,12 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
           CI: true
         run: yarn test:e2e --shard=${{ matrix.shard }}/4
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
