@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { ref, onMounted, watch, type Ref, markRaw } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
+import { Mesh } from 'three';
 
 const canvas: Ref<HTMLCanvasElement | undefined> = ref(undefined);
 const dive: Ref<QuickView | null> = ref(null);
@@ -9,10 +10,11 @@ const uploadInput: Ref<HTMLInputElement | null> = ref(null);
 const loading: Ref<boolean> = ref(false);
 const error: Ref<string | null> = ref(null);
 const timing: Ref<string | null> = ref(null);
+const wireframe: Ref<boolean> = ref(false);
 
 // Sample STEP file – use cube.stp for reliable loading.
 // D100.step and Mech-horsE.stp may fail (AP242/complex assemblies).
-const DEFAULT_STEP_URL = '/D100.step';
+const DEFAULT_STEP_URL = 'D100.step';
 
 onMounted(async () => {
   if (!canvas.value) {
@@ -46,6 +48,21 @@ const loadStepFile = async (url: string) => {
   }
 };
 
+const setWireframe = (enabled: boolean) => {
+  if (!dive.value) return;
+  dive.value.scene.root.traverse((child) => {
+    if (child instanceof Mesh) {
+      if (Array.isArray(child.material)) {
+        child.material.forEach((m) => (m.wireframe = enabled));
+      } else {
+        child.material.wireframe = enabled;
+      }
+    }
+  });
+};
+
+watch(wireframe, (val) => setWireframe(val));
+
 const uploadFile = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
@@ -67,6 +84,10 @@ defineProps<{
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-if="timing" class="timing">{{ timing }}</div>
     <div class="controls">
+      <label class="checkbox-label">
+        <input type="checkbox" v-model="wireframe" :disabled="loading" />
+        Wireframe
+      </label>
       <button ref="uploadButton" @click="uploadInput?.click()">
         Upload STEP / IGES
       </button>
@@ -125,6 +146,9 @@ defineProps<{
   top: 0;
   right: 0;
   margin: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .label {
@@ -137,6 +161,19 @@ defineProps<{
   background: rgba(0, 0, 0, 0.6);
   color: #ccc;
   z-index: 10;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
 }
 
 button {
