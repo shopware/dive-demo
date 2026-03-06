@@ -79,7 +79,11 @@ const goToPreset = async (index: number) => {
         ],
         800, // ms
         { easing: animationSystem.Easing.Quadratic.InOut },
-    ) || null;
+    );
+
+    animator.addEventListener('update', () => {
+        orbitController?.object.lookAt(orbitController.target);
+    });
 
     animator.play();
 };
