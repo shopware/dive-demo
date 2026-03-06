@@ -68,13 +68,10 @@ watch(activePreset, (newVal) => {
 });
 
 const goToPreset = async (index: number) => {
-    // remove old animator
-
     if (!orbitController || !animationSystem) return;
 
     animationSystem.remove(animator?.uuid ?? '');
 
-    // create new animator
     animator = await animationSystem.fromTargets(
         [
             { object: orbitController.object.position, to: { ...presets[index].position } },
@@ -84,7 +81,6 @@ const goToPreset = async (index: number) => {
         { easing: animationSystem.Easing.Quadratic.InOut },
     ) || null;
 
-    // play new animator
     animator.play();
 };
 </script>

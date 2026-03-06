@@ -9,13 +9,14 @@
     "preview": "vite preview",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@shopware-ag/dive": "2.2.30",
+    "@shopware-ag/dive": "file:.yalc/@shopware-ag/dive",
     "monaco-editor": "^0.52.2",
     "monaco-editor-vue3": "^0.1.10",
     "pinia": "^2.1.7",

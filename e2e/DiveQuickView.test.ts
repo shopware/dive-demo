@@ -1,71 +1,21 @@
-import { test, expect, type Page, type ConsoleMessage } from '@playwright/test';
-
-// Helper function to suppress Monaco Editor errors
-function setupErrorSuppression(page: Page) {
-    page.on('pageerror', (error: Error) => {
-        if (error.message.includes('Unexpected usage') ||
-            error.message.includes('Unexpected token') ||
-            error.message.includes('loadForeignModule') ||
-            error.stack?.includes('tsMode') ||
-            error.stack?.includes('monaco')) {
-            return;
-        }
-        console.error('Page error:', error.message);
-    });
-
-    page.on('console', (msg: ConsoleMessage) => {
-        const text = msg.text();
-        if (msg.type() === 'error' && (
-            text.includes('Unexpected usage') ||
-            text.includes('Unexpected token') ||
-            text.includes('loadForeignModule') ||
-            text.includes('tsMode') ||
-            text.includes('/assets/index-') ||
-            text.includes('/assets/tsMode-'))) {
-            return;
-        }
-    });
-}
+import { test, expect } from '@playwright/test';
+import { setupErrorSuppression } from './helper/setupErrorSuppression';
+import { navigateToExample } from './helper/navigateToExample';
 
 test('shows model', async ({ page }) => {
     setupErrorSuppression(page);
-
-    // Navigate to root
-    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
-    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
-
-    const canvas = page.locator('div.canvasWrapper > canvas');
-    await expect(canvas).toBeVisible({ timeout: 30000 });
-
-    // Wait for canvas to have actual dimensions
-    await page.waitForFunction(
-        () => {
-            const canvas = document.querySelector('div.canvasWrapper > canvas') as HTMLCanvasElement;
-            return canvas && canvas.width > 0 && canvas.height > 0;
-        },
-        { timeout: 30000 }
-    );
-
-    // Wait for 3D model to load and render
-    await page.waitForTimeout(5000);
-
-    // Screenshot the entire page
+    await navigateToExample(page, '/');
     await expect(page).toHaveScreenshot('dive-quick-view-model-visible.png');
 });
 
 test('click', async ({ page }) => {
     setupErrorSuppression(page);
-
-    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
-    await page.waitForSelector('#app', { state: 'attached', timeout: 30000 });
+    await navigateToExample(page, '/');
 
     const canvas = page.locator('div.canvasWrapper > canvas');
-    await expect(canvas).toBeVisible({ timeout: 30000 });
-
     const boundingBox = await canvas.boundingBox();
-    if (!boundingBox) {
-        throw new Error('Bounding box not found');
-    }
+    if (!boundingBox) throw new Error('Bounding box not found');
+
     const center = {
         x: boundingBox.x + boundingBox.width / 2,
         y: boundingBox.y + boundingBox.height / 2,
@@ -73,9 +23,57 @@ test('click', async ({ page }) => {
 
     await page.mouse.move(center.x, center.y);
     await page.mouse.down();
-    // Use fewer steps to avoid timeout - 10 steps is sufficient to simulate drag
     await page.mouse.move(center.x + 100, center.y + 100, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(5000);
+
+    await page.waitForFunction(() =>
+        new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    );
+
     await expect(page).toHaveScreenshot('dive-move-camera.png');
+});
+
+test('upload and export buttons are visible', async ({ page }) => {
+    setupErrorSuppression(page);
+    await navigateToExample(page, '/');
+
+    await expect(page.locator('button', { hasText: 'Upload File' })).toBeVisible();
+    await expect(page.locator('button', { hasText: 'Export' })).toBeVisible();
+});
+
+test('export dropdown opens and closes', async ({ page }) => {
+    setupErrorSuppression(page);
+    await navigateToExample(page, '/');
+
+    const canvas = page.locator('div.canvasWrapper > canvas');
+    const exportButton = page.locator('button', { hasText: 'Export' });
+    const exportMenu = page.locator('.export-menu');
+
+    await expect(exportMenu).not.toBeVisible();
+
+    await exportButton.click();
+    await expect(exportMenu).toBeVisible();
+
+    const options = exportMenu.locator('.export-option');
+    await expect(options).toHaveCount(3);
+    await expect(options.nth(0)).toHaveText('.glb');
+    await expect(options.nth(1)).toHaveText('.gltf');
+    await expect(options.nth(2)).toHaveText('.usdz');
+
+    await canvas.click({ position: { x: 10, y: 10 } });
+    await expect(exportMenu).not.toBeVisible();
+});
+
+test('export option click closes dropdown', async ({ page }) => {
+    setupErrorSuppression(page);
+    await navigateToExample(page, '/');
+
+    const exportButton = page.locator('button', { hasText: 'Export' });
+    const exportMenu = page.locator('.export-menu');
+
+    await exportButton.click();
+    await expect(exportMenu).toBeVisible();
+
+    await page.locator('.export-option', { hasText: '.glb' }).click();
+    await expect(exportMenu).not.toBeVisible();
 });
