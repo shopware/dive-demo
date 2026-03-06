@@ -6,10 +6,10 @@ import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 
-let dive: QuickView;
-let orbitController: OrbitController;
-let animationSystem: AnimationSystem;
-let animator: TargetAnimator;
+let dive: QuickView | null = null;
+let orbitController: OrbitController | null = null;
+let animationSystem: AnimationSystem | null = null;
+let animator: TargetAnimator | null = null;
 
 const activePreset: Ref<number> = ref(0);
 
@@ -59,7 +59,7 @@ onMounted(async () => {
 });
 
 onUnmounted(async () => {
-    animationSystem.dispose();
+    animationSystem?.dispose();
     await dive?.dispose();
 });
 
@@ -69,7 +69,10 @@ watch(activePreset, (newVal) => {
 
 const goToPreset = async (index: number) => {
     // remove old animator
-    animationSystem.remove(animator.uuid);
+
+    if (!orbitController || !animationSystem) return;
+
+    animationSystem.remove(animator?.uuid ?? '');
 
     // create new animator
     animator = await animationSystem.fromTargets(
@@ -79,7 +82,7 @@ const goToPreset = async (index: number) => {
         ],
         800, // ms
         { easing: animationSystem.Easing.Quadratic.InOut },
-    );
+    ) || null;
 
     // play new animator
     animator.play();
