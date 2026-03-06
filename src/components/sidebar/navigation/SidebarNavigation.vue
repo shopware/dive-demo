@@ -86,13 +86,13 @@ nav a.router-link-exact-active:hover {
 .menu-button {
   display: block;
   width: 100%;
-  background: none;
-  border: none;
   padding: 0.75rem 1rem;
   font-size: 1rem;
   cursor: pointer;
-  color: var(--color-text);
-  background-color: var(--color-background-active);
+  color: var(--ui-btn-text);
+  background-color: var(--ui-btn-bg);
+  border: 1px solid var(--ui-btn-border);
+  border-radius: 0;
   text-align: left;
   line-height: 1.5;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -124,7 +124,7 @@ nav a.router-link-exact-active:hover {
 }
 
 .sidebar-navigation nav.open a.router-link-exact-active {
-  background-color: var(--color-background-active);
+  background-color: var(--ui-btn-bg-hover);
 }
 
 /* Desktop styles */
@@ -169,7 +169,7 @@ nav a.router-link-exact-active:hover {
   }
 
   .sidebar-navigation nav a.router-link-exact-active {
-    background-color: var(--color-background-active);
+    background-color: var(--ui-btn-bg-hover);
   }
 }
 </style>

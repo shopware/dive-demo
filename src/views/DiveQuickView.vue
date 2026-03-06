@@ -72,18 +72,16 @@ defineProps<{
   <div class="canvasWrapper">
     <canvas ref="canvas"></canvas>
     <input ref="fileInput" type="file" :accept="exportFormats.join(',')" class="file-input" @change="onFileSelected" />
-    <div class="button-bar">
-      <button class="action-button" @click="fileInput?.click()">
-        Upload File
-      </button>
-      <div ref="exportWrapper" class="export-wrapper">
-        <button class="action-button" @click="showExportMenu = !showExportMenu">
-          Export
-        </button>
-        <div v-if="showExportMenu" class="export-menu">
-          <button v-for="format in exportFormats" :key="format" class="export-option" @click="exportModel(format)">
-            .{{ format }}
-          </button>
+    <div class="controlPanel controlPanel--bottom">
+      <div class="controlPanel-buttons">
+        <button @click="fileInput?.click()">Upload File</button>
+        <div ref="exportWrapper" class="export-wrapper">
+          <button @click="showExportMenu = !showExportMenu">Export</button>
+          <div v-if="showExportMenu" class="export-menu export-menu--up">
+            <button v-for="format in exportFormats" :key="format" class="export-option" @click="exportModel(format)">
+              .{{ format }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -100,59 +98,5 @@ defineProps<{
 
 .file-input {
   display: none;
-}
-
-.button-bar {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-button {
-  padding: 0.5rem 1rem;
-  background-color: var(--color-background-active);
-  color: var(--color-text);
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  height: 50px;
-  min-width: 120px;
-  font-size: 1rem;
-}
-
-.export-wrapper {
-  position: relative;
-}
-
-.export-menu {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--color-background-active);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  min-width: 120px;
-}
-
-.export-option {
-  padding: 0.5rem 1rem;
-  background: none;
-  border: none;
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 1rem;
-  text-align: left;
-}
-
-.export-option:hover {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 </style>

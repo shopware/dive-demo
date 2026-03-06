@@ -154,19 +154,17 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
         <div class="canvasWrapper">
             <canvas ref="canvas"></canvas>
             <input ref="fileInput" type="file" accept=".glb,.gltf,.usdz" class="file-input" @change="onFileSelected" />
-            <div class="button-bar">
-                <button class="action-button" @click="fileInput?.click()">
-                    Upload File
-                </button>
-                <div ref="exportWrapper" class="export-wrapper">
-                    <button class="action-button" @click="showExportMenu = !showExportMenu">
-                        Export
-                    </button>
-                    <div v-if="showExportMenu" class="export-menu">
-                        <button v-for="format in exportFormats" :key="format" class="export-option"
-                            @click="exportModel(format)">
-                            .{{ format }}
-                        </button>
+            <div class="controlPanel controlPanel--top">
+                <div class="controlPanel-buttons">
+                    <button @click="fileInput?.click()">Upload File</button>
+                    <div ref="exportWrapper" class="export-wrapper">
+                        <button @click="showExportMenu = !showExportMenu">Export</button>
+                        <div v-if="showExportMenu" class="export-menu">
+                            <button v-for="format in exportFormats" :key="format" class="export-option"
+                                @click="exportModel(format)">
+                                .{{ format }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -216,128 +214,6 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
 
 .file-input {
     display: none;
-}
-
-.button-bar {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 1rem;
-    display: flex;
-    gap: 0.5rem;
-}
-
-.action-button {
-    padding: 0.45rem 0.85rem;
-    border-radius: 0.35rem;
-    border: 1px solid #555;
-    background-color: #2a2a2a;
-    color: #eee;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: background-color 0.15s, border-color 0.15s;
-}
-
-.action-button:hover {
-    background-color: #3a3a3a;
-    border-color: #888;
-}
-
-.export-wrapper {
-    position: relative;
-}
-
-.export-menu {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 0.25rem;
-    display: flex;
-    flex-direction: column;
-    background-color: #2a2a2a;
-    border: 1px solid #555;
-    border-radius: 0.35rem;
-    overflow: hidden;
-    min-width: 100px;
-}
-
-.export-option {
-    padding: 0.45rem 0.85rem;
-    background: none;
-    border: none;
-    color: #eee;
-    cursor: pointer;
-    font-size: 0.8rem;
-    text-align: left;
-}
-
-.export-option:hover {
-    background-color: #3a3a3a;
-}
-
-.controlPanel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    position: absolute;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(30, 30, 30, 0.9);
-    padding: 1rem;
-    border-radius: 0.75rem;
-    backdrop-filter: blur(8px);
-}
-
-.controlPanel-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.controlPanel-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #aaa;
-}
-
-.controlPanel-buttons {
-    display: flex;
-    gap: 0.4rem;
-}
-
-.controlPanel-buttons button {
-    padding: 0.45rem 0.85rem;
-    border-radius: 0.35rem;
-    border: 1px solid #555;
-    background-color: #2a2a2a;
-    color: #eee;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: background-color 0.15s, border-color 0.15s;
-}
-
-.controlPanel-buttons button:hover:not(:disabled) {
-    background-color: #3a3a3a;
-    border-color: #888;
-}
-
-.controlPanel-buttons button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.controlPanel-buttons button.active {
-    background-color: #0066cc;
-    border-color: #0088ff;
-    color: white;
-}
-
-.controlPanel-buttons--center {
-    justify-content: center;
 }
 
 .controlPanel-buttons--center button {

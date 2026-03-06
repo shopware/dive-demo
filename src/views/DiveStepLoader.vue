@@ -83,15 +83,17 @@ defineProps<{
     <div v-if="loading" class="loading">Loading STEP file…</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-if="timing" class="timing">{{ timing }}</div>
-    <div class="controls">
-      <label class="checkbox-label">
-        <input type="checkbox" v-model="wireframe" :disabled="loading" />
-        Wireframe
-      </label>
-      <button ref="uploadButton" @click="uploadInput?.click()">
-        Upload STEP / IGES
-      </button>
-      <input type="file" ref="uploadInput" style="display: none" @change="uploadFile" accept=".step,.stp,.iges,.igs" />
+    <div class="controlPanel controlPanel--top-right">
+      <div class="controlPanel-buttons">
+        <label class="checkbox-button">
+          <input type="checkbox" v-model="wireframe" :disabled="loading" />
+          Wireframe
+        </label>
+        <button ref="uploadButton" @click="uploadInput?.click()">
+          Upload STEP / IGES
+        </button>
+        <input type="file" ref="uploadInput" style="display: none" @change="uploadFile" accept=".step,.stp,.iges,.igs" />
+      </div>
     </div>
     <div class="label">occt-import-js</div>
   </div>
@@ -112,18 +114,19 @@ defineProps<{
   left: 50%;
   transform: translateX(-50%);
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 0.35rem;
   font-size: 0.875rem;
   z-index: 10;
-}
-
-.loading {
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
+  background-color: var(--ui-panel-bg);
+  border: 1px solid var(--ui-panel-border);
+  color: var(--ui-btn-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .error {
-  background: rgba(200, 50, 50, 0.9);
+  background: rgba(200, 50, 50, 0.85);
+  border-color: rgba(200, 50, 50, 0.5);
   color: white;
 }
 
@@ -133,22 +136,15 @@ defineProps<{
   left: 50%;
   transform: translateX(-50%);
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 0.35rem;
   font-size: 0.875rem;
-  background: rgba(0, 0, 0, 0.7);
-  color: #4fc3f7;
+  background-color: var(--ui-panel-bg);
+  border: 1px solid var(--ui-panel-border);
+  color: var(--ui-btn-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 10;
   font-variant-numeric: tabular-nums;
-}
-
-.controls {
-  position: absolute;
-  top: 0;
-  right: 0;
-  margin: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
 }
 
 .label {
@@ -156,37 +152,14 @@ defineProps<{
   top: 1rem;
   left: 1rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 0.35rem;
   font-size: 0.75rem;
-  background: rgba(0, 0, 0, 0.6);
-  color: #ccc;
+  background-color: var(--ui-panel-bg);
+  border: 1px solid var(--ui-panel-border);
+  color: var(--ui-label-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 10;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  background: var(--color-background);
-  color: var(--color-text);
-  font-size: 0.875rem;
-  cursor: pointer;
-  user-select: none;
-}
-
-button {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-button:hover {
-  background: var(--color-background-active);
-}
 </style>
