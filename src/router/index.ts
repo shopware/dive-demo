@@ -11,32 +11,32 @@ const router = createRouter({
     },
     {
       path: '/ar',
-      name: 'ar',
+      name: 'augmented reality',
       component: () => import('../views/DiveAR.vue')
     },
     {
       path: '/switch-canvas',
-      name: 'switch-canvas',
+      name: 'switch canvas',
       component: () => import('../views/DiveSwitchCanvas.vue')
     },
     {
       path: '/place-on-floor',
-      name: 'place-on-floor',
+      name: 'place on floor',
       component: () => import('../views/DivePlaceOnFloor.vue')
     },
     {
       path: '/focus-object',
-      name: 'focus-object',
+      name: 'focus object',
       component: () => import('../views/DiveFocusObject.vue')
     },
     {
       path: '/orientation-display',
-      name: 'orientation-display',
+      name: 'orientation display',
       component: () => import('../views/DiveOD.vue')
     },
     {
       path: '/step-loader',
-      name: 'STEP loader',
+      name: 'step loader',
       component: () => import('../views/DiveStepLoader.vue')
     },
     {
