@@ -39,11 +39,8 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Run tests in parallel. Use 2 workers on CI for better performance. */
-  /* 4 workers with 3 browsers = 12 concurrent instances, which can overwhelm CI resources */
-  /* 2 workers = 6 concurrent instances is a safer balance */
-  workers: process.env.CI ? 2 : undefined,
+  retries: 2,
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
