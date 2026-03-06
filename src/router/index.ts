@@ -38,6 +38,16 @@ const router = createRouter({
       path: '/step-loader',
       name: 'STEP loader',
       component: () => import('../views/DiveStepLoader.vue')
+    },
+    {
+      path: '/target-animation',
+      name: 'target animation',
+      component: () => import('../views/DiveTargetAnimation.vue')
+    },
+    {
+      path: '/clip-animation',
+      name: 'clip animation',
+      component: () => import('../views/DiveClipAnimation.vue')
     }
   ]
 })
