@@ -126,14 +126,14 @@ jobs:
           # System dependencies must be installed in each job since each job runs on a fresh runner
           # and system packages can't be cached between jobs. This is minimal overhead.
           sudo apt-get --yes remove --purge man-db
-          yarn playwright install-deps
+          yarn playwright install-deps chromium firefox webkit
       - name: Run playwright tests
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
           CI: true
           LIBGL_ALWAYS_SOFTWARE: "1"
           GALLIUM_DRIVER: llvmpipe
-        run: xvfb-run --auto-servernum yarn test:e2e --shard=${{ matrix.shard }}/4
+        run: xvfb-run --auto-servernum yarn test:e2e --headed --shard=${{ matrix.shard }}/4
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
