@@ -6,7 +6,7 @@ test('shows model with animation controls', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation');
 
-    const controlPanel = page.locator('.controlPanel');
+    const controlPanel = page.locator('.controlPanel:not(.controlPanel--top)');
     await expect(controlPanel).toBeVisible({ timeout: 30000 });
 
     const stopButton = page.locator('.controlPanel-buttons--center button').nth(1);
