@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
-  timeout: 60 * 1000, // Increased for 3D canvas rendering tests
+  timeout: process.env.CI ? 30 * 1000 : 10 * 1000,
   /* Use platform-agnostic snapshot names so they work on both macOS and Linux
    * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
    * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}
@@ -39,11 +39,8 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Run tests in parallel. Use 2 workers on CI for better performance. */
-  /* 4 workers with 3 browsers = 12 concurrent instances, which can overwhelm CI resources */
-  /* 2 workers = 6 concurrent instances is a safer balance */
-  workers: process.env.CI ? 2 : undefined,
+  retries: process.env.CI ? 4 : 2,
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -56,8 +53,8 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
-    /* Only on CI systems run the tests headless */
-    headless: !!process.env.CI,
+    /* On CI, WebKit needs headed mode (via --headed CLI flag) for WebGL under xvfb.
+     * Don't force headless here so the CLI flag takes effect. */
 
     /* Ignore HTTPS errors */
     ignoreHTTPSErrors: true,

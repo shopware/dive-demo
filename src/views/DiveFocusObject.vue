@@ -92,30 +92,33 @@ defineProps<{
     <div class="canvasWrapper">
         <canvas ref="canvas"></canvas>
     </div>
-    <div class="buttonWrapper">
-        <button @click="switchObject('sofa_B.glb')">Sofa</button>
-        <button @click="switchObject('hay_chair.glb')">Chair</button>
-        <button @click="switchObject('suzanne.glb')">Suzanne</button>
+    <div class="controlPanel">
+        <div class="controlPanel-buttons">
+            <button @click="switchObject('sofa_B.glb')">Sofa</button>
+            <button @click="switchObject('hay_chair.glb')">Chair</button>
+            <button @click="switchObject('suzanne.glb')">Suzanne</button>
+        </div>
     </div>
     <div class="infoPanel">
+        <span class="controlPanel-label">Dimensions</span>
         <div class="infoPanel-dimensions">
-            <div class="infoPanel-dimensions-tags">
-                <p>Width:</p>
-                <p>Height:</p>
-                <p>Depth:</p>
+            <div class="infoPanel-row">
+                <span class="infoPanel-key">Width</span>
+                <span class="infoPanel-value">{{ width }} m</span>
             </div>
-            <div class="infoPanel-dimensions-values">
-                <p>{{ width }} m</p>
-                <p>{{ height }} m</p>
-                <p>{{ depth }} m</p>
+            <div class="infoPanel-row">
+                <span class="infoPanel-key">Height</span>
+                <span class="infoPanel-value">{{ height }} m</span>
+            </div>
+            <div class="infoPanel-row">
+                <span class="infoPanel-key">Depth</span>
+                <span class="infoPanel-value">{{ depth }} m</span>
             </div>
         </div>
-        <div class="infoPanel-controls">
-            <label>
-                <input type="checkbox" v-model="isBoundingBoxVisible" @change="showBoundingBox" />
-                Show bounding volume
-            </label>
-        </div>
+        <label class="checkbox-button">
+            <input type="checkbox" v-model="isBoundingBoxVisible" @change="showBoundingBox" />
+            Show bounding volume
+        </label>
     </div>
 </template>
 
@@ -126,68 +129,27 @@ defineProps<{
     width: 100%;
 }
 
-.buttonWrapper {
-    display: flex;
-    gap: 0.5rem;
-    position: absolute;
-    bottom: 10px;
-    width: 100%;
-    justify-content: center;
-    align-items: center;
-
-    button {
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        cursor: pointer;
-    }
-}
-
-.infoPanel {
+.infoPanel-dimensions {
     display: flex;
     flex-direction: column;
-    position: absolute;
-    top: 4rem;
-    left: 4rem;
-    background-color: #ccc;
-    padding: 0.5rem;
-    border-radius: 1rem;
-
-    .infoPanel-dimensions {
-        display: flex;
-
-        flex-direction: row;
-        justify-content: space-between;
-
-        padding: 0.5rem;
-
-        .infoPanel-dimensions-tags {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .infoPanel-dimensions-values {
-            display: flex;
-            flex-direction: column;
-
-            p {
-                color: black;
-                text-align: right;
-            }
-        }
-
-
-
-        p {
-            color: black;
-        }
-    }
-
-    .infoPanel-controls {
-        display: flex;
-        align-items: center;
-
-        padding: 0.5rem;
-    }
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
 }
+
+.infoPanel-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    font-size: 0.8rem;
+}
+
+.infoPanel-key {
+    color: var(--ui-label-text);
+}
+
+.infoPanel-value {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
 </style>

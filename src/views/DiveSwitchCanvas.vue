@@ -130,14 +130,13 @@ button {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-
   pointer-events: none;
+}
 
-  p {
-    color: white;
-    font-size: 30px;
-    font-weight: bold;
-    text-align: center;
-  }
+.overlay p {
+  color: white;
+  font-size: 30px;
+  font-weight: bold;
+  text-align: center;
 }
 </style>

@@ -4,34 +4,56 @@ import { DIVE } from '@shopware-ag/dive';
 import { ARSystem } from '@shopware-ag/dive/ar';
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
-const arbuttonRef: Ref<HTMLButtonElement | null> = ref(null);
+const placementWrapper: Ref<HTMLElement | null> = ref(null);
+const scaleWrapper: Ref<HTMLElement | null> = ref(null);
 
-// Add placement and scale options and selected values
 const placementOptions = ['horizontal', 'vertical'] as const;
 const scaleOptions = ['auto', 'fixed'] as const;
 const selectedPlacement = ref<typeof placementOptions[number]>('horizontal');
 const selectedScale = ref<typeof scaleOptions[number]>('auto');
 
+const showPlacementMenu = ref(false);
+const showScaleMenu = ref(false);
+
 let dive: DIVE | null = null;
+let arSystem: ARSystem | null = null;
 
 onMounted(async () => {
   if (!canvasRef.value) return;
 
   dive = await DIVE.QuickView('hay_chair.glb', { canvas: canvasRef.value });
-
-  if (!arbuttonRef.value) return;
-
-  const arSystem = new ARSystem();
-
-  arbuttonRef.value.addEventListener('click', () => {
-    arSystem.launch('hay_chair.glb', { arPlacement: selectedPlacement.value, arScale: selectedScale.value });
-  });
-})
+  arSystem = new ARSystem();
+  document.addEventListener('click', onClickOutside);
+});
 
 onUnmounted(() => {
+  document.removeEventListener('click', onClickOutside);
   if (!dive) return;
   dive.dispose();
-})
+});
+
+function onClickOutside(event: MouseEvent) {
+  if (placementWrapper.value && !placementWrapper.value.contains(event.target as Node)) {
+    showPlacementMenu.value = false;
+  }
+  if (scaleWrapper.value && !scaleWrapper.value.contains(event.target as Node)) {
+    showScaleMenu.value = false;
+  }
+}
+
+function selectPlacement(option: typeof placementOptions[number]) {
+  selectedPlacement.value = option;
+  showPlacementMenu.value = false;
+}
+
+function selectScale(option: typeof scaleOptions[number]) {
+  selectedScale.value = option;
+  showScaleMenu.value = false;
+}
+
+function launchAR() {
+  arSystem?.launch('hay_chair.glb', { arPlacement: selectedPlacement.value, arScale: selectedScale.value });
+}
 
 defineProps<{
   msg: string
@@ -42,24 +64,33 @@ defineProps<{
 <template>
   <div class="canvasWrapper">
     <canvas ref="canvasRef"></canvas>
-    <!-- Dropdown controls for placement and scale -->
-    <div class="controls">
-      <label>
-        Placement:
-        <select v-model="selectedPlacement">
-          <option v-for="option in placementOptions" :key="option" :value="option">{{ option }}</option>
-        </select>
-      </label>
-      <label>
-        Scale:
-        <select v-model="selectedScale">
-          <option v-for="option in scaleOptions" :key="option" :value="option">{{ option }}</option>
-        </select>
-      </label>
+    <div class="controlPanel controlPanel--top controlPanel--row">
+      <div class="controlPanel-group">
+        <span class="controlPanel-label">Placement</span>
+        <div ref="placementWrapper" class="export-wrapper">
+          <button @click="showPlacementMenu = !showPlacementMenu">{{ selectedPlacement }}</button>
+          <div v-if="showPlacementMenu" class="export-menu">
+            <button v-for="option in placementOptions" :key="option" class="export-option"
+              @click="selectPlacement(option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="controlPanel-group">
+        <span class="controlPanel-label">Scale</span>
+        <div ref="scaleWrapper" class="export-wrapper">
+          <button @click="showScaleMenu = !showScaleMenu">{{ selectedScale }}</button>
+          <div v-if="showScaleMenu" class="export-menu">
+            <button v-for="option in scaleOptions" :key="option" class="export-option"
+              @click="selectScale(option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    <button class="arbutton" ref="arbuttonRef">
-      AR
-    </button>
+    <button class="ar-launch" @click="launchAR">AR</button>
   </div>
 </template>
 
@@ -71,55 +102,10 @@ defineProps<{
   width: 100%;
 }
 
-.controls {
+.ar-launch {
   position: absolute;
-  top: 1rem;
+  bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
-  gap: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  z-index: 10;
-}
-
-.controls label {
-  display: flex;
-  flex-direction: column;
-  font-size: 1rem;
-  color: var(--color-text);
-  font-weight: 600;
-}
-
-.controls select {
-  margin-top: 0.25rem;
-  padding: 0.5rem 1rem;
-  height: 50px;
-  border: none;
-  border-radius: 0.5rem;
-  background-color: var(--color-background-active);
-  color: var(--color-text);
-  font-size: 1rem;
-  cursor: pointer;
-  min-width: 120px;
-  appearance: none;
-}
-
-.arbutton {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-background-active);
-  color: var(--color-text);
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-
-  width: 100px;
-  height: 50px;
 }
 </style>
