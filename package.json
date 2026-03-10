@@ -16,7 +16,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@shopware-ag/dive": "^2.3.0",
+    "@shopware-ag/dive": "^2.3.1",
     "monaco-editor": "^0.52.2",
     "monaco-editor-vue3": "^0.1.10",
     "pinia": "^2.1.7",
