@@ -23,7 +23,7 @@ test('click', async ({ page }) => {
 
     await page.mouse.move(center.x, center.y);
     await page.mouse.down();
-    await page.mouse.move(center.x + 100, center.y + 100, { steps: 10 });
+    await page.mouse.move(center.x + 40, center.y + 40, { steps: 3 });
     await page.mouse.up();
 
     await page.waitForFunction(() =>
