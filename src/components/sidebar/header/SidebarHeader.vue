@@ -21,6 +21,7 @@ const diveVersion = pkgjson.version;
   align-items: center;
   justify-content: space-evenly;
   width: 100%;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .logo {
