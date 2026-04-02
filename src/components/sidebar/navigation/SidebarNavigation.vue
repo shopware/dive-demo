@@ -135,10 +135,11 @@ nav a.router-link-exact-active:hover {
     display: none;
   }
 
-  /* Sidebar layout */
   .sidebar-navigation {
     display: flex;
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .sidebar-navigation img {
