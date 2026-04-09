@@ -92,7 +92,8 @@ defineProps<{
         <button ref="uploadButton" @click="uploadInput?.click()">
           Upload STEP / IGES
         </button>
-        <input type="file" ref="uploadInput" style="display: none" @change="uploadFile" accept=".step,.stp,.iges,.igs" />
+        <input type="file" ref="uploadInput" style="display: none" @change="uploadFile"
+          accept=".step,.stp,.iges,.igs" />
       </div>
     </div>
     <div class="label">occt-import-js</div>
@@ -161,5 +162,4 @@ defineProps<{
   -webkit-backdrop-filter: blur(8px);
   z-index: 10;
 }
-
 </style>

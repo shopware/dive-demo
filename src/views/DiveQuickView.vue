@@ -19,7 +19,7 @@ async function loadModel(uri: string) {
 
   await quickView?.dispose();
 
-  quickView = await QuickView(uri, { canvas: canvas.value });
+  quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
 }
 
 function onFileSelected(event: Event) {

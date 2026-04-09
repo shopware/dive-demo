@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
-import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { QuickView } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
 import type { AnimationSystem, ClipAnimator, TAnimatorLoopMode } from '@shopware-ag/dive/animation';

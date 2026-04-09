@@ -2,6 +2,7 @@
 import { ref, onMounted, type Ref, onUnmounted } from 'vue';
 import { DIVE } from '@shopware-ag/dive';
 import { ARSystem } from '@shopware-ag/dive/ar';
+import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const placementWrapper: Ref<HTMLElement | null> = ref(null);
@@ -21,7 +22,7 @@ let arSystem: ARSystem | null = null;
 onMounted(async () => {
   if (!canvasRef.value) return;
 
-  dive = await DIVE.QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  dive = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
   arSystem = new ARSystem();
   document.addEventListener('click', onClickOutside);
 });
@@ -82,8 +83,7 @@ defineProps<{
         <div ref="scaleWrapper" class="export-wrapper">
           <button @click="showScaleMenu = !showScaleMenu">{{ selectedScale }}</button>
           <div v-if="showScaleMenu" class="export-menu">
-            <button v-for="option in scaleOptions" :key="option" class="export-option"
-              @click="selectScale(option)">
+            <button v-for="option in scaleOptions" :key="option" class="export-option" @click="selectScale(option)">
               {{ option }}
             </button>
           </div>
