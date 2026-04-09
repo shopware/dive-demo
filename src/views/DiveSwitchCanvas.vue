@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 
@@ -17,6 +17,11 @@ onMounted(async () => {
   }
 
   dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas0.value }));
+});
+
+onUnmounted(() => {
+  void dive.value?.dispose();
+  dive.value = null;
 });
 
 const switchCanvasTo = (canvas: HTMLCanvasElement, index: number) => {

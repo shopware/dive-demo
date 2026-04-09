@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, watch, type Ref, markRaw } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Mesh } from 'three';
 
@@ -75,6 +75,11 @@ const uploadFile = async (event: Event) => {
 defineProps<{
   msg: string;
 }>();
+
+onUnmounted(() => {
+  void dive.value?.dispose();
+  dive.value = null;
+});
 </script>
 
 <template>

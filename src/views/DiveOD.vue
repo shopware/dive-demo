@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { OrientationDisplay } from '@shopware-ag/dive/orientationdisplay';
@@ -10,6 +10,7 @@ const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1];
 
 const dive0: Ref<QuickView | null> = ref(null)
 const dive1: Ref<QuickView | null> = ref(null)
+let orientationDisplay: OrientationDisplay | null = null;
 
 onMounted(async () => {
   if (!canvas0.value || !canvas1.value) {
@@ -24,9 +25,19 @@ onMounted(async () => {
   // without displayAxes
   dive1.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas1.value }));
 
-  const orientationDisplay = new OrientationDisplay(dive1.value.mainView.renderer, dive1.value.scene, dive1.value.mainView.camera);
+  orientationDisplay = new OrientationDisplay(dive1.value.mainView.renderer, dive1.value.scene, dive1.value.mainView.camera);
   dive1.value.clock.addTicker(orientationDisplay);
 })
+
+onUnmounted(() => {
+  orientationDisplay?.dispose();
+  orientationDisplay = null;
+
+  void dive0.value?.dispose();
+  void dive1.value?.dispose();
+  dive0.value = null;
+  dive1.value = null;
+});
 
 defineProps<{
   msg: string

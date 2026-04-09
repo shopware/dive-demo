@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { BoundingBox, DIVEMath, DIVEModel } from '@shopware-ag/dive';
 
@@ -27,6 +27,11 @@ onMounted(async () => {
         }
     });
 })
+
+onUnmounted(() => {
+    void dive.value?.dispose();
+    dive.value = null;
+});
 
 const switchObject = async (object: string) => {
     if (!dive.value) {
