@@ -1,4 +1,67 @@
 import type { Page } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
+
+type NavigateToExampleOptions = {
+    filePattern?: string | RegExp;
+    timeoutMs?: number;
+    waitForAssetResponse?: boolean;
+    assetResponseTimeoutMs?: number;
+    waitForCanvasVisible?: boolean;
+    waitForRenderedCanvas?: boolean;
+};
+
+async function waitForAnimationFrames(page: Page, frames = 2): Promise<void> {
+    await page.evaluate((frameCount) =>
+        new Promise<void>((resolve) => {
+            let remaining = frameCount;
+
+            const tick = () => {
+                if (remaining <= 0) {
+                    resolve();
+                    return;
+                }
+
+                remaining -= 1;
+                requestAnimationFrame(tick);
+            };
+
+            requestAnimationFrame(tick);
+        }), frames);
+}
+
+async function waitForRenderedCanvas(
+    canvas: Locator,
+    timeoutMs: number,
+): Promise<void> {
+    await expect
+        .poll(
+            async () =>
+                canvas
+                    .evaluate((element) => {
+                        if (!(element instanceof HTMLCanvasElement)) {
+                            return false;
+                        }
+
+                        const rect = element.getBoundingClientRect();
+                        const style = window.getComputedStyle(element);
+
+                        return (
+                            rect.width >= 1 &&
+                            rect.height >= 1 &&
+                            element.width >= 1 &&
+                            element.height >= 1 &&
+                            style.display !== 'none' &&
+                            style.visibility !== 'hidden'
+                        );
+                    })
+                    .catch(() => false),
+            { timeout: timeoutMs },
+        )
+        .toBe(true);
+
+    await waitForAnimationFrames(canvas.page(), 4);
+    await canvas.page().waitForTimeout(750);
+}
 
 /**
  * Navigates to a demo page and waits for the 3D model to be fully loaded
@@ -12,10 +75,15 @@ import type { Page } from '@playwright/test';
 export async function navigateToExample(
     page: Page,
     path: string,
-    options?: { filePattern?: string | RegExp },
+    options?: NavigateToExampleOptions,
 ) {
     const {
         filePattern = /\.(glb|gltf|step|stp|iges|igs)(\?|$)/i,
+        timeoutMs = 60000,
+        waitForAssetResponse = true,
+        assetResponseTimeoutMs = 15000,
+        waitForCanvasVisible = true,
+        waitForRenderedCanvas: shouldWaitForRenderedCanvas = true,
     } = options ?? {};
 
     const matcher = (url: string) =>
@@ -23,18 +91,25 @@ export async function navigateToExample(
             ? url.includes(filePattern)
             : filePattern.test(url);
 
-    const responsePromise = page.waitForResponse(
-        (resp) => matcher(resp.url()) && resp.ok(),
-    );
-
     await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await responsePromise;
 
-    await page.waitForFunction(() =>
-        new Promise((resolve) =>
-            requestAnimationFrame(() =>
-                requestAnimationFrame(() => setTimeout(resolve, 100)),
-            ),
-        ),
-    );
+    if (waitForAssetResponse) {
+        await page
+            .waitForResponse((resp) => matcher(resp.url()) && resp.ok(), {
+                timeout: assetResponseTimeoutMs,
+            })
+            .catch(() => null);
+    }
+
+    const canvas = page.locator('canvas').first();
+
+    if (waitForCanvasVisible) {
+        await expect(canvas).toBeVisible({ timeout: timeoutMs });
+    }
+
+    if (shouldWaitForRenderedCanvas) {
+        await waitForRenderedCanvas(canvas, timeoutMs);
+    }
+
+    await waitForAnimationFrames(page, 2);
 }

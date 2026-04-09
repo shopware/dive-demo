@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, onUnmounted } from 'vue';
+import { ref, onMounted, type Ref, onUnmounted, nextTick, markRaw } from 'vue';
 import { DIVE } from '@shopware-ag/dive';
 import { ARSystem } from '@shopware-ag/dive/ar';
 import { QuickView } from '@shopware-ag/dive/quickview';
@@ -18,16 +18,31 @@ const showScaleMenu = ref(false);
 
 let dive: DIVE | null = null;
 let arSystem: ARSystem | null = null;
+let disposed = false;
 
-onMounted(async () => {
+async function initializeDive() {
+  await nextTick();
+  await new Promise((resolve) => window.setTimeout(resolve, 50));
+
   if (!canvasRef.value) return;
 
-  dive = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  const quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  if (disposed) {
+    await quickView.dispose();
+    return;
+  }
+
+  dive = markRaw(quickView);
   arSystem = new ARSystem();
   document.addEventListener('click', onClickOutside);
+}
+
+onMounted(() => {
+  void initializeDive();
 });
 
 onUnmounted(() => {
+  disposed = true;
   document.removeEventListener('click', onClickOutside);
   if (!dive) return;
   dive.dispose();
@@ -99,7 +114,14 @@ defineProps<{
   position: relative;
   display: flex;
   height: 100%;
+  min-height: 100vh;
   width: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .ar-launch {

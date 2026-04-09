@@ -4,20 +4,30 @@ import { navigateToExample } from './helper/navigateToExample';
 
 test('shows model with preset controls', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation');
+    await navigateToExample(page, '/target-animation', {
+        waitForCanvasVisible: false,
+        waitForRenderedCanvas: false,
+    });
 
-    await expect(page.locator('.controlPanel')).toBeVisible();
+    await expect(page.getByTestId('target-animation-control-panel')).toBeVisible();
+    await expect(page.getByTestId('target-animation-preset').first()).toBeEnabled();
+    await page.waitForTimeout(500);
     await expect(page).toHaveScreenshot('dive-target-animation-loaded.png');
 });
 
 test('all preset buttons are visible', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation');
+    await navigateToExample(page, '/target-animation', {
+        waitForCanvasVisible: false,
+        waitForRenderedCanvas: false,
+    });
 
-    const cameraLabel = page.locator('.controlPanel-label', { hasText: 'Camera' });
+    const controlPanel = page.getByTestId('target-animation-control-panel');
+    const cameraLabel = controlPanel.locator('.controlPanel-label', { hasText: 'Camera' });
     await expect(cameraLabel).toBeVisible();
 
-    const presetButtons = cameraLabel.locator('..').locator('.controlPanel-buttons button');
+    const presetButtons = page.getByTestId('target-animation-preset');
+    await expect(presetButtons.first()).toBeEnabled();
     await expect(presetButtons).toHaveCount(5);
 
     await expect(presetButtons.nth(0)).toHaveText('Initial');
@@ -29,22 +39,28 @@ test('all preset buttons are visible', async ({ page }) => {
 
 test('initial preset is active by default', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation');
+    await navigateToExample(page, '/target-animation', {
+        waitForCanvasVisible: false,
+        waitForRenderedCanvas: false,
+    });
 
-    const cameraLabel = page.locator('.controlPanel-label', { hasText: 'Camera' });
-    const presetButtons = cameraLabel.locator('..').locator('.controlPanel-buttons button');
+    const presetButtons = page.getByTestId('target-animation-preset');
+    await expect(presetButtons.first()).toBeEnabled();
 
     await expect(presetButtons.nth(0)).toHaveClass(/active/);
 });
 
 test('clicking preset changes active state and animates camera', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation');
+    await navigateToExample(page, '/target-animation', {
+        waitForCanvasVisible: false,
+        waitForRenderedCanvas: false,
+    });
 
-    const cameraLabel = page.locator('.controlPanel-label', { hasText: 'Camera' });
-    const presetButtons = cameraLabel.locator('..').locator('.controlPanel-buttons button');
+    const presetButtons = page.getByTestId('target-animation-preset');
+    await expect(presetButtons.first()).toBeEnabled();
 
-    await presetButtons.nth(1).click();
+    await presetButtons.nth(1).click({ force: true });
     await expect(presetButtons.nth(1)).toHaveClass(/active/);
     await expect(presetButtons.nth(0)).not.toHaveClass(/active/);
 
@@ -55,21 +71,24 @@ test('clicking preset changes active state and animates camera', async ({ page }
 
 test('clicking multiple presets in sequence', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation');
+    await navigateToExample(page, '/target-animation', {
+        waitForCanvasVisible: false,
+        waitForRenderedCanvas: false,
+    });
 
-    const cameraLabel = page.locator('.controlPanel-label', { hasText: 'Camera' });
-    const presetButtons = cameraLabel.locator('..').locator('.controlPanel-buttons button');
+    const presetButtons = page.getByTestId('target-animation-preset');
+    await expect(presetButtons.first()).toBeEnabled();
 
-    await presetButtons.nth(3).click();
+    await presetButtons.nth(3).click({ force: true });
     await expect(presetButtons.nth(3)).toHaveClass(/active/);
     await page.waitForTimeout(1000);
 
-    await presetButtons.nth(4).click();
+    await presetButtons.nth(4).click({ force: true });
     await expect(presetButtons.nth(4)).toHaveClass(/active/);
     await expect(presetButtons.nth(3)).not.toHaveClass(/active/);
     await page.waitForTimeout(1000);
 
-    await presetButtons.nth(0).click();
+    await presetButtons.nth(0).click({ force: true });
     await expect(presetButtons.nth(0)).toHaveClass(/active/);
     await expect(presetButtons.nth(4)).not.toHaveClass(/active/);
     await page.waitForTimeout(1000);

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, watch, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Mesh } from 'three';
 
-const canvas: Ref<HTMLCanvasElement | undefined> = ref(undefined);
+const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const dive: Ref<QuickView | null> = ref(null);
 const uploadButton: Ref<HTMLButtonElement | null> = ref(null);
 const uploadInput: Ref<HTMLInputElement | null> = ref(null);
@@ -12,41 +12,122 @@ const error: Ref<string | null> = ref(null);
 const timing: Ref<string | null> = ref(null);
 const wireframe: Ref<boolean> = ref(false);
 
-// Sample STEP file – use cube.stp for reliable loading.
-// D100.step and Mech-horsE.stp may fail (AP242/complex assemblies).
+// Keep the original demo asset; CI stability must not change the showcased model.
 const DEFAULT_STEP_URL = 'D100.step';
+const STEP_LOAD_TIMEOUT_MS = 120000;
+const STEP_LOAD_MAX_ATTEMPTS = 2;
+const STEP_LOAD_RETRY_DELAY_MS = 500;
+const INITIAL_LOAD_DELAY_MS = 150;
+let disposed = false;
 
-onMounted(async () => {
-  if (!canvas.value) {
+const shouldAutoloadDefaultStep = () => {
+  const search = new URLSearchParams(window.location.search);
+  return search.get('autoload') !== '0';
+};
+
+const waitForCanvasLayout = async () => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (!canvas.value || disposed) {
+      return;
+    }
+
+    const rect = canvas.value.getBoundingClientRect();
+
+    if (canvas.value.isConnected && rect.width >= 1 && rect.height >= 1) {
+      return;
+    }
+
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  }
+};
+
+const initializeDefaultStep = async () => {
+  await nextTick();
+  await waitForCanvasLayout();
+  await new Promise((resolve) => window.setTimeout(resolve, INITIAL_LOAD_DELAY_MS));
+
+  if (!canvas.value || disposed) {
     return;
   }
 
   await loadStepFile(DEFAULT_STEP_URL);
-});
+};
 
 const loadStepFile = async (url: string) => {
-  if (!canvas.value) return;
+  if (!canvas.value || disposed) return;
 
   loading.value = true;
   error.value = null;
   timing.value = null;
 
   const t0 = performance.now();
+  let lastError: string | null = null;
 
   try {
-    dive.value?.dispose();
-    dive.value = markRaw(
-      await QuickView(url, { canvas: canvas.value }),
-    );
+    for (let attempt = 1; attempt <= STEP_LOAD_MAX_ATTEMPTS; attempt += 1) {
+      let timeoutId: number | undefined;
 
-    const elapsed = performance.now() - t0;
-    timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load STEP file';
+      try {
+        await dive.value?.dispose();
+        dive.value = null;
+
+        await waitForCanvasLayout();
+
+        if (!canvas.value || disposed) {
+          return;
+        }
+
+        const nextDive = await Promise.race([
+          QuickView(url, { canvas: canvas.value }),
+          new Promise<never>((_, reject) => {
+            timeoutId = window.setTimeout(() => {
+              reject(new Error(`STEP loading timed out after ${STEP_LOAD_TIMEOUT_MS / 1000}s`));
+            }, STEP_LOAD_TIMEOUT_MS);
+          }),
+        ]);
+
+        if (disposed) {
+          await nextDive.dispose();
+          return;
+        }
+
+        dive.value = markRaw(nextDive);
+
+        const elapsed = performance.now() - t0;
+        timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
+        error.value = null;
+        return;
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : 'Failed to load STEP file';
+
+        await dive.value?.dispose();
+        dive.value = null;
+
+        if (disposed || attempt === STEP_LOAD_MAX_ATTEMPTS) {
+          break;
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, STEP_LOAD_RETRY_DELAY_MS));
+      } finally {
+        if (timeoutId !== undefined) {
+          window.clearTimeout(timeoutId);
+        }
+      }
+    }
+
+    error.value = lastError ?? 'Failed to load STEP file';
   } finally {
     loading.value = false;
   }
 };
+
+onMounted(() => {
+  if (shouldAutoloadDefaultStep()) {
+    void initializeDefaultStep();
+  }
+});
 
 const setWireframe = (enabled: boolean) => {
   if (!dive.value) return;
@@ -77,6 +158,7 @@ defineProps<{
 }>();
 
 onUnmounted(() => {
+  disposed = true;
   void dive.value?.dispose();
   dive.value = null;
 });
@@ -109,8 +191,15 @@ onUnmounted(() => {
 .canvasWrapper {
   display: flex;
   height: 100%;
+  min-height: 100vh;
   width: 100%;
   position: relative;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .loading,

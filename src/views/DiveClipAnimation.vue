@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
 import type { AnimationSystem, ClipAnimator, TAnimatorLoopMode } from '@shopware-ag/dive/animation';
 
-const canvas: Ref<HTMLCanvasElement> = ref(document.createElement('canvas'));
+const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const fileInput: Ref<HTMLInputElement | null> = ref(null);
 const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
@@ -13,6 +13,7 @@ const showExportMenu = ref(false);
 let dive: QuickView | null = null;
 let animationSystem: AnimationSystem | null = null;
 let animator: ClipAnimator | null = null;
+let disposed = false;
 
 const exporter = new AssetExporter();
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
@@ -24,6 +25,8 @@ const isPlaying = ref(false);
 const isPaused = ref(false);
 
 async function loadModel(uri: string) {
+    if (!canvas.value || disposed) return;
+
     // dispose old dive and animation system
     await dive?.dispose();
     animationSystem?.dispose();
@@ -96,11 +99,16 @@ function onClickOutside(event: MouseEvent) {
 }
 
 onMounted(() => {
-    loadModel('Fox.glb');
+    void (async () => {
+        await nextTick();
+        await new Promise((resolve) => window.setTimeout(resolve, 50));
+        await loadModel('Fox.glb');
+    })();
     document.addEventListener('click', onClickOutside);
 });
 
 onUnmounted(async () => {
+    disposed = true;
     document.removeEventListener('click', onClickOutside);
     animationSystem?.dispose();
     await dive?.dispose();
@@ -203,13 +211,21 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
     position: relative;
     width: 100%;
     height: 100%;
+    min-height: 100vh;
 }
 
 .canvasWrapper {
     position: relative;
     display: flex;
     height: 100%;
+    min-height: 24rem;
     width: 100%;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 .file-input {

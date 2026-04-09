@@ -13,6 +13,8 @@ jobs:
         uses: actions/checkout@main
       - name: Setup Node.js
         uses: actions/setup-node@main
+        with:
+          node-version-file: .nvmrc
       - name: Search for cached node_modules
         uses: actions/cache@main
         id: yarn-cache
@@ -58,6 +60,8 @@ jobs:
         uses: actions/checkout@main
       - name: Setup Node.js
         uses: actions/setup-node@main
+        with:
+          node-version-file: .nvmrc
       - name: Load node-modules from cache
         uses: actions/cache@main
         id: yarn-cache
@@ -76,6 +80,8 @@ jobs:
         uses: actions/checkout@main
       - name: Setup Node.js
         uses: actions/setup-node@main
+        with:
+          node-version-file: .nvmrc
       - name: Load node-modules from cache
         uses: actions/cache@main
         id: yarn-cache
@@ -107,6 +113,8 @@ jobs:
         uses: actions/checkout@main
       - name: Setup Node.js
         uses: actions/setup-node@main
+        with:
+          node-version-file: .nvmrc
       - name: Load node-modules from cache
         uses: actions/cache@main
         id: yarn-cache

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { markRaw, onMounted, onUnmounted, ref, watch } from 'vue';
+import { markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
 
 type HDROption = {
@@ -25,6 +25,9 @@ const useAsBackground = ref(true);
 const rotationY = ref(0);
 
 let environmentRequestId = 0;
+let disposed = false;
+let backgroundUpdateTimer: number | null = null;
+let rotationUpdateTimer: number | null = null;
 
 const getEnvironment = () => dive.value?.mainView.renderer.environment;
 
@@ -52,36 +55,75 @@ const applyHDR = async (url: string) => {
 };
 
 watch(useAsBackground, (enabled) => {
-  getEnvironment()?.setUseAsBackground(enabled);
+  if (backgroundUpdateTimer !== null) {
+    window.clearTimeout(backgroundUpdateTimer);
+  }
+
+  backgroundUpdateTimer = window.setTimeout(() => {
+    if (disposed) {
+      return;
+    }
+
+    getEnvironment()?.setUseAsBackground(enabled);
+  }, 50);
 });
 
 watch(rotationY, (degrees) => {
   const radians = (degrees * Math.PI) / 180;
-  getEnvironment()?.setRotationY(radians);
+
+  if (rotationUpdateTimer !== null) {
+    window.clearTimeout(rotationUpdateTimer);
+  }
+
+  rotationUpdateTimer = window.setTimeout(() => {
+    if (disposed) {
+      return;
+    }
+
+    getEnvironment()?.setRotationY(radians);
+  }, 50);
 });
 
 watch(selectedHDR, async (url) => {
   await applyHDR(url);
 });
 
-onMounted(async () => {
-  if (!canvas.value) {
+const initializeDive = async () => {
+  await nextTick();
+  await new Promise((resolve) => window.setTimeout(resolve, 50));
+
+  if (!canvas.value || disposed) {
     return;
   }
 
-  dive.value = markRaw(
-    await QuickView('sofa_B.glb', {
-      canvas: canvas.value,
-      displayGrid: false,
-    }),
-  );
+  const quickView = await QuickView('sofa_B.glb', {
+    canvas: canvas.value,
+    displayGrid: false,
+  });
 
+  if (disposed) {
+    await quickView.dispose();
+    return;
+  }
+
+  dive.value = markRaw(quickView);
   getEnvironment()?.setUseAsBackground(useAsBackground.value);
   getEnvironment()?.setRotationY(0);
   await applyHDR(selectedHDR.value);
+};
+
+onMounted(() => {
+  void initializeDive();
 });
 
 onUnmounted(() => {
+  disposed = true;
+  if (backgroundUpdateTimer !== null) {
+    window.clearTimeout(backgroundUpdateTimer);
+  }
+  if (rotationUpdateTimer !== null) {
+    window.clearTimeout(rotationUpdateTimer);
+  }
   if (dive.value) {
     dive.value.dispose();
   }
@@ -92,11 +134,19 @@ onUnmounted(() => {
   <div class="canvasWrapper">
     <canvas ref="canvas"></canvas>
 
-    <div class="controlPanel controlPanel--top controlPanel--row">
+    <div class="controlPanel controlPanel--top controlPanel--row" data-testid="hdr-control-panel">
       <div class="controlPanel-group">
         <span class="controlPanel-label">HDR Preset</span>
-        <select v-model="selectedHDR" class="hdrSelect">
-          <option v-for="option in hdrOptions" :key="option.url" :value="option.url">
+        <select
+          v-model="selectedHDR"
+          class="hdrSelect"
+          aria-label="HDR Preset"
+          data-testid="hdr-select">
+          <option
+            v-for="option in hdrOptions"
+            :key="option.url"
+            :value="option.url"
+            data-testid="hdr-option">
             {{ option.label }}
           </option>
         </select>
@@ -105,21 +155,32 @@ onUnmounted(() => {
       <div class="controlPanel-group controlPanel-group--wide">
         <span class="controlPanel-label">Rotation Y</span>
         <div class="sliderRow">
-          <input v-model="rotationY" type="range" min="-180" max="180" step="1" />
-          <span class="sliderValue">{{ rotationY }}&deg;</span>
+          <input
+            v-model="rotationY"
+            type="range"
+            min="-180"
+            max="180"
+            step="1"
+            aria-label="Rotation Y"
+            data-testid="hdr-rotation" />
+          <span class="sliderValue" data-testid="hdr-slider-value">{{ rotationY }}&deg;</span>
         </div>
       </div>
 
       <div class="controlPanel-group">
         <span class="controlPanel-label">Background</span>
         <label class="checkbox-button">
-          <input v-model="useAsBackground" type="checkbox" />
+          <input
+            v-model="useAsBackground"
+            type="checkbox"
+            aria-label="Show HDR as background"
+            data-testid="hdr-background" />
           Show HDR as background
         </label>
       </div>
     </div>
 
-    <div class="infoBadge">
+    <div class="infoBadge" data-testid="hdr-info-badge">
       <span v-if="environmentError">{{ environmentError }}</span>
       <span v-else>{{ loadingEnvironment ? 'Loading HDR…' : 'HDR ready' }}</span>
       <span>{{ hdrOptions.find((option) => option.url === selectedHDR)?.label }}</span>

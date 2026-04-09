@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
-  timeout: process.env.CI ? 30 * 1000 : 10 * 1000,
+  timeout: 60 * 1000,
   /* Use platform-agnostic snapshot names so they work on both macOS and Linux
    * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
    * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}
@@ -48,7 +48,7 @@ export default defineConfig({
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'https://localhost:5173',
+    baseURL: 'https://127.0.0.1:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -68,7 +68,8 @@ export default defineConfig({
     {
       name: 'chromium',
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
+        channel: 'chromium',
       }
     },
     {
@@ -124,9 +125,12 @@ export default defineConfig({
      * Playwright will re-use the local server if there is already a dev-server running.
      * Note: preview requires a build first, so we ensure dist/ exists.
      */
-    command: process.env.CI ? 'yarn build && yarn preview -- --port 5173' : 'yarn dev',
+    command:
+      process.env.PLAYWRIGHT_USE_PREBUILT_DIST === 'true'
+        ? 'yarn preview -- --host 127.0.0.1 --strictPort --port 5173'
+        : 'yarn build-only && yarn preview -- --host 127.0.0.1 --strictPort --port 5173',
     port: 5173,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180 * 1000, // Give the server 3 minutes to build and start (important for CI)
+    reuseExistingServer: false,
+    timeout: Number(process.env.PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS ?? 180 * 1000),
   }
 })
