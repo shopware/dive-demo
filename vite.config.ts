@@ -4,7 +4,6 @@ import vue from '@vitejs/plugin-vue'
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { resolve } from 'path'; // Import resolve
 import fs from 'fs'; // Import fs
-import { createRequire } from 'module';
 import restart from 'vite-plugin-restart';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
@@ -31,8 +30,6 @@ export default defineConfig(() => {
   } else {
     console.log('@shopware-ag/dive is not linked or not found.');
   }
-  const require = createRequire(import.meta.url);
-  const monacoEditorPlugin = require('vite-plugin-monaco-editor').default;
 
   // Use a non-root base only when deploying to GitHub Pages.
   // DEPLOY_PAGES is set exclusively by the deploy-pages workflow;
@@ -48,9 +45,6 @@ export default defineConfig(() => {
     plugins: [
       nodePolyfills(),
       vue(),
-      monacoEditorPlugin({
-        languageWorkers: ['editorWorkerService', 'typescript', 'css', 'html', 'json'],
-      }),
       restart({
         restart: [
           '.yalc/**',
