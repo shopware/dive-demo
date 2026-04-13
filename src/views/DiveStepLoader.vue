@@ -25,6 +25,11 @@ const shouldAutoloadDefaultStep = () => {
   return search.get('autoload') !== '0';
 };
 
+const getRequestedStepUrl = () => {
+  const search = new URLSearchParams(window.location.search);
+  return search.get('url')?.trim() || null;
+};
+
 const waitForCanvasLayout = async () => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     if (!canvas.value || disposed) {
@@ -43,7 +48,7 @@ const waitForCanvasLayout = async () => {
   }
 };
 
-const initializeDefaultStep = async () => {
+const initializeStep = async (url: string) => {
   await nextTick();
   await waitForCanvasLayout();
   await new Promise((resolve) => window.setTimeout(resolve, INITIAL_LOAD_DELAY_MS));
@@ -52,7 +57,7 @@ const initializeDefaultStep = async () => {
     return;
   }
 
-  await loadStepFile(DEFAULT_STEP_URL);
+  await loadStepFile(url);
 };
 
 const loadStepFile = async (url: string) => {
@@ -124,8 +129,15 @@ const loadStepFile = async (url: string) => {
 };
 
 onMounted(() => {
+  const requestedStepUrl = getRequestedStepUrl();
+
+  if (requestedStepUrl) {
+    void initializeStep(requestedStepUrl);
+    return;
+  }
+
   if (shouldAutoloadDefaultStep()) {
-    void initializeDefaultStep();
+    void initializeStep(DEFAULT_STEP_URL);
   }
 });
 

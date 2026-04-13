@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, onUnmounted, nextTick, markRaw } from 'vue';
-import { DIVE } from '@shopware-ag/dive';
+import type { DIVE } from '@shopware-ag/dive';
 import { ARSystem } from '@shopware-ag/dive/ar';
 import { QuickView } from '@shopware-ag/dive/quickview';
 
@@ -80,7 +80,7 @@ defineProps<{
 <template>
   <div class="canvasWrapper">
     <canvas ref="canvasRef"></canvas>
-    <div class="controlPanel controlPanel--top controlPanel--row">
+    <div class="controlPanel controlPanel--top controlPanel--row" data-testid="ar-control-panel">
       <div class="controlPanel-group">
         <span class="controlPanel-label">Placement</span>
         <div ref="placementWrapper" class="export-wrapper">
@@ -105,7 +105,7 @@ defineProps<{
         </div>
       </div>
     </div>
-    <button class="ar-launch" @click="launchAR">AR</button>
+    <button class="ar-launch" data-testid="ar-launch" @click="launchAR">AR</button>
   </div>
 </template>
 

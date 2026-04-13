@@ -12,6 +12,26 @@ const dive: Ref<QuickViewType | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
 let disposed = false;
 
+const waitForCanvasLayout = async (canvas: HTMLCanvasElement) => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (disposed || !canvas.isConnected) {
+      return false;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+
+    if (rect.width >= 1 && rect.height >= 1) {
+      return true;
+    }
+
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  }
+
+  return false;
+};
+
 const initializeDive = async () => {
   await nextTick();
   await new Promise((resolve) => window.setTimeout(resolve, 50));
@@ -51,6 +71,16 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement, index: number) => {
   // Let Vue commit the new active-state UI before the renderer swaps canvases.
   await nextTick();
 
+  const hasLayout = await waitForCanvasLayout(canvas);
+
+  if (!hasLayout || disposed || !dive.value) {
+    return;
+  }
+
+  // Give the browser one more frame to present the new panel state before
+  // moving the heavy renderer work onto the new canvas.
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
   // replace canvas in main view
   dive.value.mainView.setCanvas(canvas);
 
@@ -64,7 +94,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="page">
+  <div class="page" data-testid="switch-canvas-page" :data-active-canvas="String(activeCanvas)">
     <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]"
       :min-size="10" orientation="horizontal">
       <template #panel-0>

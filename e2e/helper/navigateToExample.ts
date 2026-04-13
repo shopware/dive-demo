@@ -11,22 +11,11 @@ type NavigateToExampleOptions = {
 };
 
 async function waitForAnimationFrames(page: Page, frames = 2): Promise<void> {
-    await page.evaluate((frameCount) =>
-        new Promise<void>((resolve) => {
-            let remaining = frameCount;
-
-            const tick = () => {
-                if (remaining <= 0) {
-                    resolve();
-                    return;
-                }
-
-                remaining -= 1;
-                requestAnimationFrame(tick);
-            };
-
-            requestAnimationFrame(tick);
-        }), frames);
+    // Some CI runs keep the page's main thread busy long enough that a
+    // page.evaluate(requestAnimationFrame(...)) roundtrip never resolves
+    // before the test timeout. A short Node-side delay gives the demo a
+    // chance to settle without depending on page responsiveness.
+    await page.waitForTimeout(Math.max(frames, 1) * 16);
 }
 
 async function waitForRenderedCanvas(
@@ -111,5 +100,7 @@ export async function navigateToExample(
         await waitForRenderedCanvas(canvas, timeoutMs);
     }
 
-    await waitForAnimationFrames(page, 2);
+    if (waitForCanvasVisible || shouldWaitForRenderedCanvas) {
+        await waitForAnimationFrames(page, 2);
+    }
 }

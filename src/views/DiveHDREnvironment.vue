@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
 
 type HDROption = {
@@ -23,6 +23,9 @@ const hdrOptions: HDROption[] = [
 const selectedHDR = ref<string>(hdrOptions[0].url);
 const useAsBackground = ref(true);
 const rotationY = ref(0);
+const selectedHDRLabel = computed(
+  () => hdrOptions.find((option) => option.url === selectedHDR.value)?.label ?? hdrOptions[0].label,
+);
 
 let environmentRequestId = 0;
 let disposed = false;
@@ -137,16 +140,8 @@ onUnmounted(() => {
     <div class="controlPanel controlPanel--top controlPanel--row" data-testid="hdr-control-panel">
       <div class="controlPanel-group">
         <span class="controlPanel-label">HDR Preset</span>
-        <select
-          v-model="selectedHDR"
-          class="hdrSelect"
-          aria-label="HDR Preset"
-          data-testid="hdr-select">
-          <option
-            v-for="option in hdrOptions"
-            :key="option.url"
-            :value="option.url"
-            data-testid="hdr-option">
+        <select v-model="selectedHDR" class="hdrSelect" aria-label="HDR Preset" data-testid="hdr-select">
+          <option v-for="option in hdrOptions" :key="option.url" :value="option.url" data-testid="hdr-option">
             {{ option.label }}
           </option>
         </select>
@@ -155,13 +150,7 @@ onUnmounted(() => {
       <div class="controlPanel-group controlPanel-group--wide">
         <span class="controlPanel-label">Rotation Y</span>
         <div class="sliderRow">
-          <input
-            v-model="rotationY"
-            type="range"
-            min="-180"
-            max="180"
-            step="1"
-            aria-label="Rotation Y"
+          <input v-model="rotationY" type="range" min="-180" max="180" step="1" aria-label="Rotation Y"
             data-testid="hdr-rotation" />
           <span class="sliderValue" data-testid="hdr-slider-value">{{ rotationY }}&deg;</span>
         </div>
@@ -170,10 +159,7 @@ onUnmounted(() => {
       <div class="controlPanel-group">
         <span class="controlPanel-label">Background</span>
         <label class="checkbox-button">
-          <input
-            v-model="useAsBackground"
-            type="checkbox"
-            aria-label="Show HDR as background"
+          <input v-model="useAsBackground" type="checkbox" aria-label="Show HDR as background"
             data-testid="hdr-background" />
           Show HDR as background
         </label>
@@ -181,9 +167,9 @@ onUnmounted(() => {
     </div>
 
     <div class="infoBadge" data-testid="hdr-info-badge">
-      <span v-if="environmentError">{{ environmentError }}</span>
-      <span v-else>{{ loadingEnvironment ? 'Loading HDR…' : 'HDR ready' }}</span>
-      <span>{{ hdrOptions.find((option) => option.url === selectedHDR)?.label }}</span>
+      <span>{{ selectedHDRLabel }}</span>
+      <span v-if="loadingEnvironment">Loading HDR…</span>
+      <span v-else-if="environmentError">{{ environmentError }}</span>
     </div>
   </div>
 </template>

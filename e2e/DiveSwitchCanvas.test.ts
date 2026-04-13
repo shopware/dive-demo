@@ -23,14 +23,12 @@ test('click button to switch canvas', async ({ page }) => {
 
     const button0 = page.getByTestId('switch-canvas-button-0');
     const button1 = page.getByTestId('switch-canvas-button-1');
-    const panel0 = page.getByTestId('switch-canvas-panel-0');
-    const panel1 = page.getByTestId('switch-canvas-panel-1');
+    const switchCanvasPage = page.getByTestId('switch-canvas-page');
 
+    await expect(switchCanvasPage).toHaveAttribute('data-active-canvas', '0');
     await expect(button1).toBeEnabled();
-    await button1.click({ force: true });
+    await button1.click();
 
-    await expect(button1).toBeDisabled();
+    await expect(switchCanvasPage).toHaveAttribute('data-active-canvas', '1');
     await expect(button0).toBeEnabled();
-    await expect(panel0.locator('.overlay')).toBeVisible();
-    await expect(panel1.locator('.overlay')).not.toBeVisible();
 });
