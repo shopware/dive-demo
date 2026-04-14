@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import type { AnimationSystem, TargetAnimator } from '@shopware-ag/dive/animation';
 import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
+import { waitForCanvasLayout } from '@/utils/waitForCanvasLayout';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 
@@ -45,9 +46,14 @@ const presets = [
 
 const initializeDive = async () => {
     await nextTick();
-    await new Promise((resolve) => window.setTimeout(resolve, 50));
 
     if (!canvas.value || disposed) return;
+
+    const hasLayout = await waitForCanvasLayout(canvas.value, () => disposed);
+
+    if (!hasLayout || disposed) {
+        return;
+    }
 
     const quickView = await QuickView('sofa_B.glb', { canvas: canvas.value });
 

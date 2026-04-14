@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { waitForCanvasLayout } from '@/utils/waitForCanvasLayout';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
@@ -12,31 +13,16 @@ const dive: Ref<QuickViewType | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
 let disposed = false;
 
-const waitForCanvasLayout = async (canvas: HTMLCanvasElement) => {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    if (disposed || !canvas.isConnected) {
-      return false;
-    }
-
-    const rect = canvas.getBoundingClientRect();
-
-    if (rect.width >= 1 && rect.height >= 1) {
-      return true;
-    }
-
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
-  }
-
-  return false;
-};
-
 const initializeDive = async () => {
   await nextTick();
-  await new Promise((resolve) => window.setTimeout(resolve, 50));
 
   if (!canvas0.value || !canvas1.value || !canvas2.value || disposed) {
+    return;
+  }
+
+  const hasLayout = await waitForCanvasLayout(canvas0.value, () => disposed);
+
+  if (!hasLayout || disposed) {
     return;
   }
 
@@ -71,7 +57,7 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement, index: number) => {
   // Let Vue commit the new active-state UI before the renderer swaps canvases.
   await nextTick();
 
-  const hasLayout = await waitForCanvasLayout(canvas);
+  const hasLayout = await waitForCanvasLayout(canvas, () => disposed);
 
   if (!hasLayout || disposed || !dive.value) {
     return;
