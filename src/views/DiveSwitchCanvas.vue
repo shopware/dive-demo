@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
-import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import type { QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { createStableQuickView } from '@/utils/createStableQuickView';
 import { waitForCanvasLayout } from '@/utils/waitForCanvasLayout';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
@@ -12,28 +13,39 @@ const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
 const dive: Ref<QuickViewType | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
 let disposed = false;
+const initAbortController = new AbortController();
 
 const initializeDive = async () => {
-  await nextTick();
+  try {
+    await nextTick();
 
-  if (!canvas0.value || !canvas1.value || !canvas2.value || disposed) {
-    return;
+    if (!canvas0.value || !canvas1.value || !canvas2.value || disposed) {
+      return;
+    }
+
+    const hasLayout = await waitForCanvasLayout(canvas0.value, () => disposed);
+
+    if (!hasLayout || disposed) {
+      return;
+    }
+
+    const quickView = await createStableQuickView(
+      'sofa_B.glb',
+      { canvas: canvas0.value },
+      { signal: initAbortController.signal },
+    );
+
+    if (disposed) {
+      await quickView.dispose();
+      return;
+    }
+
+    dive.value = markRaw(quickView);
+  } catch (error) {
+    if (!disposed) {
+      console.error('Failed to initialize DiveSwitchCanvas', error);
+    }
   }
-
-  const hasLayout = await waitForCanvasLayout(canvas0.value, () => disposed);
-
-  if (!hasLayout || disposed) {
-    return;
-  }
-
-  const quickView = await QuickView('sofa_B.glb', { canvas: canvas0.value });
-
-  if (disposed) {
-    await quickView.dispose();
-    return;
-  }
-
-  dive.value = markRaw(quickView);
 };
 
 onMounted(() => {
@@ -42,6 +54,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   disposed = true;
+  initAbortController.abort();
   void dive.value?.dispose();
   dive.value = null;
 });

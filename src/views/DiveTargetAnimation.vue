@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
-import { QuickView } from '@shopware-ag/dive/quickview';
+import type { QuickView } from '@shopware-ag/dive/quickview';
 import type { AnimationSystem, TargetAnimator } from '@shopware-ag/dive/animation';
 import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
+import { createStableQuickView } from '@/utils/createStableQuickView';
 import { waitForCanvasLayout } from '@/utils/waitForCanvasLayout';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
@@ -13,6 +14,7 @@ let animationSystem: AnimationSystem | null = null;
 let animator: TargetAnimator | null = null;
 let disposed = false;
 const controlsReady = ref(false);
+const initAbortController = new AbortController();
 
 const activePreset: Ref<number> = ref(0);
 
@@ -45,36 +47,46 @@ const presets = [
 ];
 
 const initializeDive = async () => {
-    await nextTick();
+    try {
+        await nextTick();
 
-    if (!canvas.value || disposed) return;
+        if (!canvas.value || disposed) return;
 
-    const hasLayout = await waitForCanvasLayout(canvas.value, () => disposed);
+        const hasLayout = await waitForCanvasLayout(canvas.value, () => disposed);
 
-    if (!hasLayout || disposed) {
-        return;
+        if (!hasLayout || disposed) {
+            return;
+        }
+
+        const quickView = await createStableQuickView(
+            'sofa_B.glb',
+            { canvas: canvas.value },
+            { signal: initAbortController.signal },
+        );
+
+        if (disposed) {
+            await quickView.dispose();
+            return;
+        }
+
+        dive = markRaw(quickView);
+        orbitController = dive.orbitController;
+
+        // set up animation system
+        const { AnimationSystem } = await import('@shopware-ag/dive/animation');
+        animationSystem = new AnimationSystem();
+        dive.clock.addTicker(animationSystem);
+
+        // set initial position and target
+        presets[0].position = orbitController.object.position.clone();
+        presets[0].target = orbitController.target.clone();
+        activePreset.value = 0;
+        controlsReady.value = true;
+    } catch (error) {
+        if (!disposed) {
+            console.error('Failed to initialize DiveTargetAnimation', error);
+        }
     }
-
-    const quickView = await QuickView('sofa_B.glb', { canvas: canvas.value });
-
-    if (disposed) {
-        await quickView.dispose();
-        return;
-    }
-
-    dive = markRaw(quickView);
-    orbitController = dive.orbitController;
-
-    // set up animation system
-    const { AnimationSystem } = await import('@shopware-ag/dive/animation');
-    animationSystem = new AnimationSystem();
-    dive.clock.addTicker(animationSystem);
-
-    // set initial position and target
-    presets[0].position = orbitController.object.position.clone();
-    presets[0].target = orbitController.target.clone();
-    activePreset.value = 0;
-    controlsReady.value = true;
 };
 
 onMounted(() => {
@@ -83,6 +95,7 @@ onMounted(() => {
 
 onUnmounted(async () => {
     disposed = true;
+    initAbortController.abort();
     controlsReady.value = false;
     animationSystem?.dispose();
     await dive?.dispose();
