@@ -117,6 +117,9 @@ jobs:
           # and system packages can't be cached between jobs. This is minimal overhead.
           sudo apt-get --yes remove --purge man-db
           yarn playwright install-deps chromium firefox webkit
+      - name: Log installed DIVE version
+        run: |
+          node -e "const fs = require('fs'); const demoPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8')); const divePkg = JSON.parse(fs.readFileSync('./node_modules/@shopware-ag/dive/package.json', 'utf8')); console.log('Requested @shopware-ag/dive:', demoPkg.dependencies['@shopware-ag/dive']); console.log('Installed @shopware-ag/dive version:', divePkg.version);"
       - name: Run playwright tests
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
