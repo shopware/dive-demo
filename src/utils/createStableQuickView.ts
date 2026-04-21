@@ -1,10 +1,11 @@
 import { DIVE, DIVEModel, type DIVESettings } from '@shopware-ag/dive';
 import { AssetCache } from '@shopware-ag/dive/assetcache';
+import { AssetLoader } from '@shopware-ag/dive/assetloader';
 import { OrbitController } from '@shopware-ag/dive/orbitcontroller';
 import type { QuickView } from '@shopware-ag/dive/quickview';
 
-const MODEL_LOAD_TIMEOUT_MS = 15000;
-const MODEL_LOAD_MAX_ATTEMPTS = 3;
+const MODEL_LOAD_TIMEOUT_MS = 10000;
+const MODEL_LOAD_MAX_ATTEMPTS = 2;
 const MODEL_LOAD_RETRY_DELAY_MS = 250;
 
 type CreateStableQuickViewOptions = {
@@ -111,12 +112,15 @@ const loadModelWithRetry = async (
         const model = new DIVEModel();
 
         try {
-            await withTimeout(
-                model.setFromURL(uri),
+            const assetLoader = new AssetLoader();
+            const object3D = await withTimeout(
+                assetLoader.load(uri),
                 options.modelLoadTimeoutMs,
                 `Loading ${uri}`,
                 options.signal,
             );
+
+            model.setFromGLTF(object3D);
             return model;
         } catch (error) {
             lastError = error instanceof Error ? error : new Error(String(error));

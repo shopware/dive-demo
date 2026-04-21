@@ -13,7 +13,10 @@ LOCK_HASH="$(shasum -a 256 "${ROOT_DIR}/yarn.lock" | awk '{ print $1 }')"
 CACHE_ROOT="${CACHE_ROOT:-${TMPDIR:-/tmp}/dive-demo-gh-local-cache}"
 KEEP_JOB_DIRS="${KEEP_JOB_DIRS:-0}"
 CLEAN_LOCAL_GH_CACHE="${CLEAN_LOCAL_GH_CACHE:-0}"
-WEB_SERVER_TIMEOUT_MS="${PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS:-180000}"
+# Use a roomier local default so the GH-like Docker repro reaches the flaky test
+# path instead of failing earlier on slower local hosts. Override with
+# PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS=180000 for strict GH timeout parity.
+WEB_SERVER_TIMEOUT_MS="${PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS:-600000}"
 
 NODE_MODULES_CACHE_DIR="${CACHE_ROOT}/node-modules-${RUNNER_OS}-${LOCK_HASH}"
 PLAYWRIGHT_CACHE_DIR="${CACHE_ROOT}/playwright-browsers-${RUNNER_OS}-${LOCK_HASH}"

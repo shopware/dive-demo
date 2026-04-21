@@ -9,6 +9,8 @@ const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
 const canvas2 = ref<HTMLCanvasElement | null>(null);
 const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
+const INITIALIZATION_MAX_ATTEMPTS = 2;
+const INITIALIZATION_RETRY_DELAY_MS = 250;
 
 const dive: Ref<QuickViewType | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
@@ -16,35 +18,56 @@ let disposed = false;
 const initAbortController = new AbortController();
 
 const initializeDive = async () => {
-  try {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= INITIALIZATION_MAX_ATTEMPTS; attempt += 1) {
     await nextTick();
 
-    if (!canvas0.value || !canvas1.value || !canvas2.value || disposed) {
+    if (disposed || initAbortController.signal.aborted) {
       return;
     }
 
-    const hasLayout = await waitForCanvasLayout(canvas0.value, () => disposed);
+    const hasLayout = await waitForCanvasLayout(() => canvas0.value, () => disposed);
 
     if (!hasLayout || disposed) {
-      return;
+      lastError = new Error('Initial switch-canvas layout did not stabilize');
+    } else {
+      const initialCanvas = canvas0.value;
+
+      if (!initialCanvas) {
+        lastError = new Error('Initial switch-canvas canvas ref is missing');
+      } else {
+        try {
+          const quickView = await createStableQuickView(
+            'sofa_B.glb',
+            { canvas: initialCanvas },
+            { signal: initAbortController.signal },
+          );
+
+          if (disposed) {
+            await quickView.dispose();
+            return;
+          }
+
+          dive.value = markRaw(quickView);
+          return;
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+        }
+      }
     }
 
-    const quickView = await createStableQuickView(
-      'sofa_B.glb',
-      { canvas: canvas0.value },
-      { signal: initAbortController.signal },
+    if (disposed || initAbortController.signal.aborted || attempt === INITIALIZATION_MAX_ATTEMPTS) {
+      break;
+    }
+
+    await new Promise<void>((resolve) =>
+      window.setTimeout(resolve, INITIALIZATION_RETRY_DELAY_MS * attempt),
     );
+  }
 
-    if (disposed) {
-      await quickView.dispose();
-      return;
-    }
-
-    dive.value = markRaw(quickView);
-  } catch (error) {
-    if (!disposed) {
-      console.error('Failed to initialize DiveSwitchCanvas', error);
-    }
+  if (!disposed && lastError) {
+    console.error('Failed to initialize DiveSwitchCanvas', lastError);
   }
 };
 
@@ -59,8 +82,8 @@ onUnmounted(() => {
   dive.value = null;
 });
 
-const switchCanvasTo = async (canvas: HTMLCanvasElement, index: number) => {
-  if (!dive.value) {
+const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) => {
+  if (!canvas || !dive.value) {
     return;
   }
 
@@ -102,7 +125,7 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas ref="canvas0" data-testid="switch-canvas-0"></canvas>
-          <button :disabled="!dive || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value!, 0)"
+          <button :disabled="!dive || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)"
             data-testid="switch-canvas-button-0">Use this</button>
         </div>
       </template>
@@ -112,7 +135,7 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas ref="canvas1" data-testid="switch-canvas-1"></canvas>
-          <button :disabled="!dive || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value!, 1)"
+          <button :disabled="!dive || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)"
             data-testid="switch-canvas-button-1">Use this</button>
         </div>
       </template>
@@ -122,7 +145,7 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas ref="canvas2" data-testid="switch-canvas-2"></canvas>
-          <button :disabled="!dive || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value!, 2)"
+          <button :disabled="!dive || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)"
             data-testid="switch-canvas-button-2">Use this</button>
         </div>
       </template>

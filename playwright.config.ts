@@ -1,6 +1,8 @@
 import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
 
+const defaultWebServerTimeoutMs = process.env.CI ? 180 * 1000 : 600 * 1000
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -131,6 +133,6 @@ export default defineConfig({
         : 'yarn build-only && yarn preview -- --host 127.0.0.1 --strictPort --port 5173',
     port: 5173,
     reuseExistingServer: false,
-    timeout: Number(process.env.PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS ?? 180 * 1000),
+    timeout: Number(process.env.PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS ?? defaultWebServerTimeoutMs),
   }
 })

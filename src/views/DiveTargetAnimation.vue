@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import type { QuickView } from '@shopware-ag/dive/quickview';
-import type { AnimationSystem, TargetAnimator } from '@shopware-ag/dive/animation';
+import { AnimationSystem, type TargetAnimator } from '@shopware-ag/dive/animation';
 import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
 import { createStableQuickView } from '@/utils/createStableQuickView';
 import { waitForCanvasLayout } from '@/utils/waitForCanvasLayout';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
+const INITIALIZATION_MAX_ATTEMPTS = 2;
+const INITIALIZATION_RETRY_DELAY_MS = 250;
 
 let dive: QuickView | null = null;
 let orbitController: OrbitController | null = null;
@@ -47,45 +49,65 @@ const presets = [
 ];
 
 const initializeDive = async () => {
-    try {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= INITIALIZATION_MAX_ATTEMPTS; attempt += 1) {
         await nextTick();
 
-        if (!canvas.value || disposed) return;
+        if (disposed || initAbortController.signal.aborted) {
+            return;
+        }
 
-        const hasLayout = await waitForCanvasLayout(canvas.value, () => disposed);
+        const hasLayout = await waitForCanvasLayout(() => canvas.value, () => disposed);
 
         if (!hasLayout || disposed) {
-            return;
+            lastError = new Error('Target-animation canvas layout did not stabilize');
+        } else {
+            const initialCanvas = canvas.value;
+
+            if (!initialCanvas) {
+                lastError = new Error('Target-animation canvas ref is missing');
+            } else {
+                try {
+                    const quickView = await createStableQuickView(
+                        'sofa_B.glb',
+                        { canvas: initialCanvas },
+                        { signal: initAbortController.signal },
+                    );
+
+                    if (disposed) {
+                        await quickView.dispose();
+                        return;
+                    }
+
+                    dive = markRaw(quickView);
+                    orbitController = dive.orbitController;
+                    animationSystem = new AnimationSystem();
+                    dive.clock.addTicker(animationSystem);
+
+                    // set initial position and target
+                    presets[0].position = orbitController.object.position.clone();
+                    presets[0].target = orbitController.target.clone();
+                    activePreset.value = 0;
+                    controlsReady.value = true;
+                    return;
+                } catch (error) {
+                    lastError = error instanceof Error ? error : new Error(String(error));
+                }
+            }
         }
 
-        const quickView = await createStableQuickView(
-            'sofa_B.glb',
-            { canvas: canvas.value },
-            { signal: initAbortController.signal },
+        if (disposed || initAbortController.signal.aborted || attempt === INITIALIZATION_MAX_ATTEMPTS) {
+            break;
+        }
+
+        await new Promise<void>((resolve) =>
+            window.setTimeout(resolve, INITIALIZATION_RETRY_DELAY_MS * attempt),
         );
+    }
 
-        if (disposed) {
-            await quickView.dispose();
-            return;
-        }
-
-        dive = markRaw(quickView);
-        orbitController = dive.orbitController;
-
-        // set up animation system
-        const { AnimationSystem } = await import('@shopware-ag/dive/animation');
-        animationSystem = new AnimationSystem();
-        dive.clock.addTicker(animationSystem);
-
-        // set initial position and target
-        presets[0].position = orbitController.object.position.clone();
-        presets[0].target = orbitController.target.clone();
-        activePreset.value = 0;
-        controlsReady.value = true;
-    } catch (error) {
-        if (!disposed) {
-            console.error('Failed to initialize DiveTargetAnimation', error);
-        }
+    if (!disposed && lastError) {
+        console.error('Failed to initialize DiveTargetAnimation', lastError);
     }
 };
 
