@@ -151,7 +151,7 @@ export const createStableQuickView = async (
 
     throwIfAborted(resolvedOptions.signal);
 
-    const dive = new DIVE(settings);
+    const dive = new DIVE({ ...settings, autoStart: false });
     dive.mainView.camera.position.set(0, 1, 2);
 
     const orbitController = new OrbitController(
@@ -170,17 +170,21 @@ export const createStableQuickView = async (
         orbitController.focusObject(model);
 
         const quickView = Object.assign(dive, { orbitController, model });
-        const originalDispose = dive.dispose.bind(dive);
+        const originalDispose = dive.disposeAsync.bind(dive);
 
-        quickView.dispose = async () => {
+        quickView.disposeAsync = async () => {
             orbitController.dispose();
             await originalDispose();
         };
 
+        if (settings?.autoStart ?? true) {
+            await dive.startAsync();
+        }
+
         return quickView;
     } catch (error) {
         orbitController.dispose();
-        await dive.dispose();
+        await dive.disposeAsync();
         throw error;
     }
 };

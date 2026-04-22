@@ -105,7 +105,7 @@ const initializeDive = async () => {
   });
 
   if (disposed) {
-    await quickView.dispose();
+    await quickView.disposeAsync();
     return;
   }
 
@@ -128,7 +128,7 @@ onUnmounted(() => {
     window.clearTimeout(rotationUpdateTimer);
   }
   if (dive.value) {
-    dive.value.dispose();
+    dive.value.disposeAsync();
   }
 });
 </script>

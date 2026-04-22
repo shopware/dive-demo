@@ -45,7 +45,7 @@ const initializeDive = async () => {
           );
 
           if (disposed) {
-            await quickView.dispose();
+            await quickView.disposeAsync();
             return;
           }
 
@@ -78,7 +78,7 @@ onMounted(() => {
 onUnmounted(() => {
   disposed = true;
   initAbortController.abort();
-  void dive.value?.dispose();
+  void dive.value?.disposeAsync();
   dive.value = null;
 });
 

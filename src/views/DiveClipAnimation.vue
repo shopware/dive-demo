@@ -28,7 +28,7 @@ async function loadModel(uri: string) {
     if (!canvas.value || disposed) return;
 
     // dispose old dive and animation system
-    await dive?.dispose();
+    await dive?.disposeAsync();
     animationSystem?.dispose();
 
     // reset UI
@@ -111,7 +111,7 @@ onUnmounted(async () => {
     disposed = true;
     document.removeEventListener('click', onClickOutside);
     animationSystem?.dispose();
-    await dive?.dispose();
+    await dive?.disposeAsync();
 });
 
 const playClip = (name: string) => {

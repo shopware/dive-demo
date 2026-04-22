@@ -55,7 +55,7 @@ onUnmounted(() => {
     window.removeEventListener('keydown', onKeyDown);
     toolbox?.dispose();
     toolbox = null;
-    void dive.value?.dispose();
+    void dive.value?.disposeAsync();
     dive.value = null;
 });
 

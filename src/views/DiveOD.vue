@@ -19,7 +19,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  void dive.value?.dispose();
+  void dive.value?.disposeAsync();
   dive.value = null;
 });
 

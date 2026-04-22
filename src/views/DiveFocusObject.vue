@@ -29,7 +29,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-    void dive.value?.dispose();
+    void dive.value?.disposeAsync();
     dive.value = null;
 });
 
@@ -156,5 +156,4 @@ defineProps<{
     font-variant-numeric: tabular-nums;
     text-align: right;
 }
-
 </style>

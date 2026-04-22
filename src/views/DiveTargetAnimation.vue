@@ -76,7 +76,7 @@ const initializeDive = async () => {
                     );
 
                     if (disposed) {
-                        await quickView.dispose();
+                        await quickView.disposeAsync();
                         return;
                     }
 
@@ -120,7 +120,7 @@ onUnmounted(async () => {
     initAbortController.abort();
     controlsReady.value = false;
     animationSystem?.dispose();
-    await dive?.dispose();
+    await dive?.disposeAsync();
 });
 
 const goToPreset = async (index: number) => {
@@ -161,9 +161,7 @@ const setActivePreset = async (index: number) => {
                 <span class="controlPanel-label">Camera</span>
                 <div class="controlPanel-buttons controlPanel-buttons--center">
                     <button v-for="(preset, i) in presets" :key="i" :class="{ active: activePreset === i }"
-                        data-testid="target-animation-preset"
-                        :disabled="!controlsReady"
-                        @click="setActivePreset(i)">
+                        data-testid="target-animation-preset" :disabled="!controlsReady" @click="setActivePreset(i)">
                         {{ preset.label }}
                     </button>
                 </div>

@@ -17,7 +17,7 @@ const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 async function loadModel(uri: string) {
   if (!canvas.value) return;
 
-  await quickView?.dispose();
+  await quickView?.disposeAsync();
 
   quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
 }
@@ -59,7 +59,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', onClickOutside);
   if (quickView) {
-    quickView.dispose();
+    quickView.disposeAsync();
   }
 });
 

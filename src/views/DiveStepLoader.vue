@@ -75,7 +75,7 @@ const loadStepFile = async (url: string) => {
       let timeoutId: number | undefined;
 
       try {
-        await dive.value?.dispose();
+        await dive.value?.disposeAsync();
         dive.value = null;
 
         await waitForCanvasLayout();
@@ -94,7 +94,7 @@ const loadStepFile = async (url: string) => {
         ]);
 
         if (disposed) {
-          await nextDive.dispose();
+          await nextDive.disposeAsync();
           return;
         }
 
@@ -107,7 +107,7 @@ const loadStepFile = async (url: string) => {
       } catch (e) {
         lastError = e instanceof Error ? e.message : 'Failed to load STEP file';
 
-        await dive.value?.dispose();
+        await dive.value?.disposeAsync();
         dive.value = null;
 
         if (disposed || attempt === STEP_LOAD_MAX_ATTEMPTS) {
@@ -171,7 +171,7 @@ defineProps<{
 
 onUnmounted(() => {
   disposed = true;
-  void dive.value?.dispose();
+  void dive.value?.disposeAsync();
   dive.value = null;
 });
 </script>

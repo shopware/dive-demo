@@ -28,7 +28,7 @@ async function initializeDive() {
 
   const quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
   if (disposed) {
-    await quickView.dispose();
+    await quickView.disposeAsync();
     return;
   }
 
@@ -45,7 +45,7 @@ onUnmounted(() => {
   disposed = true;
   document.removeEventListener('click', onClickOutside);
   if (!dive) return;
-  dive.dispose();
+  dive.disposeAsync();
 });
 
 function onClickOutside(event: MouseEvent) {
