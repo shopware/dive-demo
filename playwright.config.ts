@@ -15,7 +15,7 @@ const defaultWebServerTimeoutMs = process.env.CI ? 180 * 1000 : 600 * 1000
 export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
-  timeout: 60 * 1000,
+  timeout: 30 * 1000,
   /* Use platform-agnostic snapshot names so they work on both macOS and Linux
    * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
    * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}
@@ -26,7 +26,7 @@ export default defineConfig({
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: 60000, // Increased for 3D canvas screenshot stability checks
+    timeout: 30 * 1000,
     /**
      * Threshold for visual comparisons:
      * - threshold: Perceived color difference per pixel (0-1, default 0.2)
@@ -41,7 +41,7 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 4 : 2,
+  retries: process.env.CI ? 0 : 2,
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
