@@ -6,7 +6,16 @@ import { Toolbox } from '@shopware-ag/dive/toolbox';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 const dive: Ref<QuickView | null> = ref(null);
+const ready = ref(false);
 let toolbox: Toolbox | null = null;
+
+const waitForPresentationFrames = async (frames = 2) => {
+    for (let index = 0; index < frames; index += 1) {
+        await new Promise<void>((resolve) => {
+            window.requestAnimationFrame(() => resolve());
+        });
+    }
+};
 
 const onKeyDown = (event: KeyboardEvent) => {
     const transformTool = toolbox?.getTool('transform');
@@ -26,6 +35,7 @@ const onKeyDown = (event: KeyboardEvent) => {
 };
 
 onMounted(async () => {
+    ready.value = false;
     if (!canvas.value) {
         return;
     }
@@ -49,9 +59,13 @@ onMounted(async () => {
             child.add(bb);
         }
     });
+
+    await waitForPresentationFrames();
+    ready.value = true;
 })
 
 onUnmounted(() => {
+    ready.value = false;
     window.removeEventListener('keydown', onKeyDown);
     toolbox?.dispose();
     toolbox = null;
@@ -73,7 +87,7 @@ defineProps<{
 </script>
 
 <template>
-    <div class="canvasWrapper">
+    <div class="canvasWrapper" data-testid="place-on-floor-page" :data-ready="ready ? 'true' : 'false'">
         <canvas ref="canvas"></canvas>
         <button @click="placeOnFloor">Place on floor</button>
     </div>

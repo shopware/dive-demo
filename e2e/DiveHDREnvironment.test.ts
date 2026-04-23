@@ -23,6 +23,7 @@ test.describe('HDR environment demo', () => {
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
+            readySelector: '[data-testid="hdr-environment-page"]',
         });
         await waitForHDRControls(page);
 
@@ -38,6 +39,7 @@ test.describe('HDR environment demo', () => {
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
+            readySelector: '[data-testid="hdr-environment-page"]',
         });
         await waitForHDRControls(page);
 
@@ -66,6 +68,7 @@ test.describe('HDR environment demo', () => {
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
+            readySelector: '[data-testid="hdr-environment-page"]',
         });
         await waitForHDRControls(page);
 
@@ -83,6 +86,7 @@ test.describe('HDR environment demo', () => {
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
+            readySelector: '[data-testid="hdr-environment-page"]',
         });
         await waitForHDRControls(page);
 

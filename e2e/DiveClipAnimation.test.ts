@@ -4,7 +4,9 @@ import { navigateToExample } from './helper/navigateToExample';
 
 test('shows model with animation controls', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     const controlPanel = page.locator('.controlPanel:not(.controlPanel--top)');
     await expect(controlPanel).toBeVisible({ timeout: 30000 });
@@ -21,7 +23,9 @@ test('shows model with animation controls', async ({ page }) => {
 
 test('clip buttons appear after model loads', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     const clipsLabel = page.locator('.controlPanel-label', { hasText: 'Clips' });
     await expect(clipsLabel).toBeVisible();
@@ -35,7 +39,9 @@ test('clip buttons appear after model loads', async ({ page }) => {
 
 test('play/pause and stop controls work', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     const playPauseButton = page.locator('.controlPanel-buttons--center button').first();
     const stopButton = page.locator('.controlPanel-buttons--center button').nth(1);
@@ -56,7 +62,9 @@ test('play/pause and stop controls work', async ({ page }) => {
 
 test('loop mode buttons work', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     const loopLabel = page.locator('.controlPanel-label', { hasText: 'Loop' });
     await expect(loopLabel).toBeVisible();
@@ -81,7 +89,9 @@ test('loop mode buttons work', async ({ page }) => {
 
 test('upload and export buttons are visible', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     await expect(page.locator('button', { hasText: 'Upload File' })).toBeVisible();
     await expect(page.locator('button', { hasText: 'Export' })).toBeVisible();
@@ -89,7 +99,9 @@ test('upload and export buttons are visible', async ({ page }) => {
 
 test('export dropdown opens and closes', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     const exportButton = page.locator('button', { hasText: 'Export' });
@@ -112,7 +124,9 @@ test('export dropdown opens and closes', async ({ page }) => {
 
 test('export option click closes dropdown', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     const exportButton = page.locator('button', { hasText: 'Export' });
     const exportMenu = page.locator('.export-menu');
@@ -126,7 +140,9 @@ test('export option click closes dropdown', async ({ page }) => {
 
 test('switching clips changes active state', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/clip-animation');
+    await navigateToExample(page, '/clip-animation', {
+        readySelector: '[data-testid="clip-animation-page"]',
+    });
 
     const clipsLabel = page.locator('.controlPanel-label', { hasText: 'Clips' });
     const clipButtons = clipsLabel.locator('..').locator('.controlPanel-buttons button');

@@ -15,10 +15,17 @@ const selectedScale = ref<typeof scaleOptions[number]>('auto');
 
 const showPlacementMenu = ref(false);
 const showScaleMenu = ref(false);
+const ready = ref(false);
 
 let dive: DIVE | null = null;
 let arSystem: ARSystem | null = null;
 let disposed = false;
+
+async function waitForPresentationFrames(frames = 2) {
+  for (let i = 0; i < frames; i += 1) {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+}
 
 async function initializeDive() {
   await nextTick();
@@ -34,6 +41,8 @@ async function initializeDive() {
 
   dive = markRaw(quickView);
   arSystem = new ARSystem();
+  await waitForPresentationFrames();
+  ready.value = true;
   document.addEventListener('click', onClickOutside);
 }
 
@@ -43,6 +52,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   disposed = true;
+  ready.value = false;
   document.removeEventListener('click', onClickOutside);
   if (!dive) return;
   dive.disposeAsync();
@@ -78,7 +88,7 @@ defineProps<{
 
 
 <template>
-  <div class="canvasWrapper">
+  <div class="canvasWrapper" data-testid="ar-page" :data-ready="ready ? 'true' : 'false'">
     <canvas ref="canvasRef"></canvas>
     <div class="controlPanel controlPanel--top controlPanel--row" data-testid="ar-control-panel">
       <div class="controlPanel-group">

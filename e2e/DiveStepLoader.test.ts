@@ -57,6 +57,10 @@ async function loadStepFixture(page: Page): Promise<void> {
         const message = (await page.locator('.error').textContent())?.trim() ?? 'Unknown STEP loading error';
         throw new Error(`STEP demo failed to load fixture: ${message}`);
     }
+
+    await expect(page.getByTestId('step-loader-page')).toHaveAttribute('data-ready', 'true', {
+        timeout: STEP_MODEL_TIMEOUT_MS,
+    });
 }
 
 test('shows STEP model and wireframe toggle', async ({ page }) => {

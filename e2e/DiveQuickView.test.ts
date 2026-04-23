@@ -4,13 +4,17 @@ import { navigateToExample } from './helper/navigateToExample';
 
 test('shows model', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/');
+    await navigateToExample(page, '/', {
+        readySelector: '[data-testid="quick-view-page"]',
+    });
     await expect(page).toHaveScreenshot('dive-quick-view-model-visible.png');
 });
 
 test('click', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/');
+    await navigateToExample(page, '/', {
+        readySelector: '[data-testid="quick-view-page"]',
+    });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     const boundingBox = await canvas.boundingBox();
@@ -35,7 +39,9 @@ test('click', async ({ page }) => {
 
 test('upload and export buttons are visible', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/');
+    await navigateToExample(page, '/', {
+        readySelector: '[data-testid="quick-view-page"]',
+    });
 
     await expect(page.locator('button', { hasText: 'Upload File' })).toBeVisible();
     await expect(page.locator('button', { hasText: 'Export' })).toBeVisible();
@@ -43,7 +49,9 @@ test('upload and export buttons are visible', async ({ page }) => {
 
 test('export dropdown opens and closes', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/');
+    await navigateToExample(page, '/', {
+        readySelector: '[data-testid="quick-view-page"]',
+    });
 
     const canvas = page.locator('div.canvasWrapper > canvas');
     const exportButton = page.locator('button', { hasText: 'Export' });
@@ -66,7 +74,9 @@ test('export dropdown opens and closes', async ({ page }) => {
 
 test('export option click closes dropdown', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/');
+    await navigateToExample(page, '/', {
+        readySelector: '[data-testid="quick-view-page"]',
+    });
 
     const exportButton = page.locator('button', { hasText: 'Export' });
     const exportMenu = page.locator('.export-menu');

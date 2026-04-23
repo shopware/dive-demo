@@ -7,6 +7,7 @@ test('shows model with preset controls', async ({ page }) => {
     await navigateToExample(page, '/target-animation', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="target-animation-page"]',
     });
 
     await expect(page.getByTestId('target-animation-control-panel')).toBeVisible();
@@ -20,6 +21,7 @@ test('all preset buttons are visible', async ({ page }) => {
     await navigateToExample(page, '/target-animation', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="target-animation-page"]',
     });
 
     const controlPanel = page.getByTestId('target-animation-control-panel');
@@ -42,6 +44,7 @@ test('initial preset is active by default', async ({ page }) => {
     await navigateToExample(page, '/target-animation', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="target-animation-page"]',
     });
 
     const presetButtons = page.getByTestId('target-animation-preset');
@@ -55,6 +58,7 @@ test('clicking preset changes active state and animates camera', async ({ page }
     await navigateToExample(page, '/target-animation', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="target-animation-page"]',
     });
 
     const presetButtons = page.getByTestId('target-animation-preset');
@@ -74,6 +78,7 @@ test('clicking multiple presets in sequence', async ({ page }) => {
     await navigateToExample(page, '/target-animation', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="target-animation-page"]',
     });
 
     const presetButtons = page.getByTestId('target-animation-preset');

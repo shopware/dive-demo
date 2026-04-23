@@ -7,6 +7,7 @@ test('shows model', async ({ page }) => {
     await navigateToExample(page, '/ar', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="ar-page"]',
     });
     const controlPanel = page.getByTestId('ar-control-panel');
     await expect(controlPanel).toBeVisible();

@@ -8,6 +8,7 @@ type NavigateToExampleOptions = {
     assetResponseTimeoutMs?: number;
     waitForCanvasVisible?: boolean;
     waitForRenderedCanvas?: boolean;
+    readySelector?: string;
 };
 
 async function waitForAnimationFrames(page: Page, frames = 2): Promise<void> {
@@ -73,6 +74,7 @@ export async function navigateToExample(
         assetResponseTimeoutMs = 15000,
         waitForCanvasVisible = true,
         waitForRenderedCanvas: shouldWaitForRenderedCanvas = true,
+        readySelector,
     } = options ?? {};
 
     const matcher = (url: string) =>
@@ -102,5 +104,13 @@ export async function navigateToExample(
 
     if (waitForCanvasVisible || shouldWaitForRenderedCanvas) {
         await waitForAnimationFrames(page, 2);
+    }
+
+    if (readySelector) {
+        await expect(page.locator(readySelector)).toHaveAttribute(
+            'data-ready',
+            'true',
+            { timeout: timeoutMs },
+        );
     }
 }

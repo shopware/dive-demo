@@ -11,6 +11,7 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 const dive = ref<QuickViewType | null>(null);
 const loadingEnvironment = ref(false);
 const environmentError = ref<string | null>(null);
+const ready = ref(false);
 
 const hdrOptions: HDROption[] = [
   { label: 'Blocky Studio', url: 'blocky_photo_studio_1k.hdr' },
@@ -31,6 +32,14 @@ let environmentRequestId = 0;
 let disposed = false;
 let backgroundUpdateTimer: number | null = null;
 let rotationUpdateTimer: number | null = null;
+
+const waitForPresentationFrames = async (frames = 2) => {
+  for (let index = 0; index < frames; index += 1) {
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => resolve());
+    });
+  }
+};
 
 const getEnvironment = () => dive.value?.mainView.renderer.environment;
 
@@ -92,6 +101,7 @@ watch(selectedHDR, async (url) => {
 });
 
 const initializeDive = async () => {
+  ready.value = false;
   await nextTick();
   await new Promise((resolve) => window.setTimeout(resolve, 50));
 
@@ -113,6 +123,8 @@ const initializeDive = async () => {
   getEnvironment()?.setUseAsBackground(useAsBackground.value);
   getEnvironment()?.setRotationY(0);
   await applyHDR(selectedHDR.value);
+  await waitForPresentationFrames();
+  ready.value = true;
 };
 
 onMounted(() => {
@@ -121,6 +133,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   disposed = true;
+  ready.value = false;
   if (backgroundUpdateTimer !== null) {
     window.clearTimeout(backgroundUpdateTimer);
   }
@@ -134,7 +147,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="canvasWrapper">
+  <div class="canvasWrapper" data-testid="hdr-environment-page" :data-ready="ready ? 'true' : 'false'">
     <canvas ref="canvas"></canvas>
 
     <div class="controlPanel controlPanel--top controlPanel--row" data-testid="hdr-control-panel">

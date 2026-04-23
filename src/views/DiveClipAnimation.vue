@@ -14,6 +14,7 @@ let dive: QuickView | null = null;
 let animationSystem: AnimationSystem | null = null;
 let animator: ClipAnimator | null = null;
 let disposed = false;
+const ready = ref(false);
 
 const exporter = new AssetExporter();
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
@@ -24,10 +25,17 @@ const loopMode: Ref<TAnimatorLoopMode> = ref('once');
 const isPlaying = ref(false);
 const isPaused = ref(false);
 
+async function waitForPresentationFrames(frames = 2) {
+    for (let i = 0; i < frames; i += 1) {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+}
+
 async function loadModel(uri: string) {
     if (!canvas.value || disposed) return;
 
     // dispose old dive and animation system
+    ready.value = false;
     await dive?.disposeAsync();
     animationSystem?.dispose();
 
@@ -66,6 +74,8 @@ async function loadModel(uri: string) {
     // play first clip and set loop mode
     playClip(clipNames.value[0]);
     setLoopMode('repeat');
+    await waitForPresentationFrames();
+    ready.value = true;
 }
 
 function onFileSelected(event: Event) {
@@ -109,6 +119,7 @@ onMounted(() => {
 
 onUnmounted(async () => {
     disposed = true;
+    ready.value = false;
     document.removeEventListener('click', onClickOutside);
     animationSystem?.dispose();
     await dive?.disposeAsync();
@@ -158,7 +169,7 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
 </script>
 
 <template>
-    <div class="page">
+    <div class="page" data-testid="clip-animation-page" :data-ready="ready ? 'true' : 'false'">
         <div class="canvasWrapper">
             <canvas ref="canvas"></canvas>
             <input ref="fileInput" type="file" accept=".glb,.gltf,.usdz" class="file-input" @change="onFileSelected" />

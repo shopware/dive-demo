@@ -13,6 +13,13 @@ const depth: Ref<number> = ref(0)
 
 const isBoundingBoxVisible: Ref<boolean> = ref(false)
 const currentBoundingBox: Ref<BoundingBox | null> = ref(null)
+const ready: Ref<boolean> = ref(false)
+
+const waitForPresentationFrames = async (frames = 2) => {
+    for (let i = 0; i < frames; i += 1) {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+}
 
 onMounted(async () => {
     if (!canvas.value) {
@@ -26,9 +33,12 @@ onMounted(async () => {
             drawBoundingBox(model);
         }
     });
+    await waitForPresentationFrames();
+    ready.value = true;
 })
 
 onUnmounted(() => {
+    ready.value = false;
     void dive.value?.disposeAsync();
     dive.value = null;
 });
@@ -94,7 +104,7 @@ defineProps<{
 </script>
 
 <template>
-    <div class="canvasWrapper">
+    <div class="canvasWrapper" data-testid="focus-object-page" :data-ready="ready ? 'true' : 'false'">
         <canvas ref="canvas"></canvas>
     </div>
     <div class="controlPanel">

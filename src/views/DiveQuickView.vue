@@ -8,18 +8,28 @@ const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const fileInput: Ref<HTMLInputElement | null> = ref(null);
 const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
+const ready = ref(false);
 
 let quickView: QuickViewType | null = null;
 const exporter = new AssetExporter();
 
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
+async function waitForPresentationFrames(frames = 2) {
+  for (let i = 0; i < frames; i += 1) {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+}
+
 async function loadModel(uri: string) {
   if (!canvas.value) return;
 
+  ready.value = false;
   await quickView?.disposeAsync();
 
   quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
+  await waitForPresentationFrames();
+  ready.value = true;
 }
 
 function onFileSelected(event: Event) {
@@ -57,6 +67,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  ready.value = false;
   document.removeEventListener('click', onClickOutside);
   if (quickView) {
     quickView.disposeAsync();
@@ -69,7 +80,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="canvasWrapper">
+  <div class="canvasWrapper" data-testid="quick-view-page" :data-ready="ready ? 'true' : 'false'">
     <canvas ref="canvas"></canvas>
     <input ref="fileInput" type="file" :accept="exportFormats.join(',')" class="file-input" @change="onFileSelected" />
     <div class="controlPanel controlPanel--bottom">

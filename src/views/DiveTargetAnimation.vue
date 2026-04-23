@@ -16,6 +16,13 @@ let disposed = false;
 const controlsReady = ref(false);
 const initAbortController = new AbortController();
 
+const logTargetAnimation = (
+    stage: string,
+    details: Record<string, unknown> = {},
+) => {
+    console.info('[DiveTargetAnimation]', stage, details);
+};
+
 const activePreset: Ref<number> = ref(0);
 
 const presets = [
@@ -62,28 +69,52 @@ const initializeDive = async () => {
             lastError = new Error('Target-animation canvas ref is missing');
         } else {
             try {
-                dive.value = markRaw(await QuickView(
+                logTargetAnimation('quick-view-start', {
+                    attempt,
+                    canvasTestId: initialCanvas.dataset.testid ?? null,
+                });
+                const quickView = await QuickView(
                     'sofa_B.glb',
                     { canvas: initialCanvas },
-                ));
+                );
+                logTargetAnimation('quick-view-resolved', {
+                    attempt,
+                    rendererInitialized: quickView.mainView.renderer.initialized,
+                });
+                dive.value = markRaw(quickView);
+                logTargetAnimation('dive-ref-set', {
+                    attempt,
+                    rendererInitialized: dive.value.mainView.renderer.initialized,
+                });
 
                 if (disposed) {
                     await dive.value?.disposeAsync();
+                    logTargetAnimation('disposed-after-quick-view', { attempt });
                     return;
                 }
 
                 orbitController = dive.value?.orbitController;
+                logTargetAnimation('orbit-controller-set', { attempt });
                 animationSystem = new AnimationSystem();
+                logTargetAnimation('animation-system-created', { attempt });
                 dive.value?.clock.addTicker(animationSystem);
+                logTargetAnimation('animation-system-added-to-clock', { attempt });
 
                 // set initial position and target
                 presets[0].position = orbitController.object.position.clone();
                 presets[0].target = orbitController.target.clone();
                 activePreset.value = 0;
+                logTargetAnimation('initial-preset-captured', { attempt });
                 controlsReady.value = true;
+                logTargetAnimation('controls-ready', { attempt });
                 return;
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error(String(error));
+                logTargetAnimation('initialize-failed', {
+                    attempt,
+                    errorName: lastError.name,
+                    errorMessage: lastError.message,
+                });
             }
         }
 
@@ -142,7 +173,11 @@ const setActivePreset = async (index: number) => {
 </script>
 
 <template>
-    <div class="page">
+    <div
+        class="page"
+        data-testid="target-animation-page"
+        :data-ready="controlsReady ? 'true' : 'false'"
+    >
         <div class="canvasWrapper">
             <canvas ref="canvas" data-testid="target-animation-canvas"></canvas>
         </div>

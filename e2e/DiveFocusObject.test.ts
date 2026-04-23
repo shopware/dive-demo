@@ -4,13 +4,17 @@ import { navigateToExample } from './helper/navigateToExample';
 
 test('shows model', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/focus-object');
+    await navigateToExample(page, '/focus-object', {
+        readySelector: '[data-testid="focus-object-page"]',
+    });
     await expect(page).toHaveScreenshot('dive-focus-object-model-visible.png');
 });
 
 test('switch to different object', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/focus-object');
+    await navigateToExample(page, '/focus-object', {
+        readySelector: '[data-testid="focus-object-page"]',
+    });
 
     const chairButton = page.locator('button').filter({ hasText: 'Chair' });
     await expect(chairButton).toBeVisible();

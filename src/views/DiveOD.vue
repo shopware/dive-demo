@@ -4,8 +4,18 @@ import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const dive: Ref<QuickView | null> = ref(null);
+const ready = ref(false);
+
+const waitForPresentationFrames = async (frames = 2) => {
+  for (let index = 0; index < frames; index += 1) {
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => resolve());
+    });
+  }
+};
 
 onMounted(async () => {
+  ready.value = false;
   if (!canvas.value) {
     return;
   }
@@ -16,9 +26,13 @@ onMounted(async () => {
       displayAxes: true,
     }),
   );
+
+  await waitForPresentationFrames();
+  ready.value = true;
 });
 
 onUnmounted(() => {
+  ready.value = false;
   void dive.value?.disposeAsync();
   dive.value = null;
 });
@@ -29,7 +43,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="page">
+  <div class="page" data-testid="od-page" :data-ready="ready ? 'true' : 'false'">
     <div class="canvasWrapper" data-testid="od-with-axes">
       <canvas ref="canvas"></canvas>
     </div>

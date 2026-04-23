@@ -15,6 +15,13 @@ const activeCanvas: Ref<number> = ref(0)
 let disposed = false;
 const initAbortController = new AbortController();
 
+const logSwitchCanvas = (
+  stage: string,
+  details: Record<string, unknown> = {},
+) => {
+  console.info('[DiveSwitchCanvas]', stage, details);
+};
+
 const initializeDive = async () => {
   let lastError: Error | null = null;
 
@@ -31,19 +38,39 @@ const initializeDive = async () => {
       lastError = new Error('Initial switch-canvas canvas ref is missing');
     } else {
       try {
-        dive.value = markRaw(await QuickView(
+        logSwitchCanvas('quick-view-start', {
+          attempt,
+          canvasTestId: initialCanvas.dataset.testid ?? null,
+        });
+        const quickView = await QuickView(
           'sofa_B.glb',
           { canvas: initialCanvas },
-        ));
+        );
+        logSwitchCanvas('quick-view-resolved', {
+          attempt,
+          rendererInitialized: quickView.mainView.renderer.initialized,
+        });
+        dive.value = markRaw(quickView);
+        logSwitchCanvas('dive-ref-set', {
+          attempt,
+          rendererInitialized: dive.value.mainView.renderer.initialized,
+        });
 
         if (disposed) {
           await dive.value?.disposeAsync();
+          logSwitchCanvas('disposed-after-quick-view', { attempt });
           return;
         }
 
+        logSwitchCanvas('initialize-complete', { attempt });
         return;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        logSwitchCanvas('quick-view-failed', {
+          attempt,
+          errorName: lastError.name,
+          errorMessage: lastError.message,
+        });
       }
     }
 
@@ -104,7 +131,12 @@ defineProps<{
 </script>
 
 <template>
-  <div class="page" data-testid="switch-canvas-page" :data-active-canvas="String(activeCanvas)">
+  <div
+    class="page"
+    data-testid="switch-canvas-page"
+    :data-active-canvas="String(activeCanvas)"
+    :data-ready="dive ? 'true' : 'false'"
+  >
     <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]"
       :min-size="10" orientation="horizontal">
       <template #panel-0>

@@ -11,6 +11,7 @@ const loading: Ref<boolean> = ref(false);
 const error: Ref<string | null> = ref(null);
 const timing: Ref<string | null> = ref(null);
 const wireframe: Ref<boolean> = ref(false);
+const ready: Ref<boolean> = ref(false);
 
 // Keep the original demo asset; CI stability must not change the showcased model.
 const DEFAULT_STEP_URL = 'D100.step';
@@ -19,6 +20,14 @@ const STEP_LOAD_MAX_ATTEMPTS = 2;
 const STEP_LOAD_RETRY_DELAY_MS = 500;
 const INITIAL_LOAD_DELAY_MS = 150;
 let disposed = false;
+
+const waitForPresentationFrames = async (frames = 2) => {
+  for (let index = 0; index < frames; index += 1) {
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => resolve());
+    });
+  }
+};
 
 const shouldAutoloadDefaultStep = () => {
   const search = new URLSearchParams(window.location.search);
@@ -45,6 +54,7 @@ const loadStepFile = async (url: string) => {
   if (!canvas.value || disposed) return;
 
   loading.value = true;
+  ready.value = false;
   error.value = null;
   timing.value = null;
 
@@ -82,6 +92,8 @@ const loadStepFile = async (url: string) => {
         const elapsed = performance.now() - t0;
         timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
         error.value = null;
+        await waitForPresentationFrames();
+        ready.value = true;
         return;
       } catch (e) {
         lastError = e instanceof Error ? e.message : 'Failed to load STEP file';
@@ -150,13 +162,14 @@ defineProps<{
 
 onUnmounted(() => {
   disposed = true;
+  ready.value = false;
   void dive.value?.disposeAsync();
   dive.value = null;
 });
 </script>
 
 <template>
-  <div class="canvasWrapper">
+  <div class="canvasWrapper" data-testid="step-loader-page" :data-ready="ready ? 'true' : 'false'">
     <canvas ref="canvas"></canvas>
     <div v-if="loading" class="loading">Loading STEP file…</div>
     <div v-else-if="error" class="error">{{ error }}</div>

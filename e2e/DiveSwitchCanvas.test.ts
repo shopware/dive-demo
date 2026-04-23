@@ -7,6 +7,7 @@ test('shows canvas', async ({ page }) => {
     await navigateToExample(page, '/switch-canvas', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="switch-canvas-page"]',
     });
     await expect(page.getByTestId('switch-canvas-panel-0')).toBeVisible();
     await expect(page.getByTestId('switch-canvas-button-1')).toBeEnabled();
@@ -19,6 +20,7 @@ test('click button to switch canvas', async ({ page }) => {
     await navigateToExample(page, '/switch-canvas', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
+        readySelector: '[data-testid="switch-canvas-page"]',
     });
 
     const button0 = page.getByTestId('switch-canvas-button-0');
