@@ -30,27 +30,8 @@ const getRequestedStepUrl = () => {
   return search.get('url')?.trim() || null;
 };
 
-const waitForCanvasLayout = async () => {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    if (!canvas.value || disposed) {
-      return;
-    }
-
-    const rect = canvas.value.getBoundingClientRect();
-
-    if (canvas.value.isConnected && rect.width >= 1 && rect.height >= 1) {
-      return;
-    }
-
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
-  }
-};
-
 const initializeStep = async (url: string) => {
   await nextTick();
-  await waitForCanvasLayout();
   await new Promise((resolve) => window.setTimeout(resolve, INITIAL_LOAD_DELAY_MS));
 
   if (!canvas.value || disposed) {
@@ -77,8 +58,6 @@ const loadStepFile = async (url: string) => {
       try {
         await dive.value?.disposeAsync();
         dive.value = null;
-
-        await waitForCanvasLayout();
 
         if (!canvas.value || disposed) {
           return;

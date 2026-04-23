@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
-import type { QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
-import { createStableQuickView } from '@/utils/createStableQuickView';
-import { waitForCanvasLayout } from '@/utils/waitForCanvasLayout';
+import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
@@ -27,33 +25,25 @@ const initializeDive = async () => {
       return;
     }
 
-    const hasLayout = await waitForCanvasLayout(() => canvas0.value, () => disposed);
+    const initialCanvas = canvas0.value;
 
-    if (!hasLayout || disposed) {
-      lastError = new Error('Initial switch-canvas layout did not stabilize');
+    if (!initialCanvas) {
+      lastError = new Error('Initial switch-canvas canvas ref is missing');
     } else {
-      const initialCanvas = canvas0.value;
+      try {
+        dive.value = markRaw(await QuickView(
+          'sofa_B.glb',
+          { canvas: initialCanvas },
+        ));
 
-      if (!initialCanvas) {
-        lastError = new Error('Initial switch-canvas canvas ref is missing');
-      } else {
-        try {
-          const quickView = await createStableQuickView(
-            'sofa_B.glb',
-            { canvas: initialCanvas },
-            { signal: initAbortController.signal },
-          );
-
-          if (disposed) {
-            await quickView.disposeAsync();
-            return;
-          }
-
-          dive.value = markRaw(quickView);
+        if (disposed) {
+          await dive.value?.disposeAsync();
           return;
-        } catch (error) {
-          lastError = error instanceof Error ? error : new Error(String(error));
         }
+
+        return;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
       }
     }
 
@@ -93,9 +83,7 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) =
   // Let Vue commit the new active-state UI before the renderer swaps canvases.
   await nextTick();
 
-  const hasLayout = await waitForCanvasLayout(canvas, () => disposed);
-
-  if (!hasLayout || disposed || !dive.value) {
+  if (disposed || !dive.value) {
     return;
   }
 

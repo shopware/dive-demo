@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
-import type { QuickView } from '@shopware-ag/dive/quickview';
+import { QuickView } from '@shopware-ag/dive/quickview';
 import { AnimationSystem, type TargetAnimator } from '@shopware-ag/dive/animation';
 import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
-import { createStableQuickView } from '@/utils/createStableQuickView';
-import { waitForCanvasLayout } from '@/utils/waitForCanvasLayout';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const INITIALIZATION_MAX_ATTEMPTS = 2;
 const INITIALIZATION_RETRY_DELAY_MS = 250;
 
-let dive: QuickView | null = null;
+const dive: Ref<QuickView | null> = ref(null)
 let orbitController: OrbitController | null = null;
 let animationSystem: AnimationSystem | null = null;
 let animator: TargetAnimator | null = null;
@@ -58,42 +56,34 @@ const initializeDive = async () => {
             return;
         }
 
-        const hasLayout = await waitForCanvasLayout(() => canvas.value, () => disposed);
+        const initialCanvas = canvas.value;
 
-        if (!hasLayout || disposed) {
-            lastError = new Error('Target-animation canvas layout did not stabilize');
+        if (!initialCanvas) {
+            lastError = new Error('Target-animation canvas ref is missing');
         } else {
-            const initialCanvas = canvas.value;
+            try {
+                dive.value = markRaw(await QuickView(
+                    'sofa_B.glb',
+                    { canvas: initialCanvas },
+                ));
 
-            if (!initialCanvas) {
-                lastError = new Error('Target-animation canvas ref is missing');
-            } else {
-                try {
-                    const quickView = await createStableQuickView(
-                        'sofa_B.glb',
-                        { canvas: initialCanvas },
-                        { signal: initAbortController.signal },
-                    );
-
-                    if (disposed) {
-                        await quickView.disposeAsync();
-                        return;
-                    }
-
-                    dive = markRaw(quickView);
-                    orbitController = dive.orbitController;
-                    animationSystem = new AnimationSystem();
-                    dive.clock.addTicker(animationSystem);
-
-                    // set initial position and target
-                    presets[0].position = orbitController.object.position.clone();
-                    presets[0].target = orbitController.target.clone();
-                    activePreset.value = 0;
-                    controlsReady.value = true;
+                if (disposed) {
+                    await dive.value?.disposeAsync();
                     return;
-                } catch (error) {
-                    lastError = error instanceof Error ? error : new Error(String(error));
                 }
+
+                orbitController = dive.value?.orbitController;
+                animationSystem = new AnimationSystem();
+                dive.value?.clock.addTicker(animationSystem);
+
+                // set initial position and target
+                presets[0].position = orbitController.object.position.clone();
+                presets[0].target = orbitController.target.clone();
+                activePreset.value = 0;
+                controlsReady.value = true;
+                return;
+            } catch (error) {
+                lastError = error instanceof Error ? error : new Error(String(error));
             }
         }
 
@@ -120,7 +110,7 @@ onUnmounted(async () => {
     initAbortController.abort();
     controlsReady.value = false;
     animationSystem?.dispose();
-    await dive?.disposeAsync();
+    await dive.value?.disposeAsync();
 });
 
 const goToPreset = async (index: number) => {
