@@ -7,8 +7,6 @@ const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
 const canvas2 = ref<HTMLCanvasElement | null>(null);
 const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
-const INITIALIZATION_MAX_ATTEMPTS = 2;
-const INITIALIZATION_RETRY_DELAY_MS = 250;
 
 const dive: Ref<QuickViewType | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
@@ -23,67 +21,49 @@ const logSwitchCanvas = (
 };
 
 const initializeDive = async () => {
-  let lastError: Error | null = null;
+  await nextTick();
 
-  for (let attempt = 1; attempt <= INITIALIZATION_MAX_ATTEMPTS; attempt += 1) {
-    await nextTick();
+  if (disposed || initAbortController.signal.aborted) {
+    return;
+  }
 
-    if (disposed || initAbortController.signal.aborted) {
+  const initialCanvas = canvas0.value;
+
+  if (!initialCanvas) {
+    const error = new Error('Initial switch-canvas canvas ref is missing');
+    console.error('Failed to initialize DiveSwitchCanvas', error);
+    return;
+  }
+
+  try {
+    logSwitchCanvas('quick-view-start', {
+      canvasTestId: initialCanvas.dataset.testid ?? null,
+    });
+    const quickView = await QuickView(
+      'sofa_B.glb',
+      { canvas: initialCanvas },
+    );
+    logSwitchCanvas('quick-view-resolved', {
+      rendererInitialized: quickView.mainView.renderer.initialized,
+    });
+    dive.value = markRaw(quickView);
+    logSwitchCanvas('dive-ref-set', {
+      rendererInitialized: dive.value.mainView.renderer.initialized,
+    });
+
+    if (disposed) {
+      await dive.value?.disposeAsync();
+      logSwitchCanvas('disposed-after-quick-view');
       return;
     }
 
-    const initialCanvas = canvas0.value;
-
-    if (!initialCanvas) {
-      lastError = new Error('Initial switch-canvas canvas ref is missing');
-    } else {
-      try {
-        logSwitchCanvas('quick-view-start', {
-          attempt,
-          canvasTestId: initialCanvas.dataset.testid ?? null,
-        });
-        const quickView = await QuickView(
-          'sofa_B.glb',
-          { canvas: initialCanvas },
-        );
-        logSwitchCanvas('quick-view-resolved', {
-          attempt,
-          rendererInitialized: quickView.mainView.renderer.initialized,
-        });
-        dive.value = markRaw(quickView);
-        logSwitchCanvas('dive-ref-set', {
-          attempt,
-          rendererInitialized: dive.value.mainView.renderer.initialized,
-        });
-
-        if (disposed) {
-          await dive.value?.disposeAsync();
-          logSwitchCanvas('disposed-after-quick-view', { attempt });
-          return;
-        }
-
-        logSwitchCanvas('initialize-complete', { attempt });
-        return;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        logSwitchCanvas('quick-view-failed', {
-          attempt,
-          errorName: lastError.name,
-          errorMessage: lastError.message,
-        });
-      }
-    }
-
-    if (disposed || initAbortController.signal.aborted || attempt === INITIALIZATION_MAX_ATTEMPTS) {
-      break;
-    }
-
-    await new Promise<void>((resolve) =>
-      window.setTimeout(resolve, INITIALIZATION_RETRY_DELAY_MS * attempt),
-    );
-  }
-
-  if (!disposed && lastError) {
+    logSwitchCanvas('initialize-complete');
+  } catch (error) {
+    const lastError = error instanceof Error ? error : new Error(String(error));
+    logSwitchCanvas('quick-view-failed', {
+      errorName: lastError.name,
+      errorMessage: lastError.message,
+    });
     console.error('Failed to initialize DiveSwitchCanvas', lastError);
   }
 };

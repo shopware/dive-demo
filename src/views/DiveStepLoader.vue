@@ -16,8 +16,6 @@ const ready: Ref<boolean> = ref(false);
 // Keep the original demo asset; CI stability must not change the showcased model.
 const DEFAULT_STEP_URL = 'D100.step';
 const STEP_LOAD_TIMEOUT_MS = 120000;
-const STEP_LOAD_MAX_ATTEMPTS = 2;
-const STEP_LOAD_RETRY_DELAY_MS = 500;
 const INITIAL_LOAD_DELAY_MS = 150;
 let disposed = false;
 
@@ -59,61 +57,46 @@ const loadStepFile = async (url: string) => {
   timing.value = null;
 
   const t0 = performance.now();
-  let lastError: string | null = null;
 
   try {
-    for (let attempt = 1; attempt <= STEP_LOAD_MAX_ATTEMPTS; attempt += 1) {
-      let timeoutId: number | undefined;
+    let timeoutId: number | undefined;
 
-      try {
-        await dive.value?.disposeAsync();
-        dive.value = null;
+    try {
+      await dive.value?.disposeAsync();
+      dive.value = null;
 
-        if (!canvas.value || disposed) {
-          return;
-        }
-
-        const nextDive = await Promise.race([
-          QuickView(url, { canvas: canvas.value }),
-          new Promise<never>((_, reject) => {
-            timeoutId = window.setTimeout(() => {
-              reject(new Error(`STEP loading timed out after ${STEP_LOAD_TIMEOUT_MS / 1000}s`));
-            }, STEP_LOAD_TIMEOUT_MS);
-          }),
-        ]);
-
-        if (disposed) {
-          await nextDive.disposeAsync();
-          return;
-        }
-
-        dive.value = markRaw(nextDive);
-
-        const elapsed = performance.now() - t0;
-        timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
-        error.value = null;
-        await waitForPresentationFrames();
-        ready.value = true;
+      if (!canvas.value || disposed) {
         return;
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : 'Failed to load STEP file';
+      }
 
-        await dive.value?.disposeAsync();
-        dive.value = null;
+      const nextDive = await Promise.race([
+        QuickView(url, { canvas: canvas.value }),
+        new Promise<never>((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(new Error(`STEP loading timed out after ${STEP_LOAD_TIMEOUT_MS / 1000}s`));
+          }, STEP_LOAD_TIMEOUT_MS);
+        }),
+      ]);
 
-        if (disposed || attempt === STEP_LOAD_MAX_ATTEMPTS) {
-          break;
-        }
+      if (disposed) {
+        await nextDive.disposeAsync();
+        return;
+      }
 
-        await new Promise((resolve) => window.setTimeout(resolve, STEP_LOAD_RETRY_DELAY_MS));
-      } finally {
-        if (timeoutId !== undefined) {
-          window.clearTimeout(timeoutId);
-        }
+      dive.value = markRaw(nextDive);
+
+      const elapsed = performance.now() - t0;
+      timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
+      error.value = null;
+      await waitForPresentationFrames();
+      ready.value = true;
+    } finally {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
       }
     }
-
-    error.value = lastError ?? 'Failed to load STEP file';
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to load STEP file';
   } finally {
     loading.value = false;
   }

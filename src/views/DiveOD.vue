@@ -6,6 +6,10 @@ const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const dive: Ref<QuickView | null> = ref(null);
 const ready = ref(false);
 
+const logInit = (stage: string, details: Record<string, unknown> = {}) => {
+  console.info('[DiveOD]', stage, details);
+};
+
 const waitForPresentationFrames = async (frames = 2) => {
   for (let index = 0; index < frames; index += 1) {
     await new Promise<void>((resolve) => {
@@ -16,23 +20,30 @@ const waitForPresentationFrames = async (frames = 2) => {
 
 onMounted(async () => {
   ready.value = false;
+  logInit('init-start', { hasCanvas: Boolean(canvas.value) });
   if (!canvas.value) {
+    logInit('init-skip', { reason: 'missing-canvas' });
     return;
   }
 
+  logInit('quick-view-start', { uri: 'sofa_B.glb' });
   dive.value = markRaw(
     await QuickView('sofa_B.glb', {
       canvas: canvas.value,
       displayAxes: true,
     }),
   );
+  logInit('quick-view-resolved', { uri: 'sofa_B.glb' });
 
   await waitForPresentationFrames();
+  logInit('presentation-frames-complete');
   ready.value = true;
+  logInit('ready-true');
 });
 
 onUnmounted(() => {
   ready.value = false;
+  logInit('unmounted');
   void dive.value?.disposeAsync();
   dive.value = null;
 });

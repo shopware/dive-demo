@@ -21,6 +21,10 @@ let dive: DIVE | null = null;
 let arSystem: ARSystem | null = null;
 let disposed = false;
 
+const logInit = (stage: string, details: Record<string, unknown> = {}) => {
+  console.info('[DiveAR]', stage, details);
+};
+
 async function waitForPresentationFrames(frames = 2) {
   for (let i = 0; i < frames; i += 1) {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -28,31 +32,45 @@ async function waitForPresentationFrames(frames = 2) {
 }
 
 async function initializeDive() {
+  logInit('init-start', { hasCanvas: Boolean(canvasRef.value), disposed });
   await nextTick();
   await new Promise((resolve) => window.setTimeout(resolve, 50));
 
-  if (!canvasRef.value) return;
+  if (!canvasRef.value) {
+    logInit('init-skip', { reason: 'missing-canvas', disposed });
+    return;
+  }
 
+  logInit('quick-view-start', { uri: 'hay_chair.glb' });
   const quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  logInit('quick-view-resolved', { uri: 'hay_chair.glb', disposed });
   if (disposed) {
+    logInit('quick-view-dispose-stale', { uri: 'hay_chair.glb' });
     await quickView.disposeAsync();
     return;
   }
 
   dive = markRaw(quickView);
+  logInit('dive-assigned');
   arSystem = new ARSystem();
+  logInit('ar-system-created');
   await waitForPresentationFrames();
+  logInit('presentation-frames-complete');
   ready.value = true;
+  logInit('ready-true');
   document.addEventListener('click', onClickOutside);
 }
 
 onMounted(() => {
-  void initializeDive();
+  void initializeDive().catch((error: unknown) => {
+    console.error('[DiveAR]', 'init-failed', error);
+  });
 });
 
 onUnmounted(() => {
   disposed = true;
   ready.value = false;
+  logInit('unmounted');
   document.removeEventListener('click', onClickOutside);
   if (!dive) return;
   dive.disposeAsync();

@@ -16,6 +16,10 @@ let animator: ClipAnimator | null = null;
 let disposed = false;
 const ready = ref(false);
 
+const logInit = (stage: string, details: Record<string, unknown> = {}) => {
+    console.info('[DiveClipAnimation]', stage, details);
+};
+
 const exporter = new AssetExporter();
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
@@ -32,12 +36,19 @@ async function waitForPresentationFrames(frames = 2) {
 }
 
 async function loadModel(uri: string) {
-    if (!canvas.value || disposed) return;
+    logInit('load-model-start', { uri, hasCanvas: Boolean(canvas.value), disposed });
+    if (!canvas.value || disposed) {
+        logInit('load-model-skip', { uri, hasCanvas: Boolean(canvas.value), disposed });
+        return;
+    }
 
     // dispose old dive and animation system
     ready.value = false;
+    logInit('ready-false', { uri });
+    logInit('dispose-previous-start', { hasDive: Boolean(dive), hasAnimationSystem: Boolean(animationSystem) });
     await dive?.disposeAsync();
     animationSystem?.dispose();
+    logInit('dispose-previous-complete', { uri });
 
     // reset UI
     clipNames.value = [];
@@ -46,18 +57,28 @@ async function loadModel(uri: string) {
     isPaused.value = false;
 
     // load new model
+    logInit('quick-view-start', { uri });
     dive = markRaw(await QuickView(uri, { canvas: canvas.value }));
+    logInit('quick-view-resolved', { uri });
 
     // set up animation system
+    logInit('animation-system-import-start');
     const { AnimationSystem } = await import('@shopware-ag/dive/animation');
+    logInit('animation-system-import-resolved');
     animationSystem = new AnimationSystem();
     dive.clock.addTicker(animationSystem);
+    logInit('animation-system-created');
 
-    if (!dive.model.animations.length) return;
+    if (!dive.model.animations.length) {
+        logInit('no-animations', { uri });
+        return;
+    }
 
     // create new animator
+    logInit('animator-create-start', { clipCount: dive.model.animations.length });
     animator = await animationSystem.fromClips(dive.model, dive.model.animations);
     clipNames.value = animator.clipNames;
+    logInit('animator-create-resolved', { clipNames: clipNames.value });
 
     // set up event listeners
     animator.addEventListener('complete', () => {
@@ -74,8 +95,11 @@ async function loadModel(uri: string) {
     // play first clip and set loop mode
     playClip(clipNames.value[0]);
     setLoopMode('repeat');
+    logInit('initial-clip-configured', { currentClip: currentClip.value, loopMode: loopMode.value });
     await waitForPresentationFrames();
+    logInit('presentation-frames-complete');
     ready.value = true;
+    logInit('ready-true', { uri });
 }
 
 function onFileSelected(event: Event) {
@@ -113,13 +137,16 @@ onMounted(() => {
         await nextTick();
         await new Promise((resolve) => window.setTimeout(resolve, 50));
         await loadModel('Fox.glb');
-    })();
+    })().catch((error: unknown) => {
+        console.error('[DiveClipAnimation]', 'init-failed', error);
+    });
     document.addEventListener('click', onClickOutside);
 });
 
 onUnmounted(async () => {
     disposed = true;
     ready.value = false;
+    logInit('unmounted');
     document.removeEventListener('click', onClickOutside);
     animationSystem?.dispose();
     await dive?.disposeAsync();

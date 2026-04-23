@@ -13,6 +13,10 @@ const ready = ref(false);
 let quickView: QuickViewType | null = null;
 const exporter = new AssetExporter();
 
+const logInit = (stage: string, details: Record<string, unknown> = {}) => {
+  console.info('[DiveQuickView]', stage, details);
+};
+
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
 async function waitForPresentationFrames(frames = 2) {
@@ -22,14 +26,25 @@ async function waitForPresentationFrames(frames = 2) {
 }
 
 async function loadModel(uri: string) {
-  if (!canvas.value) return;
+  logInit('load-model-start', { uri, hasCanvas: Boolean(canvas.value) });
+  if (!canvas.value) {
+    logInit('load-model-skip', { uri, reason: 'missing-canvas' });
+    return;
+  }
 
   ready.value = false;
+  logInit('ready-false', { uri });
+  logInit('dispose-previous-start', { hasQuickView: Boolean(quickView) });
   await quickView?.disposeAsync();
+  logInit('dispose-previous-complete', { uri });
 
+  logInit('quick-view-start', { uri });
   quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
+  logInit('quick-view-resolved', { uri });
   await waitForPresentationFrames();
+  logInit('presentation-frames-complete', { uri });
   ready.value = true;
+  logInit('ready-true', { uri });
 }
 
 function onFileSelected(event: Event) {
@@ -62,12 +77,15 @@ function onClickOutside(event: MouseEvent) {
 }
 
 onMounted(() => {
-  loadModel('sofa_B.glb');
+  void loadModel('sofa_B.glb').catch((error: unknown) => {
+    console.error('[DiveQuickView]', 'load-model-failed', error);
+  });
   document.addEventListener('click', onClickOutside);
 });
 
 onUnmounted(() => {
   ready.value = false;
+  logInit('unmounted');
   document.removeEventListener('click', onClickOutside);
   if (quickView) {
     quickView.disposeAsync();

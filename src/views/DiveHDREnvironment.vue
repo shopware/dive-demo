@@ -33,6 +33,10 @@ let disposed = false;
 let backgroundUpdateTimer: number | null = null;
 let rotationUpdateTimer: number | null = null;
 
+const logInit = (stage: string, details: Record<string, unknown> = {}) => {
+  console.info('[DiveHDREnvironment]', stage, details);
+};
+
 const waitForPresentationFrames = async (frames = 2) => {
   for (let index = 0; index < frames; index += 1) {
     await new Promise<void>((resolve) => {
@@ -46,19 +50,23 @@ const getEnvironment = () => dive.value?.mainView.renderer.environment;
 const applyHDR = async (url: string) => {
   const environment = getEnvironment();
   if (!environment) {
+    logInit('apply-hdr-skip', { url, reason: 'missing-environment' });
     return;
   }
 
   const requestId = ++environmentRequestId;
   loadingEnvironment.value = true;
   environmentError.value = null;
+  logInit('apply-hdr-start', { url, requestId });
 
   try {
     await environment.setImageUrl(url);
+    logInit('apply-hdr-resolved', { url, requestId });
   } catch (error) {
     if (requestId === environmentRequestId) {
       environmentError.value = error instanceof Error ? error.message : 'Failed to load HDR environment.';
     }
+    console.error('[DiveHDREnvironment]', 'apply-hdr-failed', error);
   } finally {
     if (requestId === environmentRequestId) {
       loadingEnvironment.value = false;
@@ -102,38 +110,50 @@ watch(selectedHDR, async (url) => {
 
 const initializeDive = async () => {
   ready.value = false;
+  logInit('init-start', { hasCanvas: Boolean(canvas.value), disposed });
   await nextTick();
   await new Promise((resolve) => window.setTimeout(resolve, 50));
 
   if (!canvas.value || disposed) {
+    logInit('init-skip', { hasCanvas: Boolean(canvas.value), disposed });
     return;
   }
 
+  logInit('quick-view-start', { uri: 'sofa_B.glb' });
   const quickView = await QuickView('sofa_B.glb', {
     canvas: canvas.value,
     displayGrid: false,
   });
+  logInit('quick-view-resolved', { uri: 'sofa_B.glb', disposed });
 
   if (disposed) {
+    logInit('quick-view-dispose-stale', { uri: 'sofa_B.glb' });
     await quickView.disposeAsync();
     return;
   }
 
   dive.value = markRaw(quickView);
+  logInit('dive-assigned');
   getEnvironment()?.setUseAsBackground(useAsBackground.value);
   getEnvironment()?.setRotationY(0);
+  logInit('environment-baseline-applied', { useAsBackground: useAsBackground.value, rotationY: 0 });
   await applyHDR(selectedHDR.value);
   await waitForPresentationFrames();
+  logInit('presentation-frames-complete');
   ready.value = true;
+  logInit('ready-true');
 };
 
 onMounted(() => {
-  void initializeDive();
+  void initializeDive().catch((error: unknown) => {
+    console.error('[DiveHDREnvironment]', 'init-failed', error);
+  });
 });
 
 onUnmounted(() => {
   disposed = true;
   ready.value = false;
+  logInit('unmounted');
   if (backgroundUpdateTimer !== null) {
     window.clearTimeout(backgroundUpdateTimer);
   }
