@@ -11,6 +11,8 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 const dive = ref<QuickViewType | null>(null);
 const loadingEnvironment = ref(false);
 const environmentError = ref<string | null>(null);
+const initError = ref<string | null>(null);
+const initStage = ref('idle');
 const ready = ref(false);
 
 const hdrOptions: HDROption[] = [
@@ -37,6 +39,11 @@ const logInit = (stage: string, details: Record<string, unknown> = {}) => {
   console.info('[DiveHDREnvironment]', stage, details);
 };
 
+const setInitStage = (stage: string, details: Record<string, unknown> = {}) => {
+  initStage.value = stage;
+  logInit(stage, details);
+};
+
 const waitForPresentationFrames = async (frames = 2) => {
   for (let index = 0; index < frames; index += 1) {
     await new Promise<void>((resolve) => {
@@ -50,22 +57,25 @@ const getEnvironment = () => dive.value?.mainView.renderer.environment;
 const applyHDR = async (url: string) => {
   const environment = getEnvironment();
   if (!environment) {
-    logInit('apply-hdr-skip', { url, reason: 'missing-environment' });
+    setInitStage('apply-hdr-skip', { url, reason: 'missing-environment' });
     return;
   }
 
   const requestId = ++environmentRequestId;
   loadingEnvironment.value = true;
   environmentError.value = null;
-  logInit('apply-hdr-start', { url, requestId });
+  initError.value = null;
+  setInitStage('apply-hdr-start', { url, requestId });
 
   try {
     await environment.setImageUrl(url);
-    logInit('apply-hdr-resolved', { url, requestId });
+    setInitStage('apply-hdr-resolved', { url, requestId });
   } catch (error) {
     if (requestId === environmentRequestId) {
       environmentError.value = error instanceof Error ? error.message : 'Failed to load HDR environment.';
     }
+    initError.value = error instanceof Error ? error.message : 'Failed to load HDR environment.';
+    setInitStage('apply-hdr-failed', { url, requestId, message: initError.value });
     console.error('[DiveHDREnvironment]', 'apply-hdr-failed', error);
   } finally {
     if (requestId === environmentRequestId) {
@@ -110,42 +120,46 @@ watch(selectedHDR, async (url) => {
 
 const initializeDive = async () => {
   ready.value = false;
-  logInit('init-start', { hasCanvas: Boolean(canvas.value), disposed });
+  initError.value = null;
+  setInitStage('init-start', { hasCanvas: Boolean(canvas.value), disposed });
   await nextTick();
   await new Promise((resolve) => window.setTimeout(resolve, 50));
 
   if (!canvas.value || disposed) {
-    logInit('init-skip', { hasCanvas: Boolean(canvas.value), disposed });
+    setInitStage('init-skip', { hasCanvas: Boolean(canvas.value), disposed });
     return;
   }
 
-  logInit('quick-view-start', { uri: 'sofa_B.glb' });
+  setInitStage('quick-view-start', { uri: 'sofa_B.glb' });
   const quickView = await QuickView('sofa_B.glb', {
     canvas: canvas.value,
     displayGrid: false,
   });
-  logInit('quick-view-resolved', { uri: 'sofa_B.glb', disposed });
+  setInitStage('quick-view-resolved', { uri: 'sofa_B.glb', disposed });
 
   if (disposed) {
-    logInit('quick-view-dispose-stale', { uri: 'sofa_B.glb' });
+    setInitStage('quick-view-dispose-stale', { uri: 'sofa_B.glb' });
     await quickView.disposeAsync();
     return;
   }
 
   dive.value = markRaw(quickView);
-  logInit('dive-assigned');
+  setInitStage('dive-assigned');
   getEnvironment()?.setUseAsBackground(useAsBackground.value);
   getEnvironment()?.setRotationY(0);
-  logInit('environment-baseline-applied', { useAsBackground: useAsBackground.value, rotationY: 0 });
+  setInitStage('environment-baseline-applied', { useAsBackground: useAsBackground.value, rotationY: 0 });
   await applyHDR(selectedHDR.value);
+  setInitStage('presentation-frames-start');
   await waitForPresentationFrames();
-  logInit('presentation-frames-complete');
+  setInitStage('presentation-frames-complete');
   ready.value = true;
-  logInit('ready-true');
+  setInitStage('ready-true');
 };
 
 onMounted(() => {
   void initializeDive().catch((error: unknown) => {
+    initError.value = error instanceof Error ? error.message : 'Dive HDR initialization failed.';
+    setInitStage('init-failed', { message: initError.value });
     console.error('[DiveHDREnvironment]', 'init-failed', error);
   });
 });
@@ -153,7 +167,7 @@ onMounted(() => {
 onUnmounted(() => {
   disposed = true;
   ready.value = false;
-  logInit('unmounted');
+  setInitStage('unmounted');
   if (backgroundUpdateTimer !== null) {
     window.clearTimeout(backgroundUpdateTimer);
   }
@@ -167,7 +181,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="canvasWrapper" data-testid="hdr-environment-page" :data-ready="ready ? 'true' : 'false'">
+  <div
+    class="canvasWrapper"
+    data-testid="hdr-environment-page"
+    :data-ready="ready ? 'true' : 'false'"
+    :data-init-stage="initStage"
+    :data-init-error="initError ?? ''"
+  >
     <canvas ref="canvas"></canvas>
 
     <div class="controlPanel controlPanel--top controlPanel--row" data-testid="hdr-control-panel">
