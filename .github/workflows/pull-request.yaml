@@ -90,6 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [playwright-install, build]
     strategy:
+      fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
     steps:

@@ -54,8 +54,12 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: `https://${webServerHost}:${webServerPort}`,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Keep failure artifacts even without retries so CI failures can be inspected from the uploaded report. */
+    trace: 'retain-on-failure',
+    screenshot: {
+      mode: 'only-on-failure',
+      fullPage: true,
+    },
 
     /* On CI, WebKit needs headed mode (via --headed CLI flag) for WebGL under xvfb.
      * Don't force headless here so the CLI flag takes effect. */
