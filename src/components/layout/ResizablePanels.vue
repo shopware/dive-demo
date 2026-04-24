@@ -19,7 +19,7 @@ const emit = defineEmits<{
 
 const containerEl: Ref<HTMLDivElement | null> = ref(null);
 
-const orientation: Orientation = props.orientation ?? 'horizontal';
+const orientation = computed<Orientation>(() => props.orientation ?? 'horizontal');
 const gutterSize = props.gutterSize ?? 6;
 
 const panelCount = computed<number>(() => {
@@ -62,15 +62,15 @@ function onGutterDown(index: number, event: MouseEvent | TouchEvent) {
     window.addEventListener('touchmove', onMove, { passive: false });
     window.addEventListener('touchend', onUp, { passive: false });
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = orientation === 'horizontal' ? 'col-resize' : 'row-resize';
+    document.body.style.cursor = orientation.value === 'horizontal' ? 'col-resize' : 'row-resize';
 }
 
 function getPosition(event: MouseEvent | TouchEvent): number {
     if ('touches' in event && event.touches[0]) {
-        return orientation === 'horizontal' ? event.touches[0].clientX : event.touches[0].clientY;
+        return orientation.value === 'horizontal' ? event.touches[0].clientX : event.touches[0].clientY;
     }
     const e = event as MouseEvent;
-    return orientation === 'horizontal' ? e.clientX : e.clientY;
+    return orientation.value === 'horizontal' ? e.clientX : e.clientY;
 }
 
 function onMove(event: MouseEvent | TouchEvent) {
@@ -81,7 +81,7 @@ function onMove(event: MouseEvent | TouchEvent) {
     const delta = currentPos - startPos;
 
     const containerRect = containerEl.value.getBoundingClientRect();
-    const containerSize = orientation === 'horizontal' ? containerRect.width : containerRect.height;
+    const containerSize = orientation.value === 'horizontal' ? containerRect.width : containerRect.height;
     const deltaPercent = (delta / containerSize) * 100;
 
     const leftIndex = dragIndex;
@@ -159,6 +159,8 @@ onBeforeUnmount(() => {
     display: flex;
     width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -171,6 +173,8 @@ onBeforeUnmount(() => {
     display: flex;
     width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
     overflow: hidden;
 }
 

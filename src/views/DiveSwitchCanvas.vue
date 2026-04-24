@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
+import { computed, ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
 
@@ -10,6 +10,8 @@ const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
 
 const dive: Ref<QuickViewType | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
+const isCompactViewport = ref(false);
+const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
 let disposed = false;
 const initAbortController = new AbortController();
 
@@ -68,13 +70,20 @@ const initializeDive = async () => {
   }
 };
 
+const updateViewportMode = () => {
+  isCompactViewport.value = window.innerWidth <= 640 || window.innerHeight <= 480;
+};
+
 onMounted(() => {
+  updateViewportMode();
+  window.addEventListener('resize', updateViewportMode);
   void initializeDive();
 });
 
 onUnmounted(() => {
   disposed = true;
   initAbortController.abort();
+  window.removeEventListener('resize', updateViewportMode);
   void dive.value?.disposeAsync();
   dive.value = null;
 });
@@ -99,7 +108,7 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) =
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
   // replace canvas in main view
-  dive.value.mainView.setCanvas(canvas);
+  await dive.value.mainView.setCanvas(canvas);
 
   // set dom element to orbit controller
   dive.value.orbitController.setDomElements(canvas);
@@ -111,14 +120,10 @@ defineProps<{
 </script>
 
 <template>
-  <div
-    class="page"
-    data-testid="switch-canvas-page"
-    :data-active-canvas="String(activeCanvas)"
-    :data-ready="dive ? 'true' : 'false'"
-  >
+  <div class="page" data-testid="switch-canvas-page" :data-active-canvas="String(activeCanvas)"
+    :data-ready="dive ? 'true' : 'false'">
     <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]"
-      :min-size="10" orientation="horizontal">
+      :min-size="10" :orientation="panelOrientation">
       <template #panel-0>
         <div class="canvasWrapper0" data-testid="switch-canvas-panel-0">
           <div class="overlay" v-if="activeCanvas !== 0">
@@ -163,14 +168,15 @@ defineProps<{
 .page {
   width: 100%;
   height: 100%;
-  min-height: 100vh;
+  min-height: 0;
 }
 
 .canvasWrapper0 {
   position: relative;
   display: flex;
   height: 100%;
-  min-height: 24rem;
+  min-width: 0;
+  min-height: 0;
   flex: 1;
 
   justify-content: center;
@@ -181,7 +187,8 @@ defineProps<{
   position: relative;
   display: flex;
   height: 100%;
-  min-height: 24rem;
+  min-width: 0;
+  min-height: 0;
   flex: 1;
 
   justify-content: center;
@@ -192,7 +199,8 @@ defineProps<{
   position: relative;
   display: flex;
   height: 100%;
-  min-height: 24rem;
+  min-width: 0;
+  min-height: 0;
   flex: 1;
 
   justify-content: center;
@@ -207,7 +215,15 @@ canvas {
 
 button {
   position: absolute;
-  bottom: 20px;
+  bottom: clamp(0.25rem, 2vh, 1.25rem);
+  left: 50%;
+  z-index: 2;
+  max-width: calc(100% - 0.75rem);
+  padding-inline: clamp(0.45rem, 4vw, 0.85rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .overlay {
@@ -221,11 +237,12 @@ button {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   pointer-events: none;
+  z-index: 1;
 }
 
 .overlay p {
   color: white;
-  font-size: 30px;
+  font-size: clamp(0.85rem, 4vw, 1.875rem);
   font-weight: bold;
   text-align: center;
 }

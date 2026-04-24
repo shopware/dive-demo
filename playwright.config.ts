@@ -2,6 +2,8 @@ import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
 
 const defaultWebServerTimeoutMs = process.env.CI ? 180 * 1000 : 600 * 1000
+const webServerPort = Number(process.env.PLAYWRIGHT_PORT ?? 5173)
+const webServerHost = process.env.PLAYWRIGHT_HOST ?? '127.0.0.1'
 
 /**
  * Read environment variables from file.
@@ -50,7 +52,7 @@ export default defineConfig({
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'https://127.0.0.1:5173',
+    baseURL: `https://${webServerHost}:${webServerPort}`,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -129,9 +131,9 @@ export default defineConfig({
      */
     command:
       process.env.PLAYWRIGHT_USE_PREBUILT_DIST === 'true'
-        ? 'yarn preview -- --host 127.0.0.1 --strictPort --port 5173'
-        : 'yarn build-only && yarn preview -- --host 127.0.0.1 --strictPort --port 5173',
-    port: 5173,
+        ? `yarn preview -- --host ${webServerHost} --strictPort --port ${webServerPort}`
+        : `yarn build-only && yarn preview -- --host ${webServerHost} --strictPort --port ${webServerPort}`,
+    port: webServerPort,
     reuseExistingServer: false,
     timeout: Number(process.env.PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS ?? defaultWebServerTimeoutMs),
   }
