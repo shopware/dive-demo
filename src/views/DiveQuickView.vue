@@ -19,12 +19,6 @@ const logInit = (stage: string, details: Record<string, unknown> = {}) => {
 
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
-async function waitForPresentationFrames(frames = 2) {
-  for (let i = 0; i < frames; i += 1) {
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-  }
-}
-
 async function loadModel(uri: string) {
   logInit('load-model-start', { uri, hasCanvas: Boolean(canvas.value) });
   if (!canvas.value) {
@@ -41,8 +35,6 @@ async function loadModel(uri: string) {
   logInit('quick-view-start', { uri });
   quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
   logInit('quick-view-resolved', { uri });
-  await waitForPresentationFrames();
-  logInit('presentation-frames-complete', { uri });
   ready.value = true;
   logInit('ready-true', { uri });
 }

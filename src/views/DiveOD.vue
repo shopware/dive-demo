@@ -10,14 +10,6 @@ const logInit = (stage: string, details: Record<string, unknown> = {}) => {
   console.info('[DiveOD]', stage, details);
 };
 
-const waitForPresentationFrames = async (frames = 2) => {
-  for (let index = 0; index < frames; index += 1) {
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => resolve());
-    });
-  }
-};
-
 onMounted(async () => {
   ready.value = false;
   logInit('init-start', { hasCanvas: Boolean(canvas.value) });
@@ -35,8 +27,6 @@ onMounted(async () => {
   );
   logInit('quick-view-resolved', { uri: 'sofa_B.glb' });
 
-  await waitForPresentationFrames();
-  logInit('presentation-frames-complete');
   ready.value = true;
   logInit('ready-true');
 });

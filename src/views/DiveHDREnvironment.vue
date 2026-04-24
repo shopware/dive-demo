@@ -32,8 +32,6 @@ const selectedHDRLabel = computed(
 
 let environmentRequestId = 0;
 let disposed = false;
-let backgroundUpdateTimer: number | null = null;
-let rotationUpdateTimer: number | null = null;
 
 const logInit = (stage: string, details: Record<string, unknown> = {}) => {
   console.info('[DiveHDREnvironment]', stage, details);
@@ -77,33 +75,21 @@ const applyHDR = async (url: string) => {
 };
 
 watch(useAsBackground, (enabled) => {
-  if (backgroundUpdateTimer !== null) {
-    window.clearTimeout(backgroundUpdateTimer);
+  if (disposed) {
+    return;
   }
 
-  backgroundUpdateTimer = window.setTimeout(() => {
-    if (disposed) {
-      return;
-    }
-
-    getEnvironment()?.setUseAsBackground(enabled);
-  }, 50);
+  getEnvironment()?.setUseAsBackground(enabled);
 });
 
 watch(rotationY, (degrees) => {
   const radians = (degrees * Math.PI) / 180;
 
-  if (rotationUpdateTimer !== null) {
-    window.clearTimeout(rotationUpdateTimer);
+  if (disposed) {
+    return;
   }
 
-  rotationUpdateTimer = window.setTimeout(() => {
-    if (disposed) {
-      return;
-    }
-
-    getEnvironment()?.setRotationY(radians);
-  }, 50);
+  getEnvironment()?.setRotationY(radians);
 });
 
 watch(selectedHDR, async (url) => {
@@ -115,7 +101,6 @@ const initializeDive = async () => {
   initError.value = null;
   setInitStage('init-start', { hasCanvas: Boolean(canvas.value), disposed });
   await nextTick();
-  await new Promise((resolve) => window.setTimeout(resolve, 50));
 
   if (!canvas.value || disposed) {
     setInitStage('init-skip', { hasCanvas: Boolean(canvas.value), disposed });
@@ -157,12 +142,6 @@ onUnmounted(() => {
   disposed = true;
   ready.value = false;
   setInitStage('unmounted');
-  if (backgroundUpdateTimer !== null) {
-    window.clearTimeout(backgroundUpdateTimer);
-  }
-  if (rotationUpdateTimer !== null) {
-    window.clearTimeout(rotationUpdateTimer);
-  }
   if (dive.value) {
     dive.value.disposeAsync();
   }

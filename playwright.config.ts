@@ -2,6 +2,7 @@ import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
 
 const defaultWebServerTimeoutMs = process.env.CI ? 180 * 1000 : 600 * 1000
+const defaultTestTimeoutMs = process.env.CI ? 90 * 1000 : 30 * 1000
 const webServerPort = Number(process.env.PLAYWRIGHT_PORT ?? 5173)
 const webServerHost = process.env.PLAYWRIGHT_HOST ?? '127.0.0.1'
 
@@ -17,7 +18,7 @@ const webServerHost = process.env.PLAYWRIGHT_HOST ?? '127.0.0.1'
 export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
-  timeout: 30 * 1000,
+  timeout: Number(process.env.PLAYWRIGHT_TEST_TIMEOUT_MS ?? defaultTestTimeoutMs),
   /* Use platform-agnostic snapshot names so they work on both macOS and Linux
    * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
    * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}

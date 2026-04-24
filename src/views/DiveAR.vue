@@ -25,16 +25,9 @@ const logInit = (stage: string, details: Record<string, unknown> = {}) => {
   console.info('[DiveAR]', stage, details);
 };
 
-async function waitForPresentationFrames(frames = 2) {
-  for (let i = 0; i < frames; i += 1) {
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-  }
-}
-
 async function initializeDive() {
   logInit('init-start', { hasCanvas: Boolean(canvasRef.value), disposed });
   await nextTick();
-  await new Promise((resolve) => window.setTimeout(resolve, 50));
 
   if (!canvasRef.value) {
     logInit('init-skip', { reason: 'missing-canvas', disposed });
@@ -54,8 +47,6 @@ async function initializeDive() {
   logInit('dive-assigned');
   arSystem = new ARSystem();
   logInit('ar-system-created');
-  await waitForPresentationFrames();
-  logInit('presentation-frames-complete');
   ready.value = true;
   logInit('ready-true');
   document.addEventListener('click', onClickOutside);

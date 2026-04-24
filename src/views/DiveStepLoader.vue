@@ -15,17 +15,7 @@ const ready: Ref<boolean> = ref(false);
 
 // Keep the original demo asset; CI stability must not change the showcased model.
 const DEFAULT_STEP_URL = 'D100.step';
-const STEP_LOAD_TIMEOUT_MS = 120000;
-const INITIAL_LOAD_DELAY_MS = 150;
 let disposed = false;
-
-const waitForPresentationFrames = async (frames = 2) => {
-  for (let index = 0; index < frames; index += 1) {
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => resolve());
-    });
-  }
-};
 
 const shouldAutoloadDefaultStep = () => {
   const search = new URLSearchParams(window.location.search);
@@ -39,7 +29,6 @@ const getRequestedStepUrl = () => {
 
 const initializeStep = async (url: string) => {
   await nextTick();
-  await new Promise((resolve) => window.setTimeout(resolve, INITIAL_LOAD_DELAY_MS));
 
   if (!canvas.value || disposed) {
     return;
@@ -59,42 +48,26 @@ const loadStepFile = async (url: string) => {
   const t0 = performance.now();
 
   try {
-    let timeoutId: number | undefined;
+    await dive.value?.disposeAsync();
+    dive.value = null;
 
-    try {
-      await dive.value?.disposeAsync();
-      dive.value = null;
-
-      if (!canvas.value || disposed) {
-        return;
-      }
-
-      const nextDive = await Promise.race([
-        QuickView(url, { canvas: canvas.value }),
-        new Promise<never>((_, reject) => {
-          timeoutId = window.setTimeout(() => {
-            reject(new Error(`STEP loading timed out after ${STEP_LOAD_TIMEOUT_MS / 1000}s`));
-          }, STEP_LOAD_TIMEOUT_MS);
-        }),
-      ]);
-
-      if (disposed) {
-        await nextDive.disposeAsync();
-        return;
-      }
-
-      dive.value = markRaw(nextDive);
-
-      const elapsed = performance.now() - t0;
-      timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
-      error.value = null;
-      await waitForPresentationFrames();
-      ready.value = true;
-    } finally {
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
+    if (!canvas.value || disposed) {
+      return;
     }
+
+    const nextDive = await QuickView(url, { canvas: canvas.value });
+
+    if (disposed) {
+      await nextDive.disposeAsync();
+      return;
+    }
+
+    dive.value = markRaw(nextDive);
+
+    const elapsed = performance.now() - t0;
+    timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
+    error.value = null;
+    ready.value = true;
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load STEP file';
   } finally {

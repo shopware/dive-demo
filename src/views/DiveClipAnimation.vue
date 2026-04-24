@@ -29,12 +29,6 @@ const loopMode: Ref<TAnimatorLoopMode> = ref('once');
 const isPlaying = ref(false);
 const isPaused = ref(false);
 
-async function waitForPresentationFrames(frames = 2) {
-    for (let i = 0; i < frames; i += 1) {
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    }
-}
-
 async function loadModel(uri: string) {
     logInit('load-model-start', { uri, hasCanvas: Boolean(canvas.value), disposed });
     if (!canvas.value || disposed) {
@@ -96,8 +90,6 @@ async function loadModel(uri: string) {
     playClip(clipNames.value[0]);
     setLoopMode('repeat');
     logInit('initial-clip-configured', { currentClip: currentClip.value, loopMode: loopMode.value });
-    await waitForPresentationFrames();
-    logInit('presentation-frames-complete');
     ready.value = true;
     logInit('ready-true', { uri });
 }
@@ -135,7 +127,6 @@ function onClickOutside(event: MouseEvent) {
 onMounted(() => {
     void (async () => {
         await nextTick();
-        await new Promise((resolve) => window.setTimeout(resolve, 50));
         await loadModel('Fox.glb');
     })().catch((error: unknown) => {
         console.error('[DiveClipAnimation]', 'init-failed', error);

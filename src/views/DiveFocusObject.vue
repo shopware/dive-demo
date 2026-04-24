@@ -19,12 +19,6 @@ const logInit = (stage: string, details: Record<string, unknown> = {}) => {
     console.info('[DiveFocusObject]', stage, details);
 }
 
-const waitForPresentationFrames = async (frames = 2) => {
-    for (let i = 0; i < frames; i += 1) {
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    }
-}
-
 onMounted(async () => {
     logInit('init-start', { hasCanvas: Boolean(canvas.value) });
     if (!canvas.value) {
@@ -42,8 +36,6 @@ onMounted(async () => {
         }
     });
     logInit('bounding-boxes-initialized');
-    await waitForPresentationFrames();
-    logInit('presentation-frames-complete');
     ready.value = true;
     logInit('ready-true');
 })

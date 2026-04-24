@@ -103,10 +103,6 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) =
     return;
   }
 
-  // Give the browser one more frame to present the new panel state before
-  // moving the heavy renderer work onto the new canvas.
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
   // replace canvas in main view
   await dive.value.mainView.setCanvas(canvas);
 

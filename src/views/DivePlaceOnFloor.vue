@@ -13,14 +13,6 @@ const logInit = (stage: string, details: Record<string, unknown> = {}) => {
     console.info('[DivePlaceOnFloor]', stage, details);
 };
 
-const waitForPresentationFrames = async (frames = 2) => {
-    for (let index = 0; index < frames; index += 1) {
-        await new Promise<void>((resolve) => {
-            window.requestAnimationFrame(() => resolve());
-        });
-    }
-};
-
 const onKeyDown = (event: KeyboardEvent) => {
     const transformTool = toolbox?.getTool('transform');
     if (!transformTool) {
@@ -70,8 +62,6 @@ onMounted(async () => {
     });
     logInit('bounding-boxes-initialized');
 
-    await waitForPresentationFrames();
-    logInit('presentation-frames-complete');
     ready.value = true;
     logInit('ready-true');
 })
