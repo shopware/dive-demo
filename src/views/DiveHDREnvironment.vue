@@ -44,14 +44,6 @@ const setInitStage = (stage: string, details: Record<string, unknown> = {}) => {
   logInit(stage, details);
 };
 
-const waitForPresentationFrames = async (frames = 2) => {
-  for (let index = 0; index < frames; index += 1) {
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => resolve());
-    });
-  }
-};
-
 const getEnvironment = () => dive.value?.mainView.renderer.environment;
 
 const applyHDR = async (url: string) => {
@@ -149,9 +141,6 @@ const initializeDive = async () => {
   getEnvironment()?.setRotationY(0);
   setInitStage('environment-baseline-applied', { useAsBackground: useAsBackground.value, rotationY: 0 });
   await applyHDR(selectedHDR.value);
-  setInitStage('presentation-frames-start');
-  await waitForPresentationFrames();
-  setInitStage('presentation-frames-complete');
   ready.value = true;
   setInitStage('ready-true');
 };
@@ -181,13 +170,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="canvasWrapper"
-    data-testid="hdr-environment-page"
-    :data-ready="ready ? 'true' : 'false'"
-    :data-init-stage="initStage"
-    :data-init-error="initError ?? ''"
-  >
+  <div class="canvasWrapper" data-testid="hdr-environment-page" :data-ready="ready ? 'true' : 'false'"
+    :data-init-stage="initStage" :data-init-error="initError ?? ''">
     <canvas ref="canvas"></canvas>
 
     <div class="controlPanel controlPanel--top controlPanel--row" data-testid="hdr-control-panel">
