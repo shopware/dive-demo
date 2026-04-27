@@ -1,10 +1,20 @@
 import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
 
+const isCI = !!process.env.CI
 const defaultWebServerTimeoutMs = process.env.CI ? 180 * 1000 : 600 * 1000
 const defaultTestTimeoutMs = process.env.CI ? 90 * 1000 : 30 * 1000
 const webServerPort = Number(process.env.PLAYWRIGHT_PORT ?? 5173)
 const webServerHost = process.env.PLAYWRIGHT_HOST ?? '127.0.0.1'
+const chromiumLaunchArgs = [
+  '--use-gl=angle',
+  '--use-angle=swiftshader',
+  '--enable-unsafe-swiftshader',
+  '--no-sandbox',
+  '--disable-dev-shm-usage',
+  '--hide-scrollbars',
+  '--force-color-profile=srgb',
+]
 
 /**
  * Read environment variables from file.
@@ -42,9 +52,9 @@ export default defineConfig({
     },
   },
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
+  forbidOnly: isCI,
   /* Retry on CI only */
-  retries: process.env.CI ? 0 : 2,
+  retries: isCI ? 0 : 2,
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
@@ -62,9 +72,6 @@ export default defineConfig({
       fullPage: true,
     },
 
-    /* On CI, WebKit needs headed mode (via --headed CLI flag) for WebGL under xvfb.
-     * Don't force headless here so the CLI flag takes effect. */
-
     /* Ignore HTTPS errors */
     ignoreHTTPSErrors: true,
 
@@ -79,6 +86,12 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chromium',
+        headless: isCI ? true : undefined,
+        launchOptions: isCI
+          ? {
+              args: chromiumLaunchArgs,
+            }
+          : undefined,
       }
     },
     {
