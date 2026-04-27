@@ -3,6 +3,7 @@ import { ref, onMounted, type Ref, onUnmounted, nextTick, markRaw } from 'vue';
 import type { DIVE } from '@shopware-ag/dive';
 import { ARSystem } from '@shopware-ag/dive/ar';
 import { QuickView } from '@shopware-ag/dive/quickview';
+import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const placementWrapper: Ref<HTMLElement | null> = ref(null);
@@ -23,6 +24,7 @@ let disposed = false;
 
 const logInit = (stage: string, details: Record<string, unknown> = {}) => {
   console.info('[DiveAR]', stage, details);
+  recordDiveDebugEvent('DiveAR', stage, details);
 };
 
 async function initializeDive() {
@@ -35,7 +37,12 @@ async function initializeDive() {
   }
 
   logInit('quick-view-start', { uri: 'hay_chair.glb' });
-  const quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  const quickView = await withDiveDebugSpan(
+    'DiveAR',
+    'quick-view-call',
+    () => QuickView('hay_chair.glb', { canvas: canvasRef.value! }),
+    { uri: 'hay_chair.glb' },
+  );
   logInit('quick-view-resolved', { uri: 'hay_chair.glb', disposed });
   if (disposed) {
     logInit('quick-view-dispose-stale', { uri: 'hay_chair.glb' });

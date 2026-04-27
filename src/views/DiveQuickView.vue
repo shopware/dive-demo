@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, type Ref } from 'vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
+import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const fileInput: Ref<HTMLInputElement | null> = ref(null);
@@ -15,6 +16,7 @@ const exporter = new AssetExporter();
 
 const logInit = (stage: string, details: Record<string, unknown> = {}) => {
   console.info('[DiveQuickView]', stage, details);
+  recordDiveDebugEvent('DiveQuickView', stage, details);
 };
 
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
@@ -29,11 +31,21 @@ async function loadModel(uri: string) {
   ready.value = false;
   logInit('ready-false', { uri });
   logInit('dispose-previous-start', { hasQuickView: Boolean(quickView) });
-  await quickView?.disposeAsync();
+  await withDiveDebugSpan(
+    'DiveQuickView',
+    'dispose-previous-call',
+    () => quickView?.disposeAsync() ?? Promise.resolve(),
+    { uri, hasQuickView: Boolean(quickView) },
+  );
   logInit('dispose-previous-complete', { uri });
 
   logInit('quick-view-start', { uri });
-  quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
+  quickView = await withDiveDebugSpan(
+    'DiveQuickView',
+    'quick-view-call',
+    () => QuickView(uri, { canvas: canvas.value!, displayGrid: true }),
+    { uri, displayGrid: true },
+  );
   logInit('quick-view-resolved', { uri });
   ready.value = true;
   logInit('ready-true', { uri });

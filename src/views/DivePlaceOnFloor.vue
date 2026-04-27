@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { DIVEModel, BoundingBox } from '@shopware-ag/dive';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Toolbox } from '@shopware-ag/dive/toolbox';
+import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 const dive: Ref<QuickView | null> = ref(null);
@@ -11,6 +12,7 @@ let toolbox: Toolbox | null = null;
 
 const logInit = (stage: string, details: Record<string, unknown> = {}) => {
     console.info('[DivePlaceOnFloor]', stage, details);
+    recordDiveDebugEvent('DivePlaceOnFloor', stage, details);
 };
 
 const onKeyDown = (event: KeyboardEvent) => {
@@ -39,7 +41,12 @@ onMounted(async () => {
     }
 
     logInit('quick-view-start', { uri: 'sofa_B.glb' });
-    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
+    dive.value = markRaw(await withDiveDebugSpan(
+        'DivePlaceOnFloor',
+        'quick-view-call',
+        () => QuickView('sofa_B.glb', { canvas: canvas.value!, displayFloor: true }),
+        { uri: 'sofa_B.glb', displayFloor: true },
+    ));
     logInit('quick-view-resolved', { uri: 'sofa_B.glb' });
 
     toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 type HDROption = {
   label: string;
@@ -35,6 +36,7 @@ let disposed = false;
 
 const logInit = (stage: string, details: Record<string, unknown> = {}) => {
   console.info('[DiveHDREnvironment]', stage, details);
+  recordDiveDebugEvent('DiveHDREnvironment', stage, details);
 };
 
 const setInitStage = (stage: string, details: Record<string, unknown> = {}) => {
@@ -58,7 +60,12 @@ const applyHDR = async (url: string) => {
   setInitStage('apply-hdr-start', { url, requestId });
 
   try {
-    await environment.setImageUrl(url);
+    await withDiveDebugSpan(
+      'DiveHDREnvironment',
+      'environment-set-image-url-call',
+      () => environment.setImageUrl(url),
+      { url, requestId },
+    );
     setInitStage('apply-hdr-resolved', { url, requestId });
   } catch (error) {
     if (requestId === environmentRequestId) {
@@ -108,10 +115,15 @@ const initializeDive = async () => {
   }
 
   setInitStage('quick-view-start', { uri: 'sofa_B.glb' });
-  const quickView = await QuickView('sofa_B.glb', {
-    canvas: canvas.value,
-    displayGrid: false,
-  });
+  const quickView = await withDiveDebugSpan(
+    'DiveHDREnvironment',
+    'quick-view-call',
+    () => QuickView('sofa_B.glb', {
+      canvas: canvas.value!,
+      displayGrid: false,
+    }),
+    { uri: 'sofa_B.glb', displayGrid: false },
+  );
   setInitStage('quick-view-resolved', { uri: 'sofa_B.glb', disposed });
 
   if (disposed) {

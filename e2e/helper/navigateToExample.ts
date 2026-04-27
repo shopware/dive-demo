@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, type Locator } from '@playwright/test';
+import { dumpPageDiagnostics } from './setupErrorSuppression';
 
 type NavigateToExampleOptions = {
     filePattern?: string | RegExp;
@@ -99,7 +100,12 @@ export async function navigateToExample(
     }
 
     if (shouldWaitForRenderedCanvas) {
-        await waitForRenderedCanvas(canvas, timeoutMs);
+        try {
+            await waitForRenderedCanvas(canvas, timeoutMs);
+        } catch (error) {
+            await dumpPageDiagnostics(page, `${path}:rendered-canvas-timeout`);
+            throw error;
+        }
     }
 
     if (waitForCanvasVisible || shouldWaitForRenderedCanvas) {
@@ -107,10 +113,19 @@ export async function navigateToExample(
     }
 
     if (readySelector) {
-        await expect(page.locator(readySelector)).toHaveAttribute(
-            'data-ready',
-            'true',
-            { timeout: timeoutMs },
-        );
+        try {
+            await expect(page.locator(readySelector)).toHaveAttribute(
+                'data-ready',
+                'true',
+                { timeout: timeoutMs },
+            );
+        } catch (error) {
+            await dumpPageDiagnostics(
+                page,
+                `${path}:ready-timeout`,
+                readySelector,
+            );
+            throw error;
+        }
     }
 }

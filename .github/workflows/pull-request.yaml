@@ -125,6 +125,8 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
           CI: true
+          PLAYWRIGHT_DIAGNOSTICS: "1"
+          VITE_DIVE_E2E_DEBUG: "1"
         run: yarn test:e2e --project=chromium --shard=${{ matrix.shard }}/4
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

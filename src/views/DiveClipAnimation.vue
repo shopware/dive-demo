@@ -4,6 +4,7 @@ import { QuickView } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
 import type { AnimationSystem, ClipAnimator, TAnimatorLoopMode } from '@shopware-ag/dive/animation';
+import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const fileInput: Ref<HTMLInputElement | null> = ref(null);
@@ -18,6 +19,7 @@ const ready = ref(false);
 
 const logInit = (stage: string, details: Record<string, unknown> = {}) => {
     console.info('[DiveClipAnimation]', stage, details);
+    recordDiveDebugEvent('DiveClipAnimation', stage, details);
 };
 
 const exporter = new AssetExporter();
@@ -40,8 +42,15 @@ async function loadModel(uri: string) {
     ready.value = false;
     logInit('ready-false', { uri });
     logInit('dispose-previous-start', { hasDive: Boolean(dive), hasAnimationSystem: Boolean(animationSystem) });
-    await dive?.disposeAsync();
-    animationSystem?.dispose();
+    await withDiveDebugSpan(
+        'DiveClipAnimation',
+        'dispose-previous-call',
+        async () => {
+            await dive?.disposeAsync();
+            animationSystem?.dispose();
+        },
+        { uri, hasDive: Boolean(dive), hasAnimationSystem: Boolean(animationSystem) },
+    );
     logInit('dispose-previous-complete', { uri });
 
     // reset UI
@@ -52,14 +61,29 @@ async function loadModel(uri: string) {
 
     // load new model
     logInit('quick-view-start', { uri });
-    dive = markRaw(await QuickView(uri, { canvas: canvas.value }));
+    dive = markRaw(await withDiveDebugSpan(
+        'DiveClipAnimation',
+        'quick-view-call',
+        () => QuickView(uri, { canvas: canvas.value! }),
+        { uri },
+    ));
     logInit('quick-view-resolved', { uri });
 
     // set up animation system
     logInit('animation-system-import-start');
-    const { AnimationSystem } = await import('@shopware-ag/dive/animation');
+    const { AnimationSystem } = await withDiveDebugSpan(
+        'DiveClipAnimation',
+        'animation-system-import-call',
+        () => import('@shopware-ag/dive/animation'),
+        { uri },
+    );
     logInit('animation-system-import-resolved');
-    animationSystem = new AnimationSystem();
+    animationSystem = await withDiveDebugSpan(
+        'DiveClipAnimation',
+        'animation-system-create-call',
+        () => new AnimationSystem(),
+        { uri },
+    );
     dive.clock.addTicker(animationSystem);
     logInit('animation-system-created');
 
@@ -70,7 +94,12 @@ async function loadModel(uri: string) {
 
     // create new animator
     logInit('animator-create-start', { clipCount: dive.model.animations.length });
-    animator = await animationSystem.fromClips(dive.model, dive.model.animations);
+    animator = await withDiveDebugSpan(
+        'DiveClipAnimation',
+        'animator-from-clips-call',
+        () => animationSystem!.fromClips(dive!.model, dive!.model.animations),
+        { uri, clipCount: dive.model.animations.length },
+    );
     clipNames.value = animator.clipNames;
     logInit('animator-create-resolved', { clipNames: clipNames.value });
 

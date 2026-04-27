@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
@@ -20,6 +21,7 @@ const logSwitchCanvas = (
   details: Record<string, unknown> = {},
 ) => {
   console.info('[DiveSwitchCanvas]', stage, details);
+  recordDiveDebugEvent('DiveSwitchCanvas', stage, details);
 };
 
 const initializeDive = async () => {
@@ -41,9 +43,14 @@ const initializeDive = async () => {
     logSwitchCanvas('quick-view-start', {
       canvasTestId: initialCanvas.dataset.testid ?? null,
     });
-    const quickView = await QuickView(
-      'sofa_B.glb',
-      { canvas: initialCanvas },
+    const quickView = await withDiveDebugSpan(
+      'DiveSwitchCanvas',
+      'quick-view-call',
+      () => QuickView(
+        'sofa_B.glb',
+        { canvas: initialCanvas },
+      ),
+      { uri: 'sofa_B.glb', canvasTestId: initialCanvas.dataset.testid ?? null },
     );
     logSwitchCanvas('quick-view-resolved', {
       rendererInitialized: quickView.mainView.renderer.initialized,
@@ -104,10 +111,16 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) =
   }
 
   // replace canvas in main view
-  await dive.value.mainView.setCanvas(canvas);
+  await withDiveDebugSpan(
+    'DiveSwitchCanvas',
+    'set-canvas-call',
+    () => dive.value!.mainView.setCanvas(canvas),
+    { index, canvasTestId: canvas.dataset.testid ?? null },
+  );
 
   // set dom element to orbit controller
   dive.value.orbitController.setDomElements(canvas);
+  logSwitchCanvas('orbit-controller-dom-updated', { index });
 }
 
 defineProps<{

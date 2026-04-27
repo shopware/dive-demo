@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { AnimationSystem, type TargetAnimator } from '@shopware-ag/dive/animation';
 import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
+import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 
@@ -19,6 +20,7 @@ const logTargetAnimation = (
     details: Record<string, unknown> = {},
 ) => {
     console.info('[DiveTargetAnimation]', stage, details);
+    recordDiveDebugEvent('DiveTargetAnimation', stage, details);
 };
 
 const activePreset: Ref<number> = ref(0);
@@ -70,9 +72,14 @@ const initializeDive = async () => {
         logTargetAnimation('quick-view-start', {
             canvasTestId: initialCanvas.dataset.testid ?? null,
         });
-        const quickView = await QuickView(
-            'sofa_B.glb',
-            { canvas: initialCanvas },
+        const quickView = await withDiveDebugSpan(
+            'DiveTargetAnimation',
+            'quick-view-call',
+            () => QuickView(
+                'sofa_B.glb',
+                { canvas: initialCanvas },
+            ),
+            { uri: 'sofa_B.glb', canvasTestId: initialCanvas.dataset.testid ?? null },
         );
         logTargetAnimation('quick-view-resolved', {
             rendererInitialized: quickView.mainView.renderer.initialized,
@@ -90,7 +97,11 @@ const initializeDive = async () => {
 
         orbitController = dive.value?.orbitController;
         logTargetAnimation('orbit-controller-set');
-        animationSystem = new AnimationSystem();
+        animationSystem = await withDiveDebugSpan(
+            'DiveTargetAnimation',
+            'animation-system-create-call',
+            () => new AnimationSystem(),
+        );
         logTargetAnimation('animation-system-created');
         dive.value?.clock.addTicker(animationSystem);
         logTargetAnimation('animation-system-added-to-clock');
@@ -129,13 +140,18 @@ const goToPreset = async (index: number) => {
 
     animationSystem.remove(animator?.uuid ?? '');
 
-    animator = await animationSystem.fromTargets(
-        [
-            { object: orbitController.object.position, to: { ...presets[index].position } },
-            { object: orbitController.target, to: { ...presets[index].target } },
-        ],
-        800, // ms
-        { easing: animationSystem.Easing.Quadratic.InOut },
+    animator = await withDiveDebugSpan(
+        'DiveTargetAnimation',
+        'animator-from-targets-call',
+        () => animationSystem!.fromTargets(
+            [
+                { object: orbitController!.object.position, to: { ...presets[index].position } },
+                { object: orbitController!.target, to: { ...presets[index].target } },
+            ],
+            800, // ms
+            { easing: animationSystem!.Easing.Quadratic.InOut },
+        ),
+        { presetIndex: index, presetLabel: presets[index].label },
     );
 
     animator.addEventListener('update', () => {
