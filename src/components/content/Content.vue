@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue';
-import CodeEditor from '@/components/codeeditor/CodeEditor.vue';
+import { defineAsyncComponent, ref, onMounted, onUnmounted } from 'vue';
+
+const CodeEditor = defineAsyncComponent(() => import('@/components/codeeditor/CodeEditor.vue'));
 
 // toggle visibility of code panel
 const showCode = ref(false);
@@ -49,9 +50,9 @@ onUnmounted(() => window.removeEventListener('resize', onResize));
 <template>
   <div class="content">
     <RouterView class="router-view" />
-    <div v-if="!isMobile" class="splitter" @mousedown="onSplitterMouseDown" :class="{ hidden: !showCode }" />
-    <div v-if="!isMobile" ref="codePane" class="code-view"
-      :style="{ width: showCode ? codeWidth + 'px' : '0px', flex: 'none' }">
+    <div v-if="!isMobile && showCode" class="splitter" @mousedown="onSplitterMouseDown" />
+    <div v-if="!isMobile && showCode" ref="codePane" class="code-view"
+      :style="{ width: codeWidth + 'px', flex: 'none' }">
       <CodeEditor language="typescript" theme="vs-dark" class="full-editor" />
     </div>
     <div v-if="isMobile && showCode" class="code-modal">
@@ -78,7 +79,6 @@ onUnmounted(() => window.removeEventListener('resize', onResize));
 
 .code-view {
   overflow: hidden;
-  transition: width 0.3s ease;
 }
 
 /* draggable splitter between panels */
@@ -88,13 +88,6 @@ onUnmounted(() => window.removeEventListener('resize', onResize));
   background-color: var(--ui-btn-border);
   height: 100%;
   z-index: 1;
-  transition: opacity 0.3s ease;
-  opacity: 1;
-}
-
-.splitter.hidden {
-  opacity: 0;
-  pointer-events: none;
 }
 
 .full-editor {

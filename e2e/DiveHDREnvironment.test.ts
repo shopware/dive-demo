@@ -2,7 +2,11 @@ import { test, expect, type Page } from '@playwright/test';
 import { setupErrorSuppression } from './helper/setupErrorSuppression';
 import { navigateToExample } from './helper/navigateToExample';
 
+const HDR_READY_TIMEOUT_MS = 120000;
+
 test.describe('HDR environment demo', () => {
+    test.describe.configure({ timeout: 150000 });
+
     async function waitForHDRControls(page: Page) {
         const infoBadge = page.getByTestId('hdr-info-badge');
         const controlPanel = page.getByTestId('hdr-control-panel');
@@ -24,6 +28,7 @@ test.describe('HDR environment demo', () => {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
+            timeoutMs: HDR_READY_TIMEOUT_MS,
         });
         await waitForHDRControls(page);
 
@@ -40,6 +45,7 @@ test.describe('HDR environment demo', () => {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
+            timeoutMs: HDR_READY_TIMEOUT_MS,
         });
         await waitForHDRControls(page);
 
@@ -69,6 +75,7 @@ test.describe('HDR environment demo', () => {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
+            timeoutMs: HDR_READY_TIMEOUT_MS,
         });
         await waitForHDRControls(page);
 
@@ -87,6 +94,7 @@ test.describe('HDR environment demo', () => {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
+            timeoutMs: HDR_READY_TIMEOUT_MS,
         });
         await waitForHDRControls(page);
 

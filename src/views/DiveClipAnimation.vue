@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
-import type { AnimationSystem, ClipAnimator, TAnimatorLoopMode } from '@shopware-ag/dive/animation';
+import { AnimationSystem, type ClipAnimator, type TAnimatorLoopMode } from '@shopware-ag/dive/animation';
 import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
@@ -70,14 +70,8 @@ async function loadModel(uri: string) {
     logInit('quick-view-resolved', { uri });
 
     // set up animation system
-    logInit('animation-system-import-start');
-    const { AnimationSystem } = await withDiveDebugSpan(
-        'DiveClipAnimation',
-        'animation-system-import-call',
-        () => import('@shopware-ag/dive/animation'),
-        { uri },
-    );
-    logInit('animation-system-import-resolved');
+    logInit('animation-system-import-start', { strategy: 'route-static-import' });
+    logInit('animation-system-import-resolved', { strategy: 'route-static-import' });
     animationSystem = await withDiveDebugSpan(
         'DiveClipAnimation',
         'animation-system-create-call',

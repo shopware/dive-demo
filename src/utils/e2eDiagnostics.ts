@@ -17,7 +17,7 @@ declare global {
 const MAX_EVENTS = 300;
 const PENDING_MILESTONES_MS = [5000, 15000, 30000, 60000];
 
-const isDebugEnabled = () => {
+export const isDiveDebugEnabled = () => {
   if (import.meta.env.VITE_DIVE_E2E_DEBUG === '1') {
     return true;
   }
@@ -72,7 +72,7 @@ export const recordDiveDebugEvent = (
   stage: string,
   details: DiveDebugDetails = {},
 ) => {
-  if (!isDebugEnabled()) {
+  if (!isDiveDebugEnabled()) {
     return;
   }
 
@@ -115,7 +115,7 @@ export const withDiveDebugSpan = async <T>(
   run: () => T | Promise<T>,
   details: DiveDebugDetails = {},
 ): Promise<T> => {
-  if (!isDebugEnabled()) {
+  if (!isDiveDebugEnabled()) {
     return await run();
   }
 

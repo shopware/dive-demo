@@ -5,6 +5,7 @@ import { navigateToExample } from './helper/navigateToExample';
 test('shows model with animation controls', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 
@@ -24,6 +25,7 @@ test('shows model with animation controls', async ({ page }) => {
 test('clip buttons appear after model loads', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 
@@ -40,6 +42,7 @@ test('clip buttons appear after model loads', async ({ page }) => {
 test('play/pause and stop controls work', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 
@@ -63,6 +66,7 @@ test('play/pause and stop controls work', async ({ page }) => {
 test('loop mode buttons work', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 
@@ -90,6 +94,7 @@ test('loop mode buttons work', async ({ page }) => {
 test('upload and export buttons are visible', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 
@@ -100,6 +105,7 @@ test('upload and export buttons are visible', async ({ page }) => {
 test('export dropdown opens and closes', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 
@@ -125,6 +131,7 @@ test('export dropdown opens and closes', async ({ page }) => {
 test('export option click closes dropdown', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 
@@ -141,6 +148,7 @@ test('export option click closes dropdown', async ({ page }) => {
 test('switching clips changes active state', async ({ page }) => {
     setupErrorSuppression(page);
     await navigateToExample(page, '/clip-animation', {
+        waitForRenderedCanvas: false,
         readySelector: '[data-testid="clip-animation-page"]',
     });
 

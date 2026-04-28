@@ -1,5 +1,28 @@
 import type { Page, ConsoleMessage } from '@playwright/test';
 
+export type DiveDebugEventMatcher = {
+    scope: string;
+    stage: string;
+};
+
+type DiveDebugConsoleEvent = DiveDebugEventMatcher & {
+    text: string;
+    type: string;
+    wallTimeMs: number;
+};
+
+type DiveDebugWaiter = {
+    matchers: DiveDebugEventMatcher[];
+    timer: ReturnType<typeof setTimeout>;
+    resolve: (event: DiveDebugConsoleEvent) => void;
+    sinceMs?: number;
+};
+
+type DiveDebugState = {
+    events: DiveDebugConsoleEvent[];
+    waiters: DiveDebugWaiter[];
+};
+
 const diagnosticsEnabled =
     process.env.PLAYWRIGHT_DIAGNOSTICS === '1' ||
     process.env.CI === 'true';
@@ -8,6 +31,8 @@ const interestingUrlPattern =
     /\.(glb|gltf|hdr|js|css|wasm|ttf)(\?|$)|\/(clip-animation|hdr-environment|target-animation|switch-canvas|place-on-floor|ar)(\?|$)/i;
 
 const requestStartedAt = new WeakMap<object, number>();
+const diveDebugStates = new WeakMap<Page, DiveDebugState>();
+const maxDiveDebugEvents = 300;
 
 function formatUrl(url: string): string {
     try {
@@ -39,6 +64,159 @@ function isSuppressedPageError(error: Error): boolean {
         Boolean(error.stack?.includes('tsMode')) ||
         Boolean(error.stack?.includes('monaco'))
     );
+}
+
+function parseDiveDebugConsoleEvent(
+    text: string,
+    type: string,
+): DiveDebugConsoleEvent | null {
+    const diveDebugMatch = text.match(/^\[DiveDebug\]\s+(\S+)\s+(\S+)/);
+    if (diveDebugMatch) {
+        return {
+            scope: diveDebugMatch[1],
+            stage: diveDebugMatch[2],
+            text,
+            type,
+            wallTimeMs: Date.now(),
+        };
+    }
+
+    const legacyDiveDebugMatch = text.match(/^\[(Dive(?!Debug\b)\S+)\]\s+(\S+)/);
+    if (legacyDiveDebugMatch) {
+        return {
+            scope: legacyDiveDebugMatch[1],
+            stage: legacyDiveDebugMatch[2],
+            text,
+            type,
+            wallTimeMs: Date.now(),
+        };
+    }
+
+    return null;
+}
+
+function matchesDiveDebugEvent(
+    event: DiveDebugConsoleEvent,
+    matchers: DiveDebugEventMatcher[],
+    sinceMs?: number,
+): boolean {
+    if (sinceMs && event.wallTimeMs < sinceMs) {
+        return false;
+    }
+
+    return matchers.some(
+        (matcher) =>
+            matcher.scope === event.scope &&
+            matcher.stage === event.stage,
+    );
+}
+
+function formatDiveDebugMatcher(matcher: DiveDebugEventMatcher): string {
+    return `${matcher.scope}:${matcher.stage}`;
+}
+
+function formatRecentDiveDebugEvents(events: DiveDebugConsoleEvent[]): string {
+    if (events.length === 0) {
+        return 'none';
+    }
+
+    return events
+        .slice(-20)
+        .map((event) => `${event.scope}:${event.stage}`)
+        .join(', ');
+}
+
+function removeDiveDebugWaiter(
+    state: DiveDebugState,
+    waiter: DiveDebugWaiter,
+) {
+    const index = state.waiters.indexOf(waiter);
+    if (index >= 0) {
+        state.waiters.splice(index, 1);
+    }
+}
+
+function resolveMatchingDiveDebugWaiters(
+    state: DiveDebugState,
+    event: DiveDebugConsoleEvent,
+) {
+    for (const waiter of [...state.waiters]) {
+        if (!matchesDiveDebugEvent(event, waiter.matchers, waiter.sinceMs)) {
+            continue;
+        }
+
+        clearTimeout(waiter.timer);
+        removeDiveDebugWaiter(state, waiter);
+        waiter.resolve(event);
+    }
+}
+
+export function ensureDiveDebugEventRecorder(page: Page): DiveDebugState {
+    const existingState = diveDebugStates.get(page);
+    if (existingState) {
+        return existingState;
+    }
+
+    const state: DiveDebugState = {
+        events: [],
+        waiters: [],
+    };
+    diveDebugStates.set(page, state);
+
+    page.on('console', (msg: ConsoleMessage) => {
+        const event = parseDiveDebugConsoleEvent(msg.text(), msg.type());
+        if (!event) {
+            return;
+        }
+
+        state.events.push(event);
+        if (state.events.length > maxDiveDebugEvents) {
+            state.events.splice(0, state.events.length - maxDiveDebugEvents);
+        }
+
+        resolveMatchingDiveDebugWaiters(state, event);
+    });
+
+    return state;
+}
+
+export async function waitForDiveDebugEvent(
+    page: Page,
+    matchers: DiveDebugEventMatcher[],
+    options: {
+        timeoutMs: number;
+        description: string;
+        sinceMs?: number;
+    },
+): Promise<DiveDebugConsoleEvent> {
+    const state = ensureDiveDebugEventRecorder(page);
+    const existingEvent = state.events.find((event) =>
+        matchesDiveDebugEvent(event, matchers, options.sinceMs),
+    );
+
+    if (existingEvent) {
+        return existingEvent;
+    }
+
+    return await new Promise<DiveDebugConsoleEvent>((resolve, reject) => {
+        const waiter: DiveDebugWaiter = {
+            matchers,
+            sinceMs: options.sinceMs,
+            resolve,
+            timer: setTimeout(() => {
+                removeDiveDebugWaiter(state, waiter);
+                const expected = matchers.map(formatDiveDebugMatcher).join(', ');
+                reject(
+                    new Error(
+                        `Timed out after ${options.timeoutMs}ms waiting for ${options.description}. ` +
+                            `Expected one of: ${expected}. Recent debug events: ${formatRecentDiveDebugEvents(state.events)}`,
+                    ),
+                );
+            }, options.timeoutMs),
+        };
+
+        state.waiters.push(waiter);
+    });
 }
 
 export async function dumpPageDiagnostics(
@@ -110,6 +288,8 @@ export async function dumpPageDiagnostics(
 }
 
 export function setupErrorSuppression(page: Page) {
+    ensureDiveDebugEventRecorder(page);
+
     page.on('pageerror', (error: Error) => {
         if (isSuppressedPageError(error)) {
             return;

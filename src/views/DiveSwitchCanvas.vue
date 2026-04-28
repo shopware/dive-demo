@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
-import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
+import { isDiveDebugEnabled, recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
@@ -22,6 +22,22 @@ const logSwitchCanvas = (
 ) => {
   console.info('[DiveSwitchCanvas]', stage, details);
   recordDiveDebugEvent('DiveSwitchCanvas', stage, details);
+};
+
+const getDebugRequestedCanvasIndex = () => {
+  if (!isDiveDebugEnabled()) {
+    return null;
+  }
+
+  const rawIndex = new URLSearchParams(window.location.search).get('switchCanvasTo');
+  if (rawIndex === null) {
+    return null;
+  }
+
+  const index = Number(rawIndex);
+  return Number.isInteger(index) && index >= 0 && index < canvases.length
+    ? index
+    : null;
 };
 
 const initializeDive = async () => {
@@ -67,6 +83,11 @@ const initializeDive = async () => {
     }
 
     logSwitchCanvas('initialize-complete');
+
+    const requestedCanvasIndex = getDebugRequestedCanvasIndex();
+    if (requestedCanvasIndex !== null && requestedCanvasIndex !== activeCanvas.value) {
+      void switchCanvasTo(canvases[requestedCanvasIndex].value, requestedCanvasIndex);
+    }
   } catch (error) {
     const lastError = error instanceof Error ? error : new Error(String(error));
     logSwitchCanvas('quick-view-failed', {

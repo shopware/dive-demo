@@ -9,6 +9,7 @@
 import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import router from '@/router';
+import '@/monaco';
 import MonacoEditor from 'monaco-editor-vue3';
 
 interface Props {
