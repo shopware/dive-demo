@@ -14,7 +14,6 @@ let animator: TargetAnimator | null = null;
 let disposed = false;
 const controlsReady = ref(false);
 const initAbortController = new AbortController();
-const debugPresetSequenceStepDelayMs = 25;
 
 const logTargetAnimation = (
     stage: string,
@@ -53,18 +52,6 @@ const presets = [
         target: { x: 0.15, y: 0.65, z: -0.35 },
     },
 ];
-
-const waitForNextFrame = async () => {
-    await new Promise<void>((resolve) => {
-        window.requestAnimationFrame(() => resolve());
-    });
-};
-
-const waitForDebugDelay = async (delayMs: number) => {
-    await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, delayMs);
-    });
-};
 
 const getValidPresetIndex = (rawIndex: string | null) => {
     if (rawIndex === null) {
@@ -110,118 +97,21 @@ const getDebugPresetRequest = () => {
     };
 };
 
-const getElementLayoutDetails = (element: HTMLElement | null) => {
-    if (!element) {
-        return {
-            exists: false,
-            visible: false,
-            display: 'missing',
-            visibility: 'missing',
-            x: -1,
-            y: -1,
-            width: 0,
-            height: 0,
-            right: -1,
-            bottom: -1,
-        };
-    }
-
-    const rect = element.getBoundingClientRect();
-    const style = window.getComputedStyle(element);
-    const visible =
-        rect.width > 0 &&
-        rect.height > 0 &&
-        style.display !== 'none' &&
-        style.visibility !== 'hidden';
-
-    return {
-        exists: true,
-        visible,
-        display: style.display,
-        visibility: style.visibility,
-        x: Math.round(rect.x),
-        y: Math.round(rect.y),
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
-        right: Math.round(rect.right),
-        bottom: Math.round(rect.bottom),
-    };
-};
-
-const recordTargetControlsLayout = async () => {
+const recordTargetControlsState = async () => {
     if (!isDiveDebugEnabled()) {
         return;
     }
 
     await nextTick();
-    await waitForNextFrame();
 
     if (disposed) {
         return;
     }
 
-    const panel = document.querySelector<HTMLElement>(
-        '[data-testid="target-animation-control-panel"]',
-    );
-    const buttons = Array.from(
-        document.querySelectorAll<HTMLButtonElement>(
-            '[data-testid="target-animation-preset"]',
-        ),
-    );
-    const labels = buttons.map((button) => button.textContent?.trim() ?? '');
-    const disabledStates = buttons.map((button) => button.disabled);
-    const buttonLayouts = buttons.map((button, index) => ({
-        index,
-        label: labels[index],
-        disabled: disabledStates[index],
-        active: button.classList.contains('active'),
-        ...getElementLayoutDetails(button),
-    }));
-    const panelLayout = getElementLayoutDetails(panel);
-    const hasValidLayout =
-        panelLayout.exists &&
-        panelLayout.visible &&
-        buttons.length === presets.length &&
-        buttonLayouts.every((button) => button.exists && button.visible && !button.disabled);
-
-    const stage = hasValidLayout
-        ? `controls-layout-valid-active-${activePreset.value}`
-        : 'controls-layout-invalid';
-
-    logTargetAnimation(stage, {
-        panel: panelLayout,
-        buttonCount: buttons.length,
-        labels,
-        disabledStates,
+    logTargetAnimation(`controls-state-ready-active-${activePreset.value}`, {
+        controlsReady: controlsReady.value,
         activeIndex: activePreset.value,
-        buttons: buttonLayouts,
-    });
-};
-
-const dispatchDebugPresetClick = async (index: number) => {
-    await nextTick();
-    await waitForNextFrame();
-
-    const button = document.querySelectorAll<HTMLButtonElement>(
-        '[data-testid="target-animation-preset"]',
-    )[index];
-
-    if (!button) {
-        logTargetAnimation('debug-preset-click-missing', { index });
-        return;
-    }
-
-    logTargetAnimation('debug-preset-click-dispatching', {
-        index,
-        presetLabel: presets[index].label,
-    });
-    button.click();
-    await nextTick();
-    await waitForNextFrame();
-    logTargetAnimation('debug-preset-click-dispatched', {
-        index,
-        presetLabel: presets[index].label,
-        activeIndex: activePreset.value,
+        presetLabels: presets.map((preset) => preset.label),
     });
 };
 
@@ -232,7 +122,7 @@ const applyDebugPresetRequest = async () => {
     }
 
     if (request.clickIndex !== null) {
-        await dispatchDebugPresetClick(request.clickIndex);
+        await setActivePreset(request.clickIndex);
     }
 
     if (!request.sequence) {
@@ -241,7 +131,6 @@ const applyDebugPresetRequest = async () => {
 
     for (const index of request.sequence) {
         await setActivePreset(index);
-        await waitForDebugDelay(debugPresetSequenceStepDelayMs);
     }
 
     logTargetAnimation(`preset-sequence-complete-${request.sequence.join('-')}`, {
@@ -311,7 +200,7 @@ const initializeDive = async () => {
         controlsReady.value = true;
         await nextTick();
         logTargetAnimation('controls-ready');
-        void recordTargetControlsLayout();
+        void recordTargetControlsState();
         void applyDebugPresetRequest();
     } catch (error) {
         const lastError = error instanceof Error ? error : new Error(String(error));
@@ -368,7 +257,16 @@ const setActivePreset = async (index: number) => {
         index,
         presetLabel: presets[index].label,
     });
-    await goToPreset(index);
+    void goToPreset(index).catch((error: unknown) => {
+        const lastError = error instanceof Error ? error : new Error(String(error));
+        logTargetAnimation('preset-animation-failed', {
+            index,
+            presetLabel: presets[index].label,
+            errorName: lastError.name,
+            errorMessage: lastError.message,
+        });
+        console.error('Failed to animate DiveTargetAnimation preset', lastError);
+    });
 };
 </script>
 

@@ -10,7 +10,7 @@ async function navigateToTargetAnimation(
     path = '/target-animation',
 ) {
     setupErrorSuppression(page);
-    const layoutStartedAt = Date.now();
+    const stateStartedAt = Date.now();
 
     await navigateToExample(page, path, {
         waitForCanvasVisible: false,
@@ -23,13 +23,13 @@ async function navigateToTargetAnimation(
         [
             {
                 scope: 'DiveTargetAnimation',
-                stage: 'controls-layout-valid-active-0',
+                stage: 'controls-state-ready-active-0',
             },
         ],
         {
             timeoutMs: 30000,
-            sinceMs: layoutStartedAt,
-            description: 'TargetAnimation controls layout',
+            sinceMs: stateStartedAt,
+            description: 'TargetAnimation controls state',
         },
     );
 }
