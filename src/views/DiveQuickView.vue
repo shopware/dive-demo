@@ -30,23 +30,29 @@ async function loadModel(uri: string) {
 
   ready.value = false;
   logInit('ready-false', { uri });
-  logInit('dispose-previous-start', { hasQuickView: Boolean(quickView) });
-  await withDiveDebugSpan(
-    'DiveQuickView',
-    'dispose-previous-call',
-    () => quickView?.disposeAsync() ?? Promise.resolve(),
-    { uri, hasQuickView: Boolean(quickView) },
-  );
-  logInit('dispose-previous-complete', { uri });
 
-  logInit('quick-view-start', { uri });
-  quickView = await withDiveDebugSpan(
-    'DiveQuickView',
-    'quick-view-call',
-    () => QuickView(uri, { canvas: canvas.value!, displayGrid: true }),
-    { uri, displayGrid: true },
-  );
-  logInit('quick-view-resolved', { uri });
+  if (!quickView) {
+    logInit('quick-view-start', { uri });
+    quickView = await withDiveDebugSpan(
+      'DiveQuickView',
+      'quick-view-call',
+      () => QuickView(uri, { canvas: canvas.value!, displayGrid: true }),
+      { uri, displayGrid: true },
+    );
+    logInit('quick-view-resolved', { uri });
+  } else {
+    logInit('model-replace-start', { uri });
+    await withDiveDebugSpan(
+      'DiveQuickView',
+      'model-set-from-url-call',
+      () => quickView!.model.setFromURL(uri),
+      { uri },
+    );
+    quickView.model.placeOnFloor();
+    quickView.orbitController.focusObject(quickView.model);
+    logInit('model-replace-complete', { uri });
+  }
+
   ready.value = true;
   logInit('ready-true', { uri });
 }
@@ -57,7 +63,13 @@ function onFileSelected(event: Event) {
   if (!file) return;
 
   const url = URL.createObjectURL(file);
-  loadModel(url);
+  void loadModel(url)
+    .catch((error: unknown) => {
+      console.error('[DiveQuickView]', 'load-model-failed', error);
+    })
+    .finally(() => {
+      URL.revokeObjectURL(url);
+    });
 }
 
 async function exportModel(type: FileType) {

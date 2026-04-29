@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { setupErrorSuppression } from './helper/setupErrorSuppression';
+import {
+    setupErrorSuppression,
+    waitForDiveDebugEvent,
+} from './helper/setupErrorSuppression';
 import { navigateToExample } from './helper/navigateToExample';
 
 test('shows model', async ({ page }) => {
@@ -48,6 +51,33 @@ test('upload and export buttons are visible', async ({ page }) => {
 
     await expect(page.locator('button', { hasText: 'Upload File' })).toBeVisible();
     await expect(page.locator('button', { hasText: 'Export' })).toBeVisible();
+});
+
+test('upload replaces the model without rebuilding the renderer', async ({ page }) => {
+    setupErrorSuppression(page);
+    await navigateToExample(page, '/', {
+        waitForRenderedCanvas: false,
+        readySelector: '[data-testid="quick-view-page"]',
+    });
+
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error: Error) => {
+        pageErrors.push(error.message);
+    });
+
+    const uploadStartedAt = Date.now();
+    await page.locator('input[type="file"]').setInputFiles('public/Fox.glb');
+    await waitForDiveDebugEvent(
+        page,
+        [{ scope: 'DiveQuickView', stage: 'model-replace-complete' }],
+        {
+            timeoutMs: 30000,
+            sinceMs: uploadStartedAt,
+            description: 'quick view model replacement',
+        },
+    );
+
+    expect(pageErrors).toEqual([]);
 });
 
 test('export dropdown opens and closes', async ({ page }) => {
