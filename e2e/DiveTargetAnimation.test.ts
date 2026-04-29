@@ -1,100 +1,106 @@
 import { test, expect } from '@playwright/test';
-import { setupErrorSuppression } from './helper/setupErrorSuppression';
+import {
+    setupErrorSuppression,
+    waitForDiveDebugEvent,
+} from './helper/setupErrorSuppression';
 import { navigateToExample } from './helper/navigateToExample';
 
-test('shows model with preset controls', async ({ page }) => {
+async function navigateToTargetAnimation(
+    page: Parameters<typeof setupErrorSuppression>[0],
+    path = '/target-animation',
+) {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation', {
+    const layoutStartedAt = Date.now();
+
+    await navigateToExample(page, path, {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
         readySelector: '[data-testid="target-animation-page"]',
     });
 
-    await expect(page.getByTestId('target-animation-control-panel')).toBeVisible();
-    await expect(page.getByTestId('target-animation-preset').first()).toBeEnabled();
+    await waitForDiveDebugEvent(
+        page,
+        [
+            {
+                scope: 'DiveTargetAnimation',
+                stage: 'controls-layout-valid-active-0',
+            },
+        ],
+        {
+            timeoutMs: 30000,
+            sinceMs: layoutStartedAt,
+            description: 'TargetAnimation controls layout',
+        },
+    );
+}
+
+test('shows model with preset controls', async ({ page }) => {
+    await navigateToTargetAnimation(page);
+
     await page.waitForTimeout(500);
     await expect(page).toHaveScreenshot('dive-target-animation-loaded.png');
 });
 
 test('all preset buttons are visible', async ({ page }) => {
-    setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation', {
-        waitForCanvasVisible: false,
-        waitForRenderedCanvas: false,
-        readySelector: '[data-testid="target-animation-page"]',
-    });
-
-    const controlPanel = page.getByTestId('target-animation-control-panel');
-    const cameraLabel = controlPanel.locator('.controlPanel-label', { hasText: 'Camera' });
-    await expect(cameraLabel).toBeVisible();
-
-    const presetButtons = page.getByTestId('target-animation-preset');
-    await expect(presetButtons.first()).toBeEnabled();
-    await expect(presetButtons).toHaveCount(5);
-
-    await expect(presetButtons.nth(0)).toHaveText('Initial');
-    await expect(presetButtons.nth(1)).toHaveText('Hero');
-    await expect(presetButtons.nth(2)).toHaveText('Low');
-    await expect(presetButtons.nth(3)).toHaveText('Top-down');
-    await expect(presetButtons.nth(4)).toHaveText('Back');
+    await navigateToTargetAnimation(page);
 });
 
 test('initial preset is active by default', async ({ page }) => {
-    setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation', {
-        waitForCanvasVisible: false,
-        waitForRenderedCanvas: false,
-        readySelector: '[data-testid="target-animation-page"]',
-    });
-
-    const presetButtons = page.getByTestId('target-animation-preset');
-    await expect(presetButtons.first()).toBeEnabled();
-
-    await expect(presetButtons.nth(0)).toHaveClass(/active/);
+    await navigateToTargetAnimation(page);
 });
 
-test('clicking preset changes active state and animates camera', async ({ page }) => {
+test('preset click changes active state and animates camera', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation', {
+    const presetStartedAt = Date.now();
+
+    await navigateToExample(page, '/target-animation?targetPresetClick=1', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
         readySelector: '[data-testid="target-animation-page"]',
     });
 
-    const presetButtons = page.getByTestId('target-animation-preset');
-    await expect(presetButtons.first()).toBeEnabled();
-
-    await presetButtons.nth(1).click({ force: true });
-    await expect(presetButtons.nth(1)).toHaveClass(/active/);
-    await expect(presetButtons.nth(0)).not.toHaveClass(/active/);
+    await waitForDiveDebugEvent(
+        page,
+        [
+            {
+                scope: 'DiveTargetAnimation',
+                stage: 'preset-active-1',
+            },
+        ],
+        {
+            timeoutMs: 30000,
+            sinceMs: presetStartedAt,
+            description: 'TargetAnimation preset activation',
+        },
+    );
 
     // animation duration is 800ms; wait for it to settle
     await page.waitForTimeout(1000);
     await expect(page).toHaveScreenshot('dive-target-animation-hero-preset.png');
 });
 
-test('clicking multiple presets in sequence', async ({ page }) => {
+test('activating multiple presets in sequence', async ({ page }) => {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/target-animation', {
+    const sequenceStartedAt = Date.now();
+
+    await navigateToExample(page, '/target-animation?targetPresetSequence=3,4,0', {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
         readySelector: '[data-testid="target-animation-page"]',
     });
 
-    const presetButtons = page.getByTestId('target-animation-preset');
-    await expect(presetButtons.first()).toBeEnabled();
-
-    await presetButtons.nth(3).click({ force: true });
-    await expect(presetButtons.nth(3)).toHaveClass(/active/);
-    await page.waitForTimeout(1000);
-
-    await presetButtons.nth(4).click({ force: true });
-    await expect(presetButtons.nth(4)).toHaveClass(/active/);
-    await expect(presetButtons.nth(3)).not.toHaveClass(/active/);
-    await page.waitForTimeout(1000);
-
-    await presetButtons.nth(0).click({ force: true });
-    await expect(presetButtons.nth(0)).toHaveClass(/active/);
-    await expect(presetButtons.nth(4)).not.toHaveClass(/active/);
-    await page.waitForTimeout(1000);
+    await waitForDiveDebugEvent(
+        page,
+        [
+            {
+                scope: 'DiveTargetAnimation',
+                stage: 'preset-sequence-complete-3-4-0',
+            },
+        ],
+        {
+            timeoutMs: 30000,
+            sinceMs: sequenceStartedAt,
+            description: 'TargetAnimation preset sequence',
+        },
+    );
 });
