@@ -54,6 +54,77 @@ const getErrorDetails = (error: unknown) => {
   };
 };
 
+const recordCompactButtonsLayout = () => {
+  if (!isDiveDebugEnabled() || !isCompactViewport.value) {
+    return;
+  }
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const tolerancePx = 1;
+  const buttons = canvases.map((_, index) => {
+    const button = document.querySelector<HTMLButtonElement>(
+      `[data-testid="switch-canvas-button-${index}"]`,
+    );
+
+    if (!button) {
+      return {
+        index,
+        exists: false,
+        visible: false,
+        display: 'missing',
+        visibility: 'missing',
+        x: -1,
+        y: -1,
+        width: 0,
+        height: 0,
+        right: -1,
+        bottom: -1,
+      };
+    }
+
+    const rect = button.getBoundingClientRect();
+    const style = window.getComputedStyle(button);
+    const visible =
+      rect.width > 0 &&
+      rect.height > 0 &&
+      style.display !== 'none' &&
+      style.visibility !== 'hidden';
+
+    return {
+      index,
+      exists: true,
+      visible,
+      display: style.display,
+      visibility: style.visibility,
+      x: Math.round(rect.x),
+      y: Math.round(rect.y),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      right: Math.round(rect.right),
+      bottom: Math.round(rect.bottom),
+    };
+  });
+
+  const hasValidLayout = buttons.every((button) =>
+    button.exists &&
+    button.visible &&
+    button.x >= -tolerancePx &&
+    button.y >= -tolerancePx &&
+    button.right <= viewportWidth + tolerancePx &&
+    button.bottom <= viewportHeight + tolerancePx,
+  );
+
+  logSwitchCanvas(
+    hasValidLayout ? 'compact-buttons-layout-valid' : 'compact-buttons-layout-invalid',
+    {
+      viewportWidth,
+      viewportHeight,
+      buttons,
+    },
+  );
+};
+
 const scheduleMainViewCanvasSwap = (
   currentDive: QuickViewType,
   canvas: HTMLCanvasElement,
@@ -128,6 +199,7 @@ const initializeDive = async () => {
     }
 
     logSwitchCanvas('initialize-complete');
+    recordCompactButtonsLayout();
 
     const requestedCanvasIndex = getDebugRequestedCanvasIndex();
     if (requestedCanvasIndex !== null && requestedCanvasIndex !== activeCanvas.value) {

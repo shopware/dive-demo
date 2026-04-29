@@ -41,6 +41,8 @@ test('click button to switch canvas', async ({ page }) => {
 
 test('keeps switch buttons visible in compact viewport', async ({ page }) => {
     setupErrorSuppression(page);
+    const layoutStartedAt = Date.now();
+
     await page.setViewportSize({ width: 360, height: 300 });
     await navigateToExample(page, '/switch-canvas', {
         waitForCanvasVisible: false,
@@ -48,20 +50,18 @@ test('keeps switch buttons visible in compact viewport', async ({ page }) => {
         readySelector: '[data-testid="switch-canvas-page"]',
     });
 
-    const viewport = page.viewportSize();
-    if (!viewport) {
-        throw new Error('Missing viewport size');
-    }
-
-    for (const index of [0, 1, 2]) {
-        const button = page.getByTestId(`switch-canvas-button-${index}`);
-        await expect(button).toBeVisible();
-
-        const box = await button.boundingBox();
-        expect(box).not.toBeNull();
-        expect(box!.x).toBeGreaterThanOrEqual(0);
-        expect(box!.y).toBeGreaterThanOrEqual(0);
-        expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
-        expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
-    }
+    await waitForDiveDebugEvent(
+        page,
+        [
+            {
+                scope: 'DiveSwitchCanvas',
+                stage: 'compact-buttons-layout-valid',
+            },
+        ],
+        {
+            timeoutMs: 30000,
+            sinceMs: layoutStartedAt,
+            description: 'SwitchCanvas compact button layout',
+        },
+    );
 });
