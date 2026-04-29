@@ -15,6 +15,7 @@ const isCompactViewport = ref(false);
 const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
 let disposed = false;
 const initAbortController = new AbortController();
+const debugCanvasSwapDelayMs = 250;
 
 const logSwitchCanvas = (
   stage: string,
@@ -38,6 +39,50 @@ const getDebugRequestedCanvasIndex = () => {
   return Number.isInteger(index) && index >= 0 && index < canvases.length
     ? index
     : null;
+};
+
+const getErrorDetails = (error: unknown) => {
+  if (error instanceof Error) {
+    return {
+      errorName: error.name,
+      errorMessage: error.message,
+    };
+  }
+
+  return {
+    errorMessage: String(error),
+  };
+};
+
+const scheduleMainViewCanvasSwap = (
+  currentDive: QuickViewType,
+  canvas: HTMLCanvasElement,
+  index: number,
+) => {
+  const details = { index, canvasTestId: canvas.dataset.testid ?? null };
+  const delayMs = isDiveDebugEnabled() ? debugCanvasSwapDelayMs : 0;
+
+  logSwitchCanvas('set-canvas-call-scheduled', { ...details, delayMs });
+
+  window.setTimeout(() => {
+    if (disposed || dive.value !== currentDive || activeCanvas.value !== index) {
+      logSwitchCanvas('set-canvas-call-skipped-stale', details);
+      return;
+    }
+
+    void withDiveDebugSpan(
+      'DiveSwitchCanvas',
+      'set-canvas-call',
+      () => currentDive.mainView.setCanvas(canvas),
+      details,
+    ).catch((error: unknown) => {
+      logSwitchCanvas('set-canvas-call-background-failed', {
+        ...details,
+        ...getErrorDetails(error),
+      });
+      console.error('Failed to switch DiveSwitchCanvas canvas', error);
+    });
+  }, delayMs);
 };
 
 const initializeDive = async () => {
@@ -127,20 +172,18 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) =
   // Let Vue commit the new active-state UI before the renderer swaps canvases.
   await nextTick();
 
-  if (disposed || !dive.value) {
+  const currentDive = dive.value;
+
+  if (disposed || !currentDive) {
     return;
   }
 
-  // replace canvas in main view
-  await withDiveDebugSpan(
-    'DiveSwitchCanvas',
-    'set-canvas-call',
-    () => dive.value!.mainView.setCanvas(canvas),
-    { index, canvasTestId: canvas.dataset.testid ?? null },
-  );
+  // Schedule the renderer swap after the UI/controller handoff so a WebGPU
+  // canvas reconfiguration stall cannot block the visible switch state.
+  scheduleMainViewCanvasSwap(currentDive, canvas, index);
 
   // set dom element to orbit controller
-  dive.value.orbitController.setDomElements(canvas);
+  currentDive.orbitController.setDomElements(canvas);
   logSwitchCanvas('orbit-controller-dom-updated', { index });
 }
 
