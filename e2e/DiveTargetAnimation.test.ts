@@ -18,7 +18,7 @@ async function navigateToTargetAnimation(
         readySelector: '[data-testid="target-animation-page"]',
     });
 
-    await waitForDiveDebugEvent(
+    return waitForDiveDebugEvent(
         page,
         [
             {
@@ -35,18 +35,30 @@ async function navigateToTargetAnimation(
 }
 
 test('shows model with preset controls', async ({ page }) => {
-    await navigateToTargetAnimation(page);
+    const readyEvent = await navigateToTargetAnimation(page);
 
-    await page.waitForTimeout(500);
-    await expect(page).toHaveScreenshot('dive-target-animation-loaded.png');
+    expect(readyEvent.text).toContain('controlsReady: true');
+    expect(readyEvent.text).toContain('activeIndex: 0');
 });
 
 test('all preset buttons are visible', async ({ page }) => {
     await navigateToTargetAnimation(page);
+
+    await expect(page.getByTestId('target-animation-preset')).toHaveText([
+        'Initial',
+        'Hero',
+        'Low',
+        'Top-down',
+        'Back',
+    ]);
 });
 
 test('initial preset is active by default', async ({ page }) => {
     await navigateToTargetAnimation(page);
+
+    await expect(
+        page.locator('[data-testid="target-animation-preset"].active'),
+    ).toHaveText('Initial');
 });
 
 test('preset click changes active state and animates camera', async ({ page }) => {
@@ -59,7 +71,7 @@ test('preset click changes active state and animates camera', async ({ page }) =
         readySelector: '[data-testid="target-animation-page"]',
     });
 
-    await waitForDiveDebugEvent(
+    const activationEvent = await waitForDiveDebugEvent(
         page,
         [
             {
@@ -74,9 +86,23 @@ test('preset click changes active state and animates camera', async ({ page }) =
         },
     );
 
-    // animation duration is 800ms; wait for it to settle
-    await page.waitForTimeout(1000);
-    await expect(page).toHaveScreenshot('dive-target-animation-hero-preset.png');
+    const animationEvent = await waitForDiveDebugEvent(
+        page,
+        [
+            {
+                scope: 'DiveTargetAnimation',
+                stage: 'animator-from-targets-call-start',
+            },
+        ],
+        {
+            timeoutMs: 30000,
+            sinceMs: presetStartedAt,
+            description: 'TargetAnimation preset animation start',
+        },
+    );
+
+    expect(activationEvent.text).toContain('presetLabel: Hero');
+    expect(animationEvent.text).toContain('presetIndex: 1');
 });
 
 test('activating multiple presets in sequence', async ({ page }) => {
@@ -89,7 +115,7 @@ test('activating multiple presets in sequence', async ({ page }) => {
         readySelector: '[data-testid="target-animation-page"]',
     });
 
-    await waitForDiveDebugEvent(
+    const sequenceEvent = await waitForDiveDebugEvent(
         page,
         [
             {
@@ -103,4 +129,6 @@ test('activating multiple presets in sequence', async ({ page }) => {
             description: 'TargetAnimation preset sequence',
         },
     );
+
+    expect(sequenceEvent.text).toContain('finalActiveIndex: 0');
 });
