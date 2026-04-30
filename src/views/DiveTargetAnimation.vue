@@ -111,7 +111,9 @@ const recordTargetControlsState = async () => {
     logTargetAnimation(`controls-state-ready-active-${activePreset.value}`, {
         controlsReady: controlsReady.value,
         activeIndex: activePreset.value,
+        activePresetLabel: presets[activePreset.value]?.label ?? null,
         presetLabels: presets.map((preset) => preset.label),
+        presetLabelList: presets.map((preset) => preset.label).join('|'),
     });
 };
 

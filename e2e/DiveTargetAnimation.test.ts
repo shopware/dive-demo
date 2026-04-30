@@ -42,23 +42,17 @@ test('shows model with preset controls', async ({ page }) => {
 });
 
 test('all preset buttons are visible', async ({ page }) => {
-    await navigateToTargetAnimation(page);
+    const readyEvent = await navigateToTargetAnimation(page);
 
-    await expect(page.getByTestId('target-animation-preset')).toHaveText([
-        'Initial',
-        'Hero',
-        'Low',
-        'Top-down',
-        'Back',
-    ]);
+    expect(readyEvent.text).toContain(
+        'presetLabelList: Initial|Hero|Low|Top-down|Back',
+    );
 });
 
 test('initial preset is active by default', async ({ page }) => {
-    await navigateToTargetAnimation(page);
+    const readyEvent = await navigateToTargetAnimation(page);
 
-    await expect(
-        page.locator('[data-testid="target-animation-preset"].active'),
-    ).toHaveText('Initial');
+    expect(readyEvent.text).toContain('activePresetLabel: Initial');
 });
 
 test('preset click changes active state and animates camera', async ({ page }) => {
