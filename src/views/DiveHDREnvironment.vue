@@ -99,8 +99,17 @@ watch(rotationY, (degrees) => {
   getEnvironment()?.setRotationY(radians);
 });
 
-watch(selectedHDR, async (url) => {
-  await applyHDR(url);
+const scheduleHDRApply = (url: string, reason: string) => {
+  logInit('apply-hdr-scheduled', {
+    url,
+    reason,
+    nextRequestId: environmentRequestId + 1,
+  });
+  void applyHDR(url);
+};
+
+watch(selectedHDR, (url) => {
+  scheduleHDRApply(url, 'selection-change');
 });
 
 const initializeDive = async () => {
@@ -137,9 +146,12 @@ const initializeDive = async () => {
   getEnvironment()?.setUseAsBackground(useAsBackground.value);
   getEnvironment()?.setRotationY(0);
   setInitStage('environment-baseline-applied', { useAsBackground: useAsBackground.value, rotationY: 0 });
-  await applyHDR(selectedHDR.value);
+  scheduleHDRApply(selectedHDR.value, 'initial');
   ready.value = true;
-  setInitStage('ready-true');
+  setInitStage('ready-true', {
+    selectedHDR: selectedHDR.value,
+    loadingEnvironment: loadingEnvironment.value,
+  });
 };
 
 onMounted(() => {
