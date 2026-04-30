@@ -5,17 +5,39 @@ import {
 } from './helper/setupErrorSuppression';
 import { navigateToExample } from './helper/navigateToExample';
 
-test('shows canvas', async ({ page }) => {
+async function navigateToSwitchCanvas(
+    page: Parameters<typeof setupErrorSuppression>[0],
+    path = '/switch-canvas',
+) {
     setupErrorSuppression(page);
-    await navigateToExample(page, '/switch-canvas', {
+    const readyStartedAt = Date.now();
+
+    await navigateToExample(page, path, {
         waitForCanvasVisible: false,
         waitForRenderedCanvas: false,
         readySelector: '[data-testid="switch-canvas-page"]',
     });
+
+    return waitForDiveDebugEvent(
+        page,
+        [{ scope: 'DiveSwitchCanvas', stage: 'initialize-complete' }],
+        {
+            timeoutMs: 30000,
+            sinceMs: readyStartedAt,
+            description: 'SwitchCanvas initial state',
+        },
+    );
+}
+
+test('shows canvas', async ({ page }) => {
+    const readyEvent = await navigateToSwitchCanvas(page);
+
+    expect(readyEvent.text).toContain('ready: true');
+    expect(readyEvent.text).toContain('activeCanvas: 0');
+    expect(readyEvent.text).toContain('activeCanvasTestId: switch-canvas-0');
+    expect(readyEvent.text).toContain('canvasCount: 3');
     await expect(page.getByTestId('switch-canvas-panel-0')).toBeVisible();
     await expect(page.getByTestId('switch-canvas-button-1')).toBeEnabled();
-    await page.waitForTimeout(500);
-    await expect(page).toHaveScreenshot('dive-switch-canvas-initial.png');
 });
 
 test('click button to switch canvas', async ({ page }) => {
@@ -28,7 +50,7 @@ test('click button to switch canvas', async ({ page }) => {
         readySelector: '[data-testid="switch-canvas-page"]',
     });
 
-    await waitForDiveDebugEvent(
+    const switchEvent = await waitForDiveDebugEvent(
         page,
         [{ scope: 'DiveSwitchCanvas', stage: 'orbit-controller-dom-updated' }],
         {
@@ -37,6 +59,8 @@ test('click button to switch canvas', async ({ page }) => {
             description: 'SwitchCanvas canvas switch',
         },
     );
+
+    expect(switchEvent.text).toContain('index: 1');
 });
 
 test('keeps switch buttons visible in compact viewport', async ({ page }) => {
@@ -50,7 +74,7 @@ test('keeps switch buttons visible in compact viewport', async ({ page }) => {
         readySelector: '[data-testid="switch-canvas-page"]',
     });
 
-    await waitForDiveDebugEvent(
+    const layoutEvent = await waitForDiveDebugEvent(
         page,
         [
             {
@@ -64,4 +88,7 @@ test('keeps switch buttons visible in compact viewport', async ({ page }) => {
             description: 'SwitchCanvas compact button layout',
         },
     );
+
+    expect(layoutEvent.text).toContain('viewportWidth: 360');
+    expect(layoutEvent.text).toContain('viewportHeight: 300');
 });

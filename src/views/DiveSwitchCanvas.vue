@@ -125,6 +125,13 @@ const recordCompactButtonsLayout = () => {
   );
 };
 
+const getSwitchCanvasReadyDetails = () => ({
+  activeCanvas: activeCanvas.value,
+  activeCanvasTestId: canvases[activeCanvas.value].value?.dataset.testid ?? null,
+  canvasCount: canvases.length,
+  ready: Boolean(dive.value),
+});
+
 const scheduleMainViewCanvasSwap = (
   currentDive: QuickViewType,
   canvas: HTMLCanvasElement,
@@ -198,7 +205,7 @@ const initializeDive = async () => {
       return;
     }
 
-    logSwitchCanvas('initialize-complete');
+    logSwitchCanvas('initialize-complete', getSwitchCanvasReadyDetails());
     recordCompactButtonsLayout();
 
     const requestedCanvasIndex = getDebugRequestedCanvasIndex();
