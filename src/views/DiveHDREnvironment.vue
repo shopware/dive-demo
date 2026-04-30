@@ -46,10 +46,21 @@ const setInitStage = (stage: string, details: Record<string, unknown> = {}) => {
 
 const getEnvironment = () => dive.value?.mainView.renderer.environment;
 
+const shouldSkipHDRLoad = () =>
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('skipHDRLoad');
+
 const applyHDR = async (url: string) => {
   const environment = getEnvironment();
   if (!environment) {
     setInitStage('apply-hdr-skip', { url, reason: 'missing-environment' });
+    return;
+  }
+
+  if (shouldSkipHDRLoad()) {
+    loadingEnvironment.value = false;
+    environmentError.value = null;
+    initError.value = null;
+    setInitStage('apply-hdr-skip', { url, reason: 'skip-query-param' });
     return;
   }
 

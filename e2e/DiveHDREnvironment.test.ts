@@ -3,6 +3,7 @@ import { setupErrorSuppression } from './helper/setupErrorSuppression';
 import { navigateToExample } from './helper/navigateToExample';
 
 const HDR_READY_TIMEOUT_MS = 120000;
+const HDR_TEST_PATH = '/hdr-environment?skipHDRLoad=1';
 
 test.describe('HDR environment demo', () => {
     test.describe.configure({ timeout: 150000 });
@@ -31,7 +32,7 @@ test.describe('HDR environment demo', () => {
 
     test('shows hdr environment controls', async ({ page }) => {
         await prepareHDRTestPage(page);
-        await navigateToExample(page, '/hdr-environment', {
+        await navigateToExample(page, HDR_TEST_PATH, {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
@@ -48,7 +49,7 @@ test.describe('HDR environment demo', () => {
 
     test('hdr preset dropdown lists all environments', async ({ page }) => {
         await prepareHDRTestPage(page);
-        await navigateToExample(page, '/hdr-environment', {
+        await navigateToExample(page, HDR_TEST_PATH, {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
@@ -78,7 +79,7 @@ test.describe('HDR environment demo', () => {
 
     test('changing hdr preset updates selection state', async ({ page }) => {
         await prepareHDRTestPage(page);
-        await navigateToExample(page, '/hdr-environment', {
+        await navigateToExample(page, HDR_TEST_PATH, {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
@@ -97,7 +98,7 @@ test.describe('HDR environment demo', () => {
 
     test('rotation slider and background toggle react to input', async ({ page }) => {
         await prepareHDRTestPage(page);
-        await navigateToExample(page, '/hdr-environment', {
+        await navigateToExample(page, HDR_TEST_PATH, {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
             readySelector: '[data-testid="hdr-environment-page"]',
