@@ -3,7 +3,7 @@ import { setupErrorSuppression } from './helper/setupErrorSuppression';
 import { navigateToExample } from './helper/navigateToExample';
 
 const HDR_READY_TIMEOUT_MS = 120000;
-const HDR_TEST_PATH = '/hdr-environment?skipHDRLoad=1';
+const HDR_TEST_PATH = '/hdr-environment?skipHDRLoad=1&stopRenderLoop=1';
 
 test.describe('HDR environment demo', () => {
     test.describe.configure({ timeout: 150000 });

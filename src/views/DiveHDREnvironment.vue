@@ -46,8 +46,12 @@ const setInitStage = (stage: string, details: Record<string, unknown> = {}) => {
 
 const getEnvironment = () => dive.value?.mainView.renderer.environment;
 
-const shouldSkipHDRLoad = () =>
-  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('skipHDRLoad');
+const hasQueryFlag = (flag: string) =>
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(flag);
+
+const shouldSkipHDRLoad = () => hasQueryFlag('skipHDRLoad');
+
+const shouldStopRenderLoop = () => hasQueryFlag('stopRenderLoop');
 
 const applyHDR = async (url: string) => {
   const environment = getEnvironment();
@@ -158,6 +162,12 @@ const initializeDive = async () => {
   getEnvironment()?.setRotationY(0);
   setInitStage('environment-baseline-applied', { useAsBackground: useAsBackground.value, rotationY: 0 });
   scheduleHDRApply(selectedHDR.value, 'initial');
+
+  if (shouldStopRenderLoop()) {
+    quickView.stop();
+    setInitStage('render-loop-stopped', { reason: 'query-param' });
+  }
+
   ready.value = true;
   setInitStage('ready-true', {
     selectedHDR: selectedHDR.value,
