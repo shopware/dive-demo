@@ -7,6 +7,13 @@ const HDR_READY_TIMEOUT_MS = 120000;
 test.describe('HDR environment demo', () => {
     test.describe.configure({ timeout: 150000 });
 
+    async function prepareHDRTestPage(page: Page) {
+        setupErrorSuppression(page);
+
+        // These tests assert the control UI, not HDR texture decoding.
+        await page.route(/\.hdr(?:\?|$)/, (route) => route.abort('failed'));
+    }
+
     async function waitForHDRControls(page: Page) {
         const infoBadge = page.getByTestId('hdr-info-badge');
         const controlPanel = page.getByTestId('hdr-control-panel');
@@ -23,7 +30,7 @@ test.describe('HDR environment demo', () => {
     }
 
     test('shows hdr environment controls', async ({ page }) => {
-        setupErrorSuppression(page);
+        await prepareHDRTestPage(page);
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
@@ -40,7 +47,7 @@ test.describe('HDR environment demo', () => {
     });
 
     test('hdr preset dropdown lists all environments', async ({ page }) => {
-        setupErrorSuppression(page);
+        await prepareHDRTestPage(page);
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
@@ -70,7 +77,7 @@ test.describe('HDR environment demo', () => {
     });
 
     test('changing hdr preset updates selection state', async ({ page }) => {
-        setupErrorSuppression(page);
+        await prepareHDRTestPage(page);
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
@@ -89,7 +96,7 @@ test.describe('HDR environment demo', () => {
     });
 
     test('rotation slider and background toggle react to input', async ({ page }) => {
-        setupErrorSuppression(page);
+        await prepareHDRTestPage(page);
         await navigateToExample(page, '/hdr-environment', {
             waitForAssetResponse: false,
             waitForRenderedCanvas: false,
