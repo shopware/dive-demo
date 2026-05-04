@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, onUnmounted, nextTick, markRaw } from 'vue';
-import type { DIVE } from '@shopware-ag/dive';
+import { ref, onMounted, type Ref, onUnmounted } from 'vue';
 import { ARSystem } from '@shopware-ag/dive/ar';
 import { QuickView } from '@shopware-ag/dive/quickview';
 
@@ -16,37 +15,33 @@ const selectedScale = ref<typeof scaleOptions[number]>('auto');
 const showPlacementMenu = ref(false);
 const showScaleMenu = ref(false);
 
-let dive: DIVE | null = null;
+let quickView: QuickView | null = null;
 let arSystem: ARSystem | null = null;
 let disposed = false;
 
-async function initializeDive() {
-  await nextTick();
-
-  if (!canvasRef.value) {
+onMounted(async () => {
+    if (!canvasRef.value) {
     return;
   }
 
-  const quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+
   if (disposed) {
     await quickView.disposeAsync();
     return;
   }
 
-  dive = markRaw(quickView);
   arSystem = new ARSystem();
   document.addEventListener('click', onClickOutside);
-}
-
-onMounted(() => {
-  void initializeDive().catch(() => undefined);
 });
 
 onUnmounted(() => {
   disposed = true;
   document.removeEventListener('click', onClickOutside);
-  if (!dive) return;
-  void dive.disposeAsync();
+
+  if (!quickView) return;
+
+  void quickView.disposeAsync();
 });
 
 function onClickOutside(event: MouseEvent) {

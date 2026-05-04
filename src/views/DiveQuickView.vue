@@ -9,36 +9,46 @@ const fileInput: Ref<HTMLInputElement | null> = ref(null);
 const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
 
+const DEFAULT_URL = 'sofa_B.glb';
 let quickView: QuickViewType | null = null;
 const exporter = new AssetExporter();
 
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
-async function loadModel(uri: string) {
+onMounted(async () => {
   if (!canvas.value) {
     return;
   }
 
   if (!quickView) {
-    quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
-  } else {
-    await quickView.model.setFromURL(uri);
-    quickView.model.placeOnFloor();
-    quickView.orbitController.focusObject(quickView.model);
+    quickView = await QuickView(DEFAULT_URL, { canvas: canvas.value, displayGrid: true });
   }
-}
 
-function onFileSelected(event: Event) {
+  document.addEventListener('click', onClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', onClickOutside);
+
+  if (quickView) {
+    void quickView.disposeAsync();
+  }
+});
+
+async function onFileSelected(event: Event) {
+  if(!canvas.value || !quickView) {
+    return;
+  }
+
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
 
   const url = URL.createObjectURL(file);
-  void loadModel(url)
-    .catch(() => undefined)
-    .finally(() => {
-      URL.revokeObjectURL(url);
-    });
+  await quickView.model.setFromURL(url);
+  quickView.model.placeOnFloor();
+  quickView.orbitController.focusObject(quickView.model);
+  URL.revokeObjectURL(url);
 }
 
 async function exportModel(type: FileType) {
@@ -60,18 +70,6 @@ function onClickOutside(event: MouseEvent) {
     showExportMenu.value = false;
   }
 }
-
-onMounted(() => {
-  void loadModel('sofa_B.glb').catch(() => undefined);
-  document.addEventListener('click', onClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', onClickOutside);
-  if (quickView) {
-    void quickView.disposeAsync();
-  }
-});
 
 defineProps<{
   msg: string

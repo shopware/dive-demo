@@ -1,95 +1,55 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
-import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
 const canvas2 = ref<HTMLCanvasElement | null>(null);
 const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
 
-const dive: Ref<QuickViewType | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
 const isCompactViewport = ref(false);
 const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
-let disposed = false;
 
-const scheduleMainViewCanvasSwap = (
-  currentDive: QuickViewType,
-  canvas: HTMLCanvasElement,
-  index: number,
-) => {
-  window.setTimeout(() => {
-    if (disposed || dive.value !== currentDive || activeCanvas.value !== index) {
-      return;
-    }
+const DEFAULT_URL = 'sofa_B.glb';
+let quickView: QuickView | null = null;
 
-    void Promise.resolve(currentDive.mainView.setCanvas(canvas)).catch(() => undefined);
-  }, 0);
-};
 
-const initializeDive = async () => {
-  await nextTick();
 
-  if (disposed) {
-    return;
-  }
-
-  const initialCanvas = canvas0.value;
-
-  if (!initialCanvas) {
-    return;
-  }
-
-  const quickView = await QuickView(
-    'sofa_B.glb',
-    { canvas: initialCanvas },
-  );
-
-  if (disposed) {
-    await quickView.disposeAsync();
-    return;
-  }
-
-  dive.value = markRaw(quickView);
-};
-
-const updateViewportMode = () => {
-  isCompactViewport.value = window.innerWidth <= 640 || window.innerHeight <= 480;
-};
-
-onMounted(() => {
+onMounted(async () => {
   updateViewportMode();
   window.addEventListener('resize', updateViewportMode);
-  void initializeDive().catch(() => undefined);
+
+  if (!canvas0.value) {
+    return;
+  }
+
+  if (!quickView) {
+    quickView = await QuickView(DEFAULT_URL, { canvas: canvas0.value });
+  }
 });
 
 onUnmounted(() => {
-  disposed = true;
-  window.removeEventListener('resize', updateViewportMode);
-  void dive.value?.disposeAsync();
-  dive.value = null;
+  if (quickView) {
+    void quickView.disposeAsync();
+  }
 });
 
 const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) => {
-  if (!canvas || !dive.value) {
+  if (!canvas || !quickView) {
     return;
   }
 
   activeCanvas.value = index;
 
-  await nextTick();
-
-  const currentDive = dive.value;
-
-  if (disposed || !currentDive) {
-    return;
-  }
-
-  scheduleMainViewCanvasSwap(currentDive, canvas, index);
-
-  currentDive.orbitController.setDomElements(canvas);
+  quickView.mainView.setCanvas(canvas)
+  quickView.orbitController.setDomElements(canvas);
 }
+
+const updateViewportMode = () => {
+  isCompactViewport.value = window.innerWidth <= 640 || window.innerHeight <= 480;
+};
 
 defineProps<{
   msg: string
@@ -106,7 +66,8 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas ref="canvas0"></canvas>
-          <button :disabled="!dive || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)">Use this</button>
+          <button :disabled="!quickView || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)">Use
+            this</button>
         </div>
       </template>
       <template #panel-1>
@@ -115,7 +76,8 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas ref="canvas1"></canvas>
-          <button :disabled="!dive || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)">Use this</button>
+          <button :disabled="!quickView || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)">Use
+            this</button>
         </div>
       </template>
       <template #panel-2>
@@ -124,7 +86,8 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas ref="canvas2"></canvas>
-          <button :disabled="!dive || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)">Use this</button>
+          <button :disabled="!quickView || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)">Use
+            this</button>
         </div>
       </template>
     </ResizablePanels>
