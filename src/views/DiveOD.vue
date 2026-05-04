@@ -4,36 +4,21 @@ import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const dive: Ref<QuickView | null> = ref(null);
-const ready = ref(false);
-
-const logInit = (stage: string, details: Record<string, unknown> = {}) => {
-  console.info('[DiveOD]', stage, details);
-};
 
 onMounted(async () => {
-  ready.value = false;
-  logInit('init-start', { hasCanvas: Boolean(canvas.value) });
   if (!canvas.value) {
-    logInit('init-skip', { reason: 'missing-canvas' });
     return;
   }
 
-  logInit('quick-view-start', { uri: 'sofa_B.glb' });
   dive.value = markRaw(
     await QuickView('sofa_B.glb', {
       canvas: canvas.value,
       displayAxes: true,
     }),
   );
-  logInit('quick-view-resolved', { uri: 'sofa_B.glb' });
-
-  ready.value = true;
-  logInit('ready-true');
 });
 
 onUnmounted(() => {
-  ready.value = false;
-  logInit('unmounted');
   void dive.value?.disposeAsync();
   dive.value = null;
 });
@@ -44,8 +29,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="page" data-testid="od-page" :data-ready="ready ? 'true' : 'false'">
-    <div class="canvasWrapper" data-testid="od-with-axes">
+  <div class="page">
+    <div class="canvasWrapper">
       <canvas ref="canvas"></canvas>
     </div>
   </div>

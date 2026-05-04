@@ -13,36 +13,22 @@ const depth: Ref<number> = ref(0)
 
 const isBoundingBoxVisible: Ref<boolean> = ref(false)
 const currentBoundingBox: Ref<BoundingBox | null> = ref(null)
-const ready: Ref<boolean> = ref(false)
-
-const logInit = (stage: string, details: Record<string, unknown> = {}) => {
-    console.info('[DiveFocusObject]', stage, details);
-}
 
 onMounted(async () => {
-    logInit('init-start', { hasCanvas: Boolean(canvas.value) });
     if (!canvas.value) {
-        logInit('init-skip', { reason: 'missing-canvas' });
         return;
     }
 
-    logInit('quick-view-start', { uri: 'sofa_B.glb' });
     dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value }));
-    logInit('quick-view-resolved', { uri: 'sofa_B.glb' });
 
     dive.value.scene.root.children.forEach((model) => {
         if (model instanceof DIVEModel) {
             drawBoundingBox(model);
         }
     });
-    logInit('bounding-boxes-initialized');
-    ready.value = true;
-    logInit('ready-true');
 })
 
 onUnmounted(() => {
-    ready.value = false;
-    logInit('unmounted');
     void dive.value?.disposeAsync();
     dive.value = null;
 });
@@ -108,7 +94,7 @@ defineProps<{
 </script>
 
 <template>
-    <div class="canvasWrapper" data-testid="focus-object-page" :data-ready="ready ? 'true' : 'false'">
+    <div class="canvasWrapper">
         <canvas ref="canvas"></canvas>
     </div>
     <div class="controlPanel">

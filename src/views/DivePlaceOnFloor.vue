@@ -3,17 +3,10 @@ import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { DIVEModel, BoundingBox } from '@shopware-ag/dive';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Toolbox } from '@shopware-ag/dive/toolbox';
-import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 const dive: Ref<QuickView | null> = ref(null);
-const ready = ref(false);
 let toolbox: Toolbox | null = null;
-
-const logInit = (stage: string, details: Record<string, unknown> = {}) => {
-    console.info('[DivePlaceOnFloor]', stage, details);
-    recordDiveDebugEvent('DivePlaceOnFloor', stage, details);
-};
 
 const onKeyDown = (event: KeyboardEvent) => {
     const transformTool = toolbox?.getTool('transform');
@@ -33,25 +26,14 @@ const onKeyDown = (event: KeyboardEvent) => {
 };
 
 onMounted(async () => {
-    ready.value = false;
-    logInit('init-start', { hasCanvas: Boolean(canvas.value) });
     if (!canvas.value) {
-        logInit('init-skip', { reason: 'missing-canvas' });
         return;
     }
 
-    logInit('quick-view-start', { uri: 'sofa_B.glb' });
-    dive.value = markRaw(await withDiveDebugSpan(
-        'DivePlaceOnFloor',
-        'quick-view-call',
-        () => QuickView('sofa_B.glb', { canvas: canvas.value!, displayFloor: true }),
-        { uri: 'sofa_B.glb', displayFloor: true },
-    ));
-    logInit('quick-view-resolved', { uri: 'sofa_B.glb' });
+    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
 
     toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
     toolbox.enableTool('transform');
-    logInit('toolbox-ready');
 
     const model = dive.value.scene.root.children.find((child) => 'isDIVEModel' in child) as DIVEModel;
     toolbox.selectionState.select(model);
@@ -67,15 +49,9 @@ onMounted(async () => {
             child.add(bb);
         }
     });
-    logInit('bounding-boxes-initialized');
-
-    ready.value = true;
-    logInit('ready-true');
 })
 
 onUnmounted(() => {
-    ready.value = false;
-    logInit('unmounted');
     window.removeEventListener('keydown', onKeyDown);
     toolbox?.dispose();
     toolbox = null;
@@ -97,7 +73,7 @@ defineProps<{
 </script>
 
 <template>
-    <div class="canvasWrapper" data-testid="place-on-floor-page" :data-ready="ready ? 'true' : 'false'">
+    <div class="canvasWrapper">
         <canvas ref="canvas"></canvas>
         <button @click="placeOnFloor">Place on floor</button>
     </div>

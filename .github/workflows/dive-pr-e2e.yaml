@@ -139,8 +139,6 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
           CI: true
-          PLAYWRIGHT_DIAGNOSTICS: "1"
-          VITE_DIVE_E2E_DEBUG: "1"
           LIBGL_ALWAYS_SOFTWARE: "1"
           GALLIUM_DRIVER: llvmpipe
         run: xvfb-run --auto-servernum yarn test:e2e --headed --shard=${{ matrix.shard }}/4

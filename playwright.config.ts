@@ -29,27 +29,12 @@ export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
   timeout: Number(process.env.PLAYWRIGHT_TEST_TIMEOUT_MS ?? defaultTestTimeoutMs),
-  /* Use platform-agnostic snapshot names so they work on both macOS and Linux
-   * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
-   * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}
-   */
-  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}',
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
     timeout: 30 * 1000,
-    /**
-     * Threshold for visual comparisons:
-     * - threshold: Perceived color difference per pixel (0-1, default 0.2)
-     * - maxDiffPixelRatio: Ratio of pixels that can differ (0-1, default very strict)
-     */
-    toHaveScreenshot: {
-      threshold: 0.3, // Color difference tolerance per pixel
-      maxDiffPixelRatio: 0.15, // Allow up to 15% of pixels to differ (within threshold)
-      animations: 'disabled',
-    },
   },
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: isCI,

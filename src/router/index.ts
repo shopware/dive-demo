@@ -20,11 +20,6 @@ const router = createRouter({
       component: () => import('../views/DiveSwitchCanvas.vue')
     },
     {
-      path: '/asset-loader-diagnostics',
-      name: 'asset loader diagnostics',
-      component: () => import('../views/DiveAssetLoaderDiagnostics.vue')
-    },
-    {
       path: '/place-on-floor',
       name: 'place on floor',
       component: () => import('../views/DivePlaceOnFloor.vue')

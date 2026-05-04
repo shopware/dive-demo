@@ -3,58 +3,29 @@ import { ref, onMounted, onUnmounted, type Ref } from 'vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
-import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const fileInput: Ref<HTMLInputElement | null> = ref(null);
 const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
-const ready = ref(false);
 
 let quickView: QuickViewType | null = null;
 const exporter = new AssetExporter();
 
-const logInit = (stage: string, details: Record<string, unknown> = {}) => {
-  console.info('[DiveQuickView]', stage, details);
-  recordDiveDebugEvent('DiveQuickView', stage, details);
-};
-
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
 async function loadModel(uri: string) {
-  logInit('load-model-start', { uri, hasCanvas: Boolean(canvas.value) });
   if (!canvas.value) {
-    logInit('load-model-skip', { uri, reason: 'missing-canvas' });
     return;
   }
 
-  ready.value = false;
-  logInit('ready-false', { uri });
-
   if (!quickView) {
-    logInit('quick-view-start', { uri });
-    quickView = await withDiveDebugSpan(
-      'DiveQuickView',
-      'quick-view-call',
-      () => QuickView(uri, { canvas: canvas.value!, displayGrid: true }),
-      { uri, displayGrid: true },
-    );
-    logInit('quick-view-resolved', { uri });
+    quickView = await QuickView(uri, { canvas: canvas.value, displayGrid: true });
   } else {
-    logInit('model-replace-start', { uri });
-    await withDiveDebugSpan(
-      'DiveQuickView',
-      'model-set-from-url-call',
-      () => quickView!.model.setFromURL(uri),
-      { uri },
-    );
+    await quickView.model.setFromURL(uri);
     quickView.model.placeOnFloor();
     quickView.orbitController.focusObject(quickView.model);
-    logInit('model-replace-complete', { uri });
   }
-
-  ready.value = true;
-  logInit('ready-true', { uri });
 }
 
 function onFileSelected(event: Event) {
@@ -64,9 +35,7 @@ function onFileSelected(event: Event) {
 
   const url = URL.createObjectURL(file);
   void loadModel(url)
-    .catch((error: unknown) => {
-      console.error('[DiveQuickView]', 'load-model-failed', error);
-    })
+    .catch(() => undefined)
     .finally(() => {
       URL.revokeObjectURL(url);
     });
@@ -93,18 +62,14 @@ function onClickOutside(event: MouseEvent) {
 }
 
 onMounted(() => {
-  void loadModel('sofa_B.glb').catch((error: unknown) => {
-    console.error('[DiveQuickView]', 'load-model-failed', error);
-  });
+  void loadModel('sofa_B.glb').catch(() => undefined);
   document.addEventListener('click', onClickOutside);
 });
 
 onUnmounted(() => {
-  ready.value = false;
-  logInit('unmounted');
   document.removeEventListener('click', onClickOutside);
   if (quickView) {
-    quickView.disposeAsync();
+    void quickView.disposeAsync();
   }
 });
 
@@ -114,7 +79,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="canvasWrapper" data-testid="quick-view-page" :data-ready="ready ? 'true' : 'false'">
+  <div class="canvasWrapper">
     <canvas ref="canvas"></canvas>
     <input ref="fileInput" type="file" :accept="exportFormats.join(',')" class="file-input" @change="onFileSelected" />
     <div class="controlPanel controlPanel--bottom">

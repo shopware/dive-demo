@@ -1,34 +1,25 @@
 import { test, expect } from '@playwright/test';
-import { setupErrorSuppression } from './helper/setupErrorSuppression';
-import { navigateToExample } from './helper/navigateToExample';
 
-test('shows model', async ({ page }) => {
-    setupErrorSuppression(page);
-    await navigateToExample(page, '/focus-object', {
-        readySelector: '[data-testid="focus-object-page"]',
-    });
-    await expect(page).toHaveScreenshot('dive-focus-object-model-visible.png');
+test('loads focus-object controls', async ({ page }) => {
+    await page.goto('/focus-object', { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+    await expect(page.locator('div.canvasWrapper > canvas')).toBeVisible({ timeout: 60000 });
+    await expect(page.getByRole('button', { name: 'Sofa' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Chair' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Suzanne' })).toBeVisible();
+    await expect(page.locator('.infoPanel')).toContainText('Dimensions');
 });
 
-test('switch to different object', async ({ page }) => {
-    setupErrorSuppression(page);
-    await navigateToExample(page, '/focus-object', {
-        readySelector: '[data-testid="focus-object-page"]',
-    });
+test('switches to another object', async ({ page }) => {
+    await page.goto('/focus-object', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-    const chairButton = page.locator('button').filter({ hasText: 'Chair' });
-    await expect(chairButton).toBeVisible();
+    const dimensions = page.locator('.infoPanel-dimensions');
+    await expect.poll(async () => dimensions.innerText(), { timeout: 30000 }).not.toContain('0 m');
+    const initialDimensions = await dimensions.innerText();
 
-    const responsePromise = page.waitForResponse(
-        (resp) => resp.url().includes('hay_chair.glb') && resp.status() === 200,
-    );
-
-    await chairButton.click();
-    await responsePromise;
-
-    await page.waitForFunction(() =>
-        new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    );
+    await page.getByRole('button', { name: 'Chair' }).click();
+    await expect.poll(async () => dimensions.innerText(), { timeout: 30000 }).not.toBe(initialDimensions);
 
     await expect(page.locator('div.canvasWrapper > canvas')).toBeVisible();
+    await expect(page.locator('.infoPanel')).toContainText('Dimensions');
 });

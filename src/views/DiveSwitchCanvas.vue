@@ -2,7 +2,6 @@
 import { computed, ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
-import { isDiveDebugEnabled, recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
@@ -14,212 +13,45 @@ const activeCanvas: Ref<number> = ref(0)
 const isCompactViewport = ref(false);
 const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
 let disposed = false;
-const initAbortController = new AbortController();
-const debugCanvasSwapDelayMs = 250;
-
-const logSwitchCanvas = (
-  stage: string,
-  details: Record<string, unknown> = {},
-) => {
-  console.info('[DiveSwitchCanvas]', stage, details);
-  recordDiveDebugEvent('DiveSwitchCanvas', stage, details);
-};
-
-const getDebugRequestedCanvasIndex = () => {
-  if (!isDiveDebugEnabled()) {
-    return null;
-  }
-
-  const rawIndex = new URLSearchParams(window.location.search).get('switchCanvasTo');
-  if (rawIndex === null) {
-    return null;
-  }
-
-  const index = Number(rawIndex);
-  return Number.isInteger(index) && index >= 0 && index < canvases.length
-    ? index
-    : null;
-};
-
-const getErrorDetails = (error: unknown) => {
-  if (error instanceof Error) {
-    return {
-      errorName: error.name,
-      errorMessage: error.message,
-    };
-  }
-
-  return {
-    errorMessage: String(error),
-  };
-};
-
-const recordCompactButtonsLayout = () => {
-  if (!isDiveDebugEnabled() || !isCompactViewport.value) {
-    return;
-  }
-
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const tolerancePx = 1;
-  const buttons = canvases.map((_, index) => {
-    const button = document.querySelector<HTMLButtonElement>(
-      `[data-testid="switch-canvas-button-${index}"]`,
-    );
-
-    if (!button) {
-      return {
-        index,
-        exists: false,
-        visible: false,
-        display: 'missing',
-        visibility: 'missing',
-        x: -1,
-        y: -1,
-        width: 0,
-        height: 0,
-        right: -1,
-        bottom: -1,
-      };
-    }
-
-    const rect = button.getBoundingClientRect();
-    const style = window.getComputedStyle(button);
-    const visible =
-      rect.width > 0 &&
-      rect.height > 0 &&
-      style.display !== 'none' &&
-      style.visibility !== 'hidden';
-
-    return {
-      index,
-      exists: true,
-      visible,
-      display: style.display,
-      visibility: style.visibility,
-      x: Math.round(rect.x),
-      y: Math.round(rect.y),
-      width: Math.round(rect.width),
-      height: Math.round(rect.height),
-      right: Math.round(rect.right),
-      bottom: Math.round(rect.bottom),
-    };
-  });
-
-  const hasValidLayout = buttons.every((button) =>
-    button.exists &&
-    button.visible &&
-    button.x >= -tolerancePx &&
-    button.y >= -tolerancePx &&
-    button.right <= viewportWidth + tolerancePx &&
-    button.bottom <= viewportHeight + tolerancePx,
-  );
-
-  logSwitchCanvas(
-    hasValidLayout ? 'compact-buttons-layout-valid' : 'compact-buttons-layout-invalid',
-    {
-      viewportWidth,
-      viewportHeight,
-      buttons,
-    },
-  );
-};
-
-const getSwitchCanvasReadyDetails = () => ({
-  activeCanvas: activeCanvas.value,
-  activeCanvasTestId: canvases[activeCanvas.value].value?.dataset.testid ?? null,
-  canvasCount: canvases.length,
-  ready: Boolean(dive.value),
-});
 
 const scheduleMainViewCanvasSwap = (
   currentDive: QuickViewType,
   canvas: HTMLCanvasElement,
   index: number,
 ) => {
-  const details = { index, canvasTestId: canvas.dataset.testid ?? null };
-  const delayMs = isDiveDebugEnabled() ? debugCanvasSwapDelayMs : 0;
-
-  logSwitchCanvas('set-canvas-call-scheduled', { ...details, delayMs });
-
   window.setTimeout(() => {
     if (disposed || dive.value !== currentDive || activeCanvas.value !== index) {
-      logSwitchCanvas('set-canvas-call-skipped-stale', details);
       return;
     }
 
-    void withDiveDebugSpan(
-      'DiveSwitchCanvas',
-      'set-canvas-call',
-      () => currentDive.mainView.setCanvas(canvas),
-      details,
-    ).catch((error: unknown) => {
-      logSwitchCanvas('set-canvas-call-background-failed', {
-        ...details,
-        ...getErrorDetails(error),
-      });
-      console.error('Failed to switch DiveSwitchCanvas canvas', error);
-    });
-  }, delayMs);
+    void Promise.resolve(currentDive.mainView.setCanvas(canvas)).catch(() => undefined);
+  }, 0);
 };
 
 const initializeDive = async () => {
   await nextTick();
 
-  if (disposed || initAbortController.signal.aborted) {
+  if (disposed) {
     return;
   }
 
   const initialCanvas = canvas0.value;
 
   if (!initialCanvas) {
-    const error = new Error('Initial switch-canvas canvas ref is missing');
-    console.error('Failed to initialize DiveSwitchCanvas', error);
     return;
   }
 
-  try {
-    logSwitchCanvas('quick-view-start', {
-      canvasTestId: initialCanvas.dataset.testid ?? null,
-    });
-    const quickView = await withDiveDebugSpan(
-      'DiveSwitchCanvas',
-      'quick-view-call',
-      () => QuickView(
-        'sofa_B.glb',
-        { canvas: initialCanvas },
-      ),
-      { uri: 'sofa_B.glb', canvasTestId: initialCanvas.dataset.testid ?? null },
-    );
-    logSwitchCanvas('quick-view-resolved', {
-      rendererInitialized: quickView.mainView.renderer.initialized,
-    });
-    dive.value = markRaw(quickView);
-    logSwitchCanvas('dive-ref-set', {
-      rendererInitialized: dive.value.mainView.renderer.initialized,
-    });
+  const quickView = await QuickView(
+    'sofa_B.glb',
+    { canvas: initialCanvas },
+  );
 
-    if (disposed) {
-      await dive.value?.disposeAsync();
-      logSwitchCanvas('disposed-after-quick-view');
-      return;
-    }
-
-    logSwitchCanvas('initialize-complete', getSwitchCanvasReadyDetails());
-    recordCompactButtonsLayout();
-
-    const requestedCanvasIndex = getDebugRequestedCanvasIndex();
-    if (requestedCanvasIndex !== null && requestedCanvasIndex !== activeCanvas.value) {
-      void switchCanvasTo(canvases[requestedCanvasIndex].value, requestedCanvasIndex);
-    }
-  } catch (error) {
-    const lastError = error instanceof Error ? error : new Error(String(error));
-    logSwitchCanvas('quick-view-failed', {
-      errorName: lastError.name,
-      errorMessage: lastError.message,
-    });
-    console.error('Failed to initialize DiveSwitchCanvas', lastError);
+  if (disposed) {
+    await quickView.disposeAsync();
+    return;
   }
+
+  dive.value = markRaw(quickView);
 };
 
 const updateViewportMode = () => {
@@ -229,12 +61,11 @@ const updateViewportMode = () => {
 onMounted(() => {
   updateViewportMode();
   window.addEventListener('resize', updateViewportMode);
-  void initializeDive();
+  void initializeDive().catch(() => undefined);
 });
 
 onUnmounted(() => {
   disposed = true;
-  initAbortController.abort();
   window.removeEventListener('resize', updateViewportMode);
   void dive.value?.disposeAsync();
   dive.value = null;
@@ -245,10 +76,8 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) =
     return;
   }
 
-  // set active canvas index
   activeCanvas.value = index;
 
-  // Let Vue commit the new active-state UI before the renderer swaps canvases.
   await nextTick();
 
   const currentDive = dive.value;
@@ -257,13 +86,9 @@ const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) =
     return;
   }
 
-  // Schedule the renderer swap after the UI/controller handoff so a WebGPU
-  // canvas reconfiguration stall cannot block the visible switch state.
   scheduleMainViewCanvasSwap(currentDive, canvas, index);
 
-  // set dom element to orbit controller
   currentDive.orbitController.setDomElements(canvas);
-  logSwitchCanvas('orbit-controller-dom-updated', { index });
 }
 
 defineProps<{
@@ -272,38 +97,34 @@ defineProps<{
 </script>
 
 <template>
-  <div class="page" data-testid="switch-canvas-page" :data-active-canvas="String(activeCanvas)"
-    :data-ready="dive ? 'true' : 'false'">
+  <div class="page">
     <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]"
       :min-size="10" :orientation="panelOrientation">
       <template #panel-0>
-        <div class="canvasWrapper0" data-testid="switch-canvas-panel-0">
+        <div class="canvasWrapper0">
           <div class="overlay" v-if="activeCanvas !== 0">
             <p>Deactivated</p>
           </div>
-          <canvas ref="canvas0" data-testid="switch-canvas-0"></canvas>
-          <button :disabled="!dive || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)"
-            data-testid="switch-canvas-button-0">Use this</button>
+          <canvas ref="canvas0"></canvas>
+          <button :disabled="!dive || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)">Use this</button>
         </div>
       </template>
       <template #panel-1>
-        <div class="canvasWrapper1" data-testid="switch-canvas-panel-1">
+        <div class="canvasWrapper1">
           <div class="overlay" v-if="activeCanvas !== 1">
             <p>Deactivated</p>
           </div>
-          <canvas ref="canvas1" data-testid="switch-canvas-1"></canvas>
-          <button :disabled="!dive || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)"
-            data-testid="switch-canvas-button-1">Use this</button>
+          <canvas ref="canvas1"></canvas>
+          <button :disabled="!dive || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)">Use this</button>
         </div>
       </template>
       <template #panel-2>
-        <div class="canvasWrapper2" data-testid="switch-canvas-panel-2">
+        <div class="canvasWrapper2">
           <div class="overlay" v-if="activeCanvas !== 2">
             <p>Deactivated</p>
           </div>
-          <canvas ref="canvas2" data-testid="switch-canvas-2"></canvas>
-          <button :disabled="!dive || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)"
-            data-testid="switch-canvas-button-2">Use this</button>
+          <canvas ref="canvas2"></canvas>
+          <button :disabled="!dive || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)">Use this</button>
         </div>
       </template>
     </ResizablePanels>

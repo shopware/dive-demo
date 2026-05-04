@@ -3,7 +3,6 @@ import { ref, onMounted, type Ref, onUnmounted, nextTick, markRaw } from 'vue';
 import type { DIVE } from '@shopware-ag/dive';
 import { ARSystem } from '@shopware-ag/dive/ar';
 import { QuickView } from '@shopware-ag/dive/quickview';
-import { recordDiveDebugEvent, withDiveDebugSpan } from '@/utils/e2eDiagnostics';
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const placementWrapper: Ref<HTMLElement | null> = ref(null);
@@ -16,62 +15,38 @@ const selectedScale = ref<typeof scaleOptions[number]>('auto');
 
 const showPlacementMenu = ref(false);
 const showScaleMenu = ref(false);
-const ready = ref(false);
 
 let dive: DIVE | null = null;
 let arSystem: ARSystem | null = null;
 let disposed = false;
 
-const logInit = (stage: string, details: Record<string, unknown> = {}) => {
-  console.info('[DiveAR]', stage, details);
-  recordDiveDebugEvent('DiveAR', stage, details);
-};
-
 async function initializeDive() {
-  logInit('init-start', { hasCanvas: Boolean(canvasRef.value), disposed });
   await nextTick();
 
   if (!canvasRef.value) {
-    logInit('init-skip', { reason: 'missing-canvas', disposed });
     return;
   }
 
-  logInit('quick-view-start', { uri: 'hay_chair.glb' });
-  const quickView = await withDiveDebugSpan(
-    'DiveAR',
-    'quick-view-call',
-    () => QuickView('hay_chair.glb', { canvas: canvasRef.value! }),
-    { uri: 'hay_chair.glb' },
-  );
-  logInit('quick-view-resolved', { uri: 'hay_chair.glb', disposed });
+  const quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
   if (disposed) {
-    logInit('quick-view-dispose-stale', { uri: 'hay_chair.glb' });
     await quickView.disposeAsync();
     return;
   }
 
   dive = markRaw(quickView);
-  logInit('dive-assigned');
   arSystem = new ARSystem();
-  logInit('ar-system-created');
-  ready.value = true;
-  logInit('ready-true');
   document.addEventListener('click', onClickOutside);
 }
 
 onMounted(() => {
-  void initializeDive().catch((error: unknown) => {
-    console.error('[DiveAR]', 'init-failed', error);
-  });
+  void initializeDive().catch(() => undefined);
 });
 
 onUnmounted(() => {
   disposed = true;
-  ready.value = false;
-  logInit('unmounted');
   document.removeEventListener('click', onClickOutside);
   if (!dive) return;
-  dive.disposeAsync();
+  void dive.disposeAsync();
 });
 
 function onClickOutside(event: MouseEvent) {
@@ -104,9 +79,9 @@ defineProps<{
 
 
 <template>
-  <div class="canvasWrapper" data-testid="ar-page" :data-ready="ready ? 'true' : 'false'">
+  <div class="canvasWrapper">
     <canvas ref="canvasRef"></canvas>
-    <div class="controlPanel controlPanel--top controlPanel--row" data-testid="ar-control-panel">
+    <div class="controlPanel controlPanel--top controlPanel--row">
       <div class="controlPanel-group">
         <span class="controlPanel-label">Placement</span>
         <div ref="placementWrapper" class="export-wrapper">
@@ -131,7 +106,7 @@ defineProps<{
         </div>
       </div>
     </div>
-    <button class="ar-launch" data-testid="ar-launch" @click="launchAR">AR</button>
+    <button class="ar-launch" @click="launchAR">AR</button>
   </div>
 </template>
 
