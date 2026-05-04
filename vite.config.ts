@@ -4,7 +4,6 @@ import vue from '@vitejs/plugin-vue'
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { resolve } from 'path'; // Import resolve
 import fs from 'fs'; // Import fs
-import { createRequire } from 'module';
 import restart from 'vite-plugin-restart';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
@@ -32,9 +31,6 @@ export default defineConfig(() => {
     console.log('@shopware-ag/dive is not linked or not found.');
   }
 
-  const require = createRequire(import.meta.url);
-  const monacoEditorPlugin = require('vite-plugin-monaco-editor').default;
-
   // Use a non-root base only when deploying to GitHub Pages.
   // DEPLOY_PAGES is set exclusively by the deploy-pages workflow;
   // other CI workflows (e2e, PR checks) must keep base '/' so the
@@ -49,9 +45,6 @@ export default defineConfig(() => {
     plugins: [
       nodePolyfills(),
       vue(),
-      monacoEditorPlugin({
-        languageWorkers: ['editorWorkerService', 'typescript', 'css', 'html', 'json'],
-      }),
       restart({
         restart: [
           '.yalc/**',
@@ -62,9 +55,17 @@ export default defineConfig(() => {
     resolve: {
       // *** ESSENTIAL for npm link to work correctly ***
       preserveSymlinks: true,
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
-      }
+      dedupe: ['three'],
+      alias: [
+        {
+          find: /^three$/,
+          replacement: 'three/webgpu',
+        },
+        {
+          find: '@',
+          replacement: fileURLToPath(new URL('./src', import.meta.url)),
+        },
+      ],
     },
     server: {
       fs: {
@@ -79,7 +80,7 @@ export default defineConfig(() => {
     },
     optimizeDeps: {
       // Might still be needed to prevent pre-bundling issues with linked deps
-      exclude: ['@shopware-ag/dive']
+      exclude: ['@shopware-ag/dive', 'three', 'three/webgpu', 'three/tsl']
     },
     build: {
       sourcemap: true,
@@ -88,4 +89,3 @@ export default defineConfig(() => {
     assetsInclude: ['**/*.glb'],
   };
 });
-

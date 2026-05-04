@@ -1,0 +1,39 @@
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG NODE_VERSION=20.20.2
+ARG RUNNER_HOME=/home/runner
+ARG RUNNER_REPO_DIR=/home/runner/work/dive-demo/dive-demo
+
+WORKDIR ${RUNNER_REPO_DIR}
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    git \
+    man-db \
+    gnupg \
+    procps \
+    rsync \
+    sudo \
+    xz-utils \
+    xvfb
+
+RUN curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
+ && tar -xJf "node-v${NODE_VERSION}-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
+ && rm "node-v${NODE_VERSION}-linux-x64.tar.xz"
+
+RUN npm install --global yarn@1.22.22
+
+RUN useradd --create-home --shell /bin/bash runner \
+ && echo 'runner ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/runner \
+ && chmod 440 /etc/sudoers.d/runner \
+ && mkdir -p "${RUNNER_HOME}/work/dive-demo" \
+ && chown -R runner:runner "${RUNNER_HOME}"
+
+ENV HOME=${RUNNER_HOME}
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV TZ=Etc/UTC
+
+USER runner

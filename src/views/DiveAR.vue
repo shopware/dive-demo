@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, onUnmounted } from 'vue';
-import { DIVE } from '@shopware-ag/dive';
 import { ARSystem } from '@shopware-ag/dive/ar';
+import { QuickView } from '@shopware-ag/dive/quickview';
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const placementWrapper: Ref<HTMLElement | null> = ref(null);
@@ -15,21 +15,33 @@ const selectedScale = ref<typeof scaleOptions[number]>('auto');
 const showPlacementMenu = ref(false);
 const showScaleMenu = ref(false);
 
-let dive: DIVE | null = null;
+let quickView: QuickView | null = null;
 let arSystem: ARSystem | null = null;
+let disposed = false;
 
 onMounted(async () => {
-  if (!canvasRef.value) return;
+    if (!canvasRef.value) {
+    return;
+  }
 
-  dive = await DIVE.QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+
+  if (disposed) {
+    await quickView.disposeAsync();
+    return;
+  }
+
   arSystem = new ARSystem();
   document.addEventListener('click', onClickOutside);
 });
 
 onUnmounted(() => {
+  disposed = true;
   document.removeEventListener('click', onClickOutside);
-  if (!dive) return;
-  dive.dispose();
+
+  if (!quickView) return;
+
+  void quickView.disposeAsync();
 });
 
 function onClickOutside(event: MouseEvent) {
@@ -82,8 +94,7 @@ defineProps<{
         <div ref="scaleWrapper" class="export-wrapper">
           <button @click="showScaleMenu = !showScaleMenu">{{ selectedScale }}</button>
           <div v-if="showScaleMenu" class="export-menu">
-            <button v-for="option in scaleOptions" :key="option" class="export-option"
-              @click="selectScale(option)">
+            <button v-for="option in scaleOptions" :key="option" class="export-option" @click="selectScale(option)">
               {{ option }}
             </button>
           </div>
@@ -99,7 +110,14 @@ defineProps<{
   position: relative;
   display: flex;
   height: 100%;
+  min-height: 100vh;
   width: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .ar-launch {

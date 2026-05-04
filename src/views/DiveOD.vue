@@ -1,32 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, markRaw } from 'vue';
-import ResizablePanels from '@/components/layout/ResizablePanels.vue';
+import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
-import { OrientationDisplay } from '@shopware-ag/dive/orientationdisplay';
 
-const canvas0: Ref<HTMLCanvasElement | null> = ref(null)
-const canvas1: Ref<HTMLCanvasElement | null> = ref(null)
-const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1];
-
-const dive0: Ref<QuickView | null> = ref(null)
-const dive1: Ref<QuickView | null> = ref(null)
+const canvas: Ref<HTMLCanvasElement | null> = ref(null);
+const dive: Ref<QuickView | null> = ref(null);
 
 onMounted(async () => {
-  if (!canvas0.value || !canvas1.value) {
+  if (!canvas.value) {
     return;
   }
 
-  // with displayAxes
-  dive0.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas0.value, displayAxes: true }));
+  dive.value = markRaw(
+    await QuickView('sofa_B.glb', {
+      canvas: canvas.value,
+      displayAxes: true,
+    }),
+  );
+});
 
-  // OR
-
-  // without displayAxes
-  dive1.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas1.value }));
-
-  const orientationDisplay = new OrientationDisplay(dive1.value.mainView.renderer, dive1.value.scene, dive1.value.mainView.camera);
-  dive1.value.clock.addTicker(orientationDisplay);
-})
+onUnmounted(() => {
+  void dive.value?.disposeAsync();
+  dive.value = null;
+});
 
 defineProps<{
   msg: string
@@ -34,21 +29,19 @@ defineProps<{
 </script>
 
 <template>
-  <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length]" :min-size="10"
-    orientation="horizontal">
-    <template #panel-0>
-      <div class="canvasWrapper">
-        <canvas ref="canvas0"></canvas>
-      </div>
-    </template>
-    <template #panel-1>
-      <div class="canvasWrapper">
-        <canvas ref="canvas1"></canvas>
-      </div>
-    </template>
-  </ResizablePanels>
+  <div class="page">
+    <div class="canvasWrapper">
+      <canvas ref="canvas"></canvas>
+    </div>
+  </div>
 </template>
 <style scoped>
+.page {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+}
+
 .canvasWrapper {
   display: flex;
   height: 100%;

@@ -9,26 +9,46 @@ const fileInput: Ref<HTMLInputElement | null> = ref(null);
 const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
 
+const DEFAULT_URL = 'sofa_B.glb';
 let quickView: QuickViewType | null = null;
 const exporter = new AssetExporter();
 
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
-async function loadModel(uri: string) {
-  if (!canvas.value) return;
+onMounted(async () => {
+  if (!canvas.value) {
+    return;
+  }
 
-  await quickView?.dispose();
+  if (!quickView) {
+    quickView = await QuickView(DEFAULT_URL, { canvas: canvas.value, displayGrid: true });
+  }
 
-  quickView = await QuickView(uri, { canvas: canvas.value });
-}
+  document.addEventListener('click', onClickOutside);
+});
 
-function onFileSelected(event: Event) {
+onUnmounted(() => {
+  document.removeEventListener('click', onClickOutside);
+
+  if (quickView) {
+    void quickView.disposeAsync();
+  }
+});
+
+async function onFileSelected(event: Event) {
+  if(!canvas.value || !quickView) {
+    return;
+  }
+
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
 
   const url = URL.createObjectURL(file);
-  loadModel(url);
+  await quickView.model.setFromURL(url);
+  quickView.model.placeOnFloor();
+  quickView.orbitController.focusObject(quickView.model);
+  URL.revokeObjectURL(url);
 }
 
 async function exportModel(type: FileType) {
@@ -50,18 +70,6 @@ function onClickOutside(event: MouseEvent) {
     showExportMenu.value = false;
   }
 }
-
-onMounted(() => {
-  loadModel('sofa_B.glb');
-  document.addEventListener('click', onClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', onClickOutside);
-  if (quickView) {
-    quickView.dispose();
-  }
-});
 
 defineProps<{
   msg: string

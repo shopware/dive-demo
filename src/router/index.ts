@@ -48,6 +48,11 @@ const router = createRouter({
       path: '/clip-animation',
       name: 'clip animation',
       component: () => import('../views/DiveClipAnimation.vue')
+    },
+    {
+      path: '/hdr-environment',
+      name: 'hdr environment',
+      component: () => import('../views/DiveHDREnvironment.vue')
     }
   ]
 })

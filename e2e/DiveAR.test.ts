@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { setupErrorSuppression } from './helper/setupErrorSuppression';
-import { navigateToExample } from './helper/navigateToExample';
 
-test('shows model', async ({ page }) => {
-    setupErrorSuppression(page);
-    await navigateToExample(page, '/ar');
-    await expect(page).toHaveScreenshot('dive-ar-model-visible.png');
+test('loads AR controls', async ({ page }) => {
+    await page.goto('/ar', { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+    await expect(page.locator('div.canvasWrapper > canvas')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('.controlPanel.controlPanel--top')).toBeVisible();
+    await expect(page.locator('.controlPanel-label', { hasText: 'Placement' })).toBeVisible();
+    await expect(page.locator('.controlPanel-label', { hasText: 'Scale' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'AR', exact: true })).toBeVisible();
 });

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, watch, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Mesh } from 'three';
 
-const canvas: Ref<HTMLCanvasElement | undefined> = ref(undefined);
-const dive: Ref<QuickView | null> = ref(null);
+const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const uploadButton: Ref<HTMLButtonElement | null> = ref(null);
 const uploadInput: Ref<HTMLInputElement | null> = ref(null);
 const loading: Ref<boolean> = ref(false);
@@ -12,45 +11,45 @@ const error: Ref<string | null> = ref(null);
 const timing: Ref<string | null> = ref(null);
 const wireframe: Ref<boolean> = ref(false);
 
-// Sample STEP file – use cube.stp for reliable loading.
-// D100.step and Mech-horsE.stp may fail (AP242/complex assemblies).
 const DEFAULT_STEP_URL = 'D100.step';
+let quickView: QuickView | null = null;
+let disposed = false;
 
 onMounted(async () => {
   if (!canvas.value) {
     return;
   }
 
-  await loadStepFile(DEFAULT_STEP_URL);
+  if (!quickView) {
+    quickView = await QuickView(DEFAULT_STEP_URL, { canvas: canvas.value, displayGrid: true });
+  }
 });
 
-const loadStepFile = async (url: string) => {
-  if (!canvas.value) return;
+onUnmounted(() => {
+  disposed = true;
+  void quickView?.disposeAsync();
+  quickView = null;
+});
 
-  loading.value = true;
-  error.value = null;
-  timing.value = null;
-
-  const t0 = performance.now();
-
-  try {
-    dive.value?.dispose();
-    dive.value = markRaw(
-      await QuickView(url, { canvas: canvas.value }),
-    );
-
-    const elapsed = performance.now() - t0;
-    timing.value = `Loaded in ${(elapsed / 1000).toFixed(2)}s`;
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load STEP file';
-  } finally {
-    loading.value = false;
+async function onFileSelected(event: Event) {
+  if(!canvas.value || !quickView) {
+    return;
   }
-};
+
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const url = URL.createObjectURL(file);
+  await quickView.model.setFromURL(url);
+  quickView.model.placeOnFloor();
+  quickView.orbitController.focusObject(quickView.model);
+  URL.revokeObjectURL(url);
+}
 
 const setWireframe = (enabled: boolean) => {
-  if (!dive.value) return;
-  dive.value.scene.root.traverse((child) => {
+  if (!quickView) return;
+  quickView.scene.root.traverse((child) => {
     if (child instanceof Mesh) {
       if (Array.isArray(child.material)) {
         child.material.forEach((m) => (m.wireframe = enabled));
@@ -63,18 +62,9 @@ const setWireframe = (enabled: boolean) => {
 
 watch(wireframe, (val) => setWireframe(val));
 
-const uploadFile = async (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-
-  const url = URL.createObjectURL(file);
-  await loadStepFile(url);
-  URL.revokeObjectURL(url);
-};
-
 defineProps<{
-  msg: string;
-}>();
+  msg: string
+}>()
 </script>
 
 <template>
@@ -92,7 +82,8 @@ defineProps<{
         <button ref="uploadButton" @click="uploadInput?.click()">
           Upload STEP / IGES
         </button>
-        <input type="file" ref="uploadInput" style="display: none" @change="uploadFile" accept=".step,.stp,.iges,.igs" />
+        <input type="file" ref="uploadInput" style="display: none" @change="onFileSelected"
+          accept=".step,.stp,.iges,.igs" />
       </div>
     </div>
     <div class="label">occt-import-js</div>
@@ -103,8 +94,15 @@ defineProps<{
 .canvasWrapper {
   display: flex;
   height: 100%;
+  min-height: 100vh;
   width: 100%;
   position: relative;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .loading,
@@ -161,5 +159,4 @@ defineProps<{
   -webkit-backdrop-filter: blur(8px);
   z-index: 10;
 }
-
 </style>

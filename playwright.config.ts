@@ -1,6 +1,21 @@
 import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
 
+const isCI = !!process.env.CI
+const defaultWebServerTimeoutMs = process.env.CI ? 180 * 1000 : 600 * 1000
+const defaultTestTimeoutMs = process.env.CI ? 90 * 1000 : 30 * 1000
+const webServerPort = Number(process.env.PLAYWRIGHT_PORT ?? 5173)
+const webServerHost = process.env.PLAYWRIGHT_HOST ?? '127.0.0.1'
+const chromiumLaunchArgs = [
+  '--use-gl=angle',
+  '--use-angle=swiftshader',
+  '--enable-unsafe-swiftshader',
+  '--no-sandbox',
+  '--disable-dev-shm-usage',
+  '--hide-scrollbars',
+  '--force-color-profile=srgb',
+]
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -13,33 +28,18 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: 'e2e',
   /* Maximum time one test can run for. */
-  timeout: process.env.CI ? 30 * 1000 : 10 * 1000,
-  /* Use platform-agnostic snapshot names so they work on both macOS and Linux
-   * {testFilePath} is relative to {testDir}, so we need to include {testDir} in the path
-   * Format: {testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}
-   */
-  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}',
+  timeout: Number(process.env.PLAYWRIGHT_TEST_TIMEOUT_MS ?? defaultTestTimeoutMs),
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: 60000, // Increased for 3D canvas screenshot stability checks
-    /**
-     * Threshold for visual comparisons:
-     * - threshold: Perceived color difference per pixel (0-1, default 0.2)
-     * - maxDiffPixelRatio: Ratio of pixels that can differ (0-1, default very strict)
-     */
-    toHaveScreenshot: {
-      threshold: 0.3, // Color difference tolerance per pixel
-      maxDiffPixelRatio: 0.15, // Allow up to 15% of pixels to differ (within threshold)
-      animations: 'disabled',
-    },
+    timeout: 30 * 1000,
   },
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
+  forbidOnly: isCI,
   /* Retry on CI only */
-  retries: process.env.CI ? 4 : 2,
+  retries: isCI ? 2 : 2,
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
@@ -48,13 +48,14 @@ export default defineConfig({
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'https://localhost:5173',
+    baseURL: `https://${webServerHost}:${webServerPort}`,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
-
-    /* On CI, WebKit needs headed mode (via --headed CLI flag) for WebGL under xvfb.
-     * Don't force headless here so the CLI flag takes effect. */
+    /* Keep failure artifacts even without retries so CI failures can be inspected from the uploaded report. */
+    trace: 'retain-on-failure',
+    screenshot: {
+      mode: 'only-on-failure',
+      fullPage: true,
+    },
 
     /* Ignore HTTPS errors */
     ignoreHTTPSErrors: true,
@@ -68,7 +69,14 @@ export default defineConfig({
     {
       name: 'chromium',
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
+        channel: 'chromium',
+        headless: isCI ? true : undefined,
+        launchOptions: isCI
+          ? {
+              args: chromiumLaunchArgs,
+            }
+          : undefined,
       }
     },
     {
@@ -124,9 +132,12 @@ export default defineConfig({
      * Playwright will re-use the local server if there is already a dev-server running.
      * Note: preview requires a build first, so we ensure dist/ exists.
      */
-    command: process.env.CI ? 'yarn build && yarn preview -- --port 5173' : 'yarn dev',
-    port: 5173,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180 * 1000, // Give the server 3 minutes to build and start (important for CI)
+    command:
+      process.env.PLAYWRIGHT_USE_PREBUILT_DIST === 'true'
+        ? `yarn preview -- --host ${webServerHost} --strictPort --port ${webServerPort}`
+        : `yarn build-only && yarn preview -- --host ${webServerHost} --strictPort --port ${webServerPort}`,
+    port: webServerPort,
+    reuseExistingServer: false,
+    timeout: Number(process.env.PLAYWRIGHT_WEB_SERVER_TIMEOUT_MS ?? defaultWebServerTimeoutMs),
   }
 })

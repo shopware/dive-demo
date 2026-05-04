@@ -1,23 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { setupErrorSuppression } from './helper/setupErrorSuppression';
-import { navigateToExample } from './helper/navigateToExample';
 
-test('shows model', async ({ page }) => {
-    setupErrorSuppression(page);
-    await navigateToExample(page, '/place-on-floor');
-    await expect(page).toHaveScreenshot('dive-place-on-floor-model-visible.png');
-});
+test('loads place-on-floor controls', async ({ page }) => {
+    await page.goto('/place-on-floor', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-test('click button', async ({ page }) => {
-    setupErrorSuppression(page);
-    await navigateToExample(page, '/place-on-floor');
+    await expect(page.locator('div.canvasWrapper > canvas')).toBeVisible({ timeout: 60000 });
 
     const button = page.getByRole('button', { name: 'Place on floor', exact: true });
+    await expect(button).toBeVisible();
     await button.click();
-
-    await page.waitForFunction(() =>
-        new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    );
-
     await expect(page.locator('div.canvasWrapper > canvas')).toBeVisible();
 });

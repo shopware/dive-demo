@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { computed, ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import ResizablePanels from '@/components/layout/ResizablePanels.vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 
@@ -8,31 +8,48 @@ const canvas1 = ref<HTMLCanvasElement | null>(null);
 const canvas2 = ref<HTMLCanvasElement | null>(null);
 const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
 
-const dive: Ref<QuickView | null> = ref(null)
 const activeCanvas: Ref<number> = ref(0)
+const isCompactViewport = ref(false);
+const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
+
+const DEFAULT_URL = 'sofa_B.glb';
+let quickView: QuickView | null = null;
+
+
 
 onMounted(async () => {
-  if (!canvas0.value || !canvas1.value || !canvas2.value) {
+  updateViewportMode();
+  window.addEventListener('resize', updateViewportMode);
+
+  if (!canvas0.value) {
     return;
   }
 
-  dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas0.value }));
+  if (!quickView) {
+    quickView = await QuickView(DEFAULT_URL, { canvas: canvas0.value });
+  }
 });
 
-const switchCanvasTo = (canvas: HTMLCanvasElement, index: number) => {
-  if (!dive.value) {
+onUnmounted(() => {
+  if (quickView) {
+    void quickView.disposeAsync();
+  }
+});
+
+const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) => {
+  if (!canvas || !quickView) {
     return;
   }
 
-  // set active canvas index
   activeCanvas.value = index;
 
-  // replace canvas in main view
-  dive.value.mainView.setCanvas(canvas);
-
-  // set dom element to orbit controller
-  dive.value.orbitController.setDomElements(canvas);
+  quickView.mainView.setCanvas(canvas)
+  quickView.orbitController.setDomElements(canvas);
 }
+
+const updateViewportMode = () => {
+  isCompactViewport.value = window.innerWidth <= 640 || window.innerHeight <= 480;
+};
 
 defineProps<{
   msg: string
@@ -40,37 +57,41 @@ defineProps<{
 </script>
 
 <template>
-  <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]" :min-size="10"
-    orientation="horizontal">
-    <template #panel-0>
-      <div class="canvasWrapper0">
-        <div class="overlay" v-if="activeCanvas !== 0">
-          <p>Deactivated</p>
+  <div class="page">
+    <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]"
+      :min-size="10" :orientation="panelOrientation">
+      <template #panel-0>
+        <div class="canvasWrapper0">
+          <div class="overlay" v-if="activeCanvas !== 0">
+            <p>Deactivated</p>
+          </div>
+          <canvas ref="canvas0"></canvas>
+          <button :disabled="!quickView || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)">Use
+            this</button>
         </div>
-        <canvas ref="canvas0"></canvas>
-        <button :disabled="activeCanvas === 0" @click="switchCanvasTo(canvases[0].value!, 0)">Use this</button>
-      </div>
-    </template>
-    <template #panel-1>
-      <div class="canvasWrapper1">
-        <div class="overlay" v-if="activeCanvas !== 1">
-          <p>Deactivated</p>
+      </template>
+      <template #panel-1>
+        <div class="canvasWrapper1">
+          <div class="overlay" v-if="activeCanvas !== 1">
+            <p>Deactivated</p>
+          </div>
+          <canvas ref="canvas1"></canvas>
+          <button :disabled="!quickView || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)">Use
+            this</button>
         </div>
-        <canvas ref="canvas1"></canvas>
-        <button :disabled="activeCanvas === 1" @click="switchCanvasTo(canvases[1].value!, 1)">Use this</button>
-      </div>
-    </template>
-    <template #panel-2>
-      <div class="canvasWrapper2">
-        <div class="overlay" v-if="activeCanvas !== 2">
-          <p>Deactivated</p>
+      </template>
+      <template #panel-2>
+        <div class="canvasWrapper2">
+          <div class="overlay" v-if="activeCanvas !== 2">
+            <p>Deactivated</p>
+          </div>
+          <canvas ref="canvas2"></canvas>
+          <button :disabled="!quickView || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)">Use
+            this</button>
         </div>
-        <canvas ref="canvas2"></canvas>
-        <button :disabled="activeCanvas === 2" @click="switchCanvasTo(canvases[2].value!, 2)">Use this</button>
-      </div>
-    </template>
-  </ResizablePanels>
-
+      </template>
+    </ResizablePanels>
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -80,10 +101,18 @@ defineProps<{
   width: 100%;
 }
 
+.page {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
 .canvasWrapper0 {
   position: relative;
   display: flex;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   flex: 1;
 
   justify-content: center;
@@ -94,6 +123,8 @@ defineProps<{
   position: relative;
   display: flex;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   flex: 1;
 
   justify-content: center;
@@ -104,6 +135,8 @@ defineProps<{
   position: relative;
   display: flex;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   flex: 1;
 
   justify-content: center;
@@ -111,13 +144,22 @@ defineProps<{
 }
 
 canvas {
+  display: block;
   width: 100%;
   height: 100%;
 }
 
 button {
   position: absolute;
-  bottom: 20px;
+  bottom: clamp(0.25rem, 2vh, 1.25rem);
+  left: 50%;
+  z-index: 2;
+  max-width: calc(100% - 0.75rem);
+  padding-inline: clamp(0.45rem, 4vw, 0.85rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .overlay {
@@ -131,11 +173,12 @@ button {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   pointer-events: none;
+  z-index: 1;
 }
 
 .overlay p {
   color: white;
-  font-size: 30px;
+  font-size: clamp(0.85rem, 4vw, 1.875rem);
   font-weight: bold;
   text-align: center;
 }

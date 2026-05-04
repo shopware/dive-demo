@@ -1,11 +1,29 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref, markRaw } from 'vue';
+import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { DIVEModel, BoundingBox } from '@shopware-ag/dive';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Toolbox } from '@shopware-ag/dive/toolbox';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 const dive: Ref<QuickView | null> = ref(null);
+let toolbox: Toolbox | null = null;
+
+const onKeyDown = (event: KeyboardEvent) => {
+    const transformTool = toolbox?.getTool('transform');
+    if (!transformTool) {
+        return;
+    }
+
+    if (event.key === 'a') {
+        transformTool.setGizmoMode('translate');
+    }
+    if (event.key === 's') {
+        transformTool.setGizmoMode('rotate');
+    }
+    if (event.key === 'd') {
+        transformTool.setGizmoMode('scale');
+    }
+};
 
 onMounted(async () => {
     if (!canvas.value) {
@@ -14,23 +32,13 @@ onMounted(async () => {
 
     dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
 
-    const toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
+    toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
     toolbox.enableTool('transform');
 
     const model = dive.value.scene.root.children.find((child) => 'isDIVEModel' in child) as DIVEModel;
     toolbox.selectionState.select(model);
 
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'a') {
-            toolbox.getTool('transform').setGizmoMode('translate');
-        }
-        if (event.key === 's') {
-            toolbox.getTool('transform').setGizmoMode('rotate');
-        }
-        if (event.key === 'd') {
-            toolbox.getTool('transform').setGizmoMode('scale');
-        }
-    });
+    window.addEventListener('keydown', onKeyDown);
 
 
 
@@ -42,6 +50,14 @@ onMounted(async () => {
         }
     });
 })
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', onKeyDown);
+    toolbox?.dispose();
+    toolbox = null;
+    void dive.value?.disposeAsync();
+    dive.value = null;
+});
 
 const placeOnFloor = () => {
     dive.value?.scene.root.children.forEach((child) => {

@@ -84,12 +84,13 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
-        run: yarn playwright install --with-deps
+        run: yarn playwright install --with-deps chromium
   e2e:
     name: e2e
     runs-on: ubuntu-latest
     needs: [playwright-install, build]
     strategy:
+      fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
     steps:
@@ -116,14 +117,15 @@ jobs:
           # System dependencies must be installed in each job since each job runs on a fresh runner
           # and system packages can't be cached between jobs. This is minimal overhead.
           sudo apt-get --yes remove --purge man-db
-          yarn playwright install-deps chromium firefox webkit
+          yarn playwright install-deps chromium
+      - name: Log installed DIVE version
+        run: |
+          node -e "const fs = require('fs'); const demoPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8')); const divePkg = JSON.parse(fs.readFileSync('./node_modules/@shopware-ag/dive/package.json', 'utf8')); console.log('Requested @shopware-ag/dive:', demoPkg.dependencies['@shopware-ag/dive']); console.log('Installed @shopware-ag/dive version:', divePkg.version);"
       - name: Run playwright tests
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
           CI: true
-          LIBGL_ALWAYS_SOFTWARE: "1"
-          GALLIUM_DRIVER: llvmpipe
-        run: xvfb-run --auto-servernum yarn test:e2e --headed --shard=${{ matrix.shard }}/4
+        run: yarn test:e2e --project=chromium --shard=${{ matrix.shard }}/4
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

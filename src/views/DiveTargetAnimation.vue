@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, type Ref, markRaw, watch } from 'vue';
+import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
-import type { AnimationSystem, TargetAnimator } from '@shopware-ag/dive/animation';
+import { AnimationSystem, type TargetAnimator } from '@shopware-ag/dive/animation';
 import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 
-let dive: QuickView | null = null;
+const dive: Ref<QuickView | null> = ref(null)
 let orbitController: OrbitController | null = null;
 let animationSystem: AnimationSystem | null = null;
 let animator: TargetAnimator | null = null;
+let disposed = false;
+const controlsReady = ref(false);
 
 const activePreset: Ref<number> = ref(0);
 
@@ -41,30 +43,49 @@ const presets = [
     },
 ];
 
-onMounted(async () => {
-    if (!canvas.value) return;
+const initializeDive = async () => {
+    await nextTick();
 
-    dive = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value }));
-    orbitController = dive.orbitController;
+    if (disposed) {
+        return;
+    }
 
-    // set up animation system
-    const { AnimationSystem } = await import('@shopware-ag/dive/animation');
+    const initialCanvas = canvas.value;
+
+    if (!initialCanvas) {
+        return;
+    }
+
+    const quickView = await QuickView(
+        'sofa_B.glb',
+        { canvas: initialCanvas },
+    );
+
+    if (disposed) {
+        await quickView.disposeAsync();
+        return;
+    }
+
+    dive.value = markRaw(quickView);
+    orbitController = dive.value.orbitController;
     animationSystem = new AnimationSystem();
-    dive.clock.addTicker(animationSystem);
+    dive.value.clock.addTicker(animationSystem);
 
-    // set initial position and target
     presets[0].position = orbitController.object.position.clone();
     presets[0].target = orbitController.target.clone();
     activePreset.value = 0;
+    controlsReady.value = true;
+};
+
+onMounted(() => {
+    void initializeDive().catch(() => undefined);
 });
 
 onUnmounted(async () => {
+    disposed = true;
+    controlsReady.value = false;
     animationSystem?.dispose();
-    await dive?.dispose();
-});
-
-watch(activePreset, (newVal) => {
-    goToPreset(newVal);
+    await dive.value?.disposeAsync();
 });
 
 const goToPreset = async (index: number) => {
@@ -87,6 +108,12 @@ const goToPreset = async (index: number) => {
 
     animator.play();
 };
+
+const setActivePreset = async (index: number) => {
+    activePreset.value = index;
+    await nextTick();
+    void goToPreset(index).catch(() => undefined);
+};
 </script>
 
 <template>
@@ -99,7 +126,7 @@ const goToPreset = async (index: number) => {
                 <span class="controlPanel-label">Camera</span>
                 <div class="controlPanel-buttons controlPanel-buttons--center">
                     <button v-for="(preset, i) in presets" :key="i" :class="{ active: activePreset === i }"
-                        @click="activePreset = i">
+                        :disabled="!controlsReady" @click="setActivePreset(i)">
                         {{ preset.label }}
                     </button>
                 </div>
@@ -113,11 +140,19 @@ const goToPreset = async (index: number) => {
     position: relative;
     width: 100%;
     height: 100%;
+    min-height: 100vh;
 }
 
 .canvasWrapper {
     display: flex;
+    min-height: 24rem;
     height: 100%;
     width: 100%;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 </style>
