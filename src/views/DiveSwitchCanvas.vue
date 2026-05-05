@@ -7,15 +7,15 @@ const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
 const canvas2 = ref<HTMLCanvasElement | null>(null);
 const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
+const canvasKeys = ref([0, 0, 0]);
 
-const activeCanvas: Ref<number> = ref(0)
+const activeCanvas: Ref<number> = ref(0);
+const isSwitchingCanvas = ref(false);
 const isCompactViewport = ref(false);
 const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
 
 const DEFAULT_URL = 'sofa_B.glb';
-let quickView: QuickView | null = null;
-
-
+const quickView = ref<QuickView | null>(null);
 
 onMounted(async () => {
   updateViewportMode();
@@ -25,26 +25,36 @@ onMounted(async () => {
     return;
   }
 
-  if (!quickView) {
-    quickView = await QuickView(DEFAULT_URL, { canvas: canvas0.value });
+  if (!quickView.value) {
+    quickView.value = markRaw(await QuickView(DEFAULT_URL, { canvas: canvas0.value }));
   }
 });
 
 onUnmounted(() => {
-  if (quickView) {
-    void quickView.disposeAsync();
+  if (quickView.value) {
+    void quickView.value.disposeAsync();
   }
 });
 
 const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) => {
-  if (!canvas || !quickView) {
+  const targetQuickView = quickView.value;
+
+  if (!canvas || !targetQuickView || isSwitchingCanvas.value || activeCanvas.value === index) {
     return;
   }
 
-  activeCanvas.value = index;
+  const previousIndex = activeCanvas.value;
+  isSwitchingCanvas.value = true;
 
-  quickView.mainView.setCanvas(canvas)
-  quickView.orbitController.setDomElements(canvas);
+  try {
+    await targetQuickView.mainView.setCanvas(canvas);
+    targetQuickView.orbitController.setDomElements(canvas);
+    activeCanvas.value = index;
+    canvasKeys.value[previousIndex] += 1;
+    await nextTick();
+  } finally {
+    isSwitchingCanvas.value = false;
+  }
 }
 
 const updateViewportMode = () => {
@@ -65,8 +75,8 @@ defineProps<{
           <div class="overlay" v-if="activeCanvas !== 0">
             <p>Deactivated</p>
           </div>
-          <canvas ref="canvas0"></canvas>
-          <button :disabled="!quickView || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)">Use
+          <canvas :key="canvasKeys[0]" ref="canvas0"></canvas>
+          <button :disabled="!quickView || isSwitchingCanvas || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)">Use
             this</button>
         </div>
       </template>
@@ -75,8 +85,8 @@ defineProps<{
           <div class="overlay" v-if="activeCanvas !== 1">
             <p>Deactivated</p>
           </div>
-          <canvas ref="canvas1"></canvas>
-          <button :disabled="!quickView || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)">Use
+          <canvas :key="canvasKeys[1]" ref="canvas1"></canvas>
+          <button :disabled="!quickView || isSwitchingCanvas || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)">Use
             this</button>
         </div>
       </template>
@@ -85,8 +95,8 @@ defineProps<{
           <div class="overlay" v-if="activeCanvas !== 2">
             <p>Deactivated</p>
           </div>
-          <canvas ref="canvas2"></canvas>
-          <button :disabled="!quickView || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)">Use
+          <canvas :key="canvasKeys[2]" ref="canvas2"></canvas>
+          <button :disabled="!quickView || isSwitchingCanvas || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)">Use
             this</button>
         </div>
       </template>
