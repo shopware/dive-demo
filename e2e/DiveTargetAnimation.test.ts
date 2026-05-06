@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+
+const targetAnimationModelPath = fileURLToPath(new URL('../public/suzanne.glb', import.meta.url));
 
 test('loads target-animation preset controls', async ({ page }) => {
     await page.goto('/target-animation', { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -11,6 +14,10 @@ test('loads target-animation preset controls', async ({ page }) => {
 });
 
 test('preset click updates the active state', async ({ page }) => {
+    await page.route('**/sofa_B.glb', async (route) => {
+        await route.fulfill({ path: targetAnimationModelPath, contentType: 'model/gltf-binary' });
+    });
+
     await page.goto('/target-animation', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     const presets = page.locator('.controlPanel-buttons--center button');
