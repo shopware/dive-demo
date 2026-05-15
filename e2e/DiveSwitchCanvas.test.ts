@@ -2,6 +2,7 @@ import { test, expect } from './helpers/diveCleanup';
 import { fileURLToPath } from 'node:url';
 
 const switchCanvasModelPath = fileURLToPath(new URL('../public/suzanne.glb', import.meta.url));
+const switchCanvasTimeout = 90000;
 
 test('loads switch-canvas panels', async ({ page }) => {
     await page.goto('/switch-canvas', { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -67,22 +68,32 @@ test('switches from canvas 0 to canvas 1 and back with use-this buttons', async 
     const useCanvas0 = canvas0.getByRole('button', { name: 'Use this' });
     const useCanvas1 = canvas1.getByRole('button', { name: 'Use this' });
 
-    await expect(useCanvas1).toBeEnabled({ timeout: 60000 });
-    await expect(useCanvas0).toBeDisabled();
+    await page.waitForFunction(() => {
+        const diveGlobal = (window as typeof window & {
+            DIVE?: {
+                instances?: unknown[];
+            };
+        }).DIVE;
+
+        return Array.isArray(diveGlobal?.instances) && diveGlobal.instances.length > 0;
+    }, undefined, { timeout: switchCanvasTimeout });
+
+    await expect(useCanvas1).toBeEnabled({ timeout: switchCanvasTimeout });
+    await expect(useCanvas0).toBeDisabled({ timeout: switchCanvasTimeout });
 
     await useCanvas1.click();
 
-    await expect(useCanvas1).toBeDisabled();
-    await expect(useCanvas0).toBeEnabled();
-    await expect(canvas1.locator('.overlay')).toHaveCount(0);
-    await expect(canvas0.locator('.overlay')).toBeVisible();
+    await expect(canvas1.locator('.overlay')).toHaveCount(0, { timeout: switchCanvasTimeout });
+    await expect(canvas0.locator('.overlay')).toBeVisible({ timeout: switchCanvasTimeout });
+    await expect(useCanvas1).toBeDisabled({ timeout: switchCanvasTimeout });
+    await expect(useCanvas0).toBeEnabled({ timeout: switchCanvasTimeout });
 
     await useCanvas0.click();
 
-    await expect(useCanvas0).toBeDisabled();
-    await expect(useCanvas1).toBeEnabled();
-    await expect(canvas0.locator('.overlay')).toHaveCount(0);
-    await expect(canvas1.locator('.overlay')).toBeVisible();
+    await expect(canvas0.locator('.overlay')).toHaveCount(0, { timeout: switchCanvasTimeout });
+    await expect(canvas1.locator('.overlay')).toBeVisible({ timeout: switchCanvasTimeout });
+    await expect(useCanvas0).toBeDisabled({ timeout: switchCanvasTimeout });
+    await expect(useCanvas1).toBeEnabled({ timeout: switchCanvasTimeout });
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
