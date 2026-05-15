@@ -13,11 +13,11 @@ const loadingEnvironment = ref(false);
 const environmentError = ref<string | null>(null);
 
 const hdrOptions: HDROption[] = [
-  { label: 'Blocky Studio', url: 'blocky_photo_studio_1k.hdr' },
-  { label: 'Brown Photostudio', url: 'brown_photostudio_02_1k.hdr' },
-  { label: 'Hornkoppe Spring', url: 'horn-koppe_spring_1k.hdr' },
-  { label: 'Qwantani Sunset', url: 'qwantani_sunset_puresky_1k.hdr' },
-  { label: 'Studio Small', url: 'studio_small_09_1k.hdr' },
+  { label: 'Blocky Studio', url: 'hdri/blocky_photo_studio_1k.hdr' },
+  { label: 'Brown Photostudio', url: 'hdri/brown_photostudio_02_1k.hdr' },
+  { label: 'Hornkoppe Spring', url: 'hdri/horn-koppe_spring_1k.hdr' },
+  { label: 'Qwantani Sunset', url: 'hdri/qwantani_sunset_puresky_1k.hdr' },
+  { label: 'Studio Small', url: 'hdri/studio_small_09_1k.hdr' },
 ];
 
 const selectedHDR = ref<string>(hdrOptions[0].url);
@@ -90,7 +90,7 @@ const initializeDive = async () => {
     return;
   }
 
-  const quickView = await QuickView('sofa_B.glb', {
+  const quickView = await QuickView('model/sofa_B.glb', {
     canvas: targetCanvas,
     displayGrid: false,
   });

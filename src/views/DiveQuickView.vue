@@ -9,7 +9,7 @@ const fileInput: Ref<HTMLInputElement | null> = ref(null);
 const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
 
-const DEFAULT_URL = 'sofa_B.glb';
+const DEFAULT_URL = 'model/sofa_B.glb';
 let quickView: QuickViewType | null = null;
 const exporter = new AssetExporter();
 

@@ -108,7 +108,7 @@ function onClickOutside(event: MouseEvent) {
 onMounted(() => {
     void (async () => {
         await nextTick();
-        await loadModel('Fox.glb');
+        await loadModel('model/Fox.glb');
     })().catch(() => undefined);
     document.addEventListener('click', onClickOutside);
 });

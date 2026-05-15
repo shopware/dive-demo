@@ -11,7 +11,7 @@ const error: Ref<string | null> = ref(null);
 const timing: Ref<string | null> = ref(null);
 const wireframe: Ref<boolean> = ref(false);
 
-const DEFAULT_STEP_URL = 'D100.step';
+const DEFAULT_STEP_URL = 'model/D100.step';
 let quickView: QuickView | null = null;
 let disposed = false;
 

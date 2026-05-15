@@ -57,7 +57,7 @@ const initializeDive = async () => {
     }
 
     const quickView = await QuickView(
-        'sofa_B.glb',
+        'model/sofa_B.glb',
         { canvas: initialCanvas },
     );
 

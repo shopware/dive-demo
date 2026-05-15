@@ -30,7 +30,7 @@ onMounted(async () => {
         return;
     }
 
-    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
+    dive.value = markRaw(await QuickView('model/sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
 
     toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
     toolbox.enableTool('transform');

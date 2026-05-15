@@ -14,7 +14,7 @@ const isCompactViewport = ref(false);
 const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
 const isQuickViewReady = computed(() => Boolean(quickView.value));
 
-const DEFAULT_URL = 'sofa_B.glb';
+const DEFAULT_URL = 'model/sofa_B.glb';
 const quickView = ref<QuickView | null>(null);
 let disposed = false;
 

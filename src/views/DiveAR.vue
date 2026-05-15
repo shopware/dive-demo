@@ -24,7 +24,7 @@ onMounted(async () => {
     return;
   }
 
-  quickView = await QuickView('hay_chair.glb', { canvas: canvasRef.value });
+  quickView = await QuickView('model/hay_chair.glb', { canvas: canvasRef.value });
 
   if (disposed) {
     await quickView.disposeAsync();
@@ -64,7 +64,7 @@ function selectScale(option: typeof scaleOptions[number]) {
 }
 
 function launchAR() {
-  arSystem?.launch('hay_chair.glb', { arPlacement: selectedPlacement.value, arScale: selectedScale.value });
+  arSystem?.launch('model/hay_chair.glb', { arPlacement: selectedPlacement.value, arScale: selectedScale.value });
 }
 
 defineProps<{

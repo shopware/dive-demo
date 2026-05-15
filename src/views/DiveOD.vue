@@ -11,7 +11,7 @@ onMounted(async () => {
   }
 
   dive.value = markRaw(
-    await QuickView('sofa_B.glb', {
+    await QuickView('model/sofa_B.glb', {
       canvas: canvas.value,
       displayAxes: true,
     }),

@@ -19,7 +19,7 @@ onMounted(async () => {
         return;
     }
 
-    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value }));
+    dive.value = markRaw(await QuickView('model/sofa_B.glb', { canvas: canvas.value }));
 
     dive.value.scene.root.children.forEach((model) => {
         if (model instanceof DIVEModel) {
@@ -44,13 +44,13 @@ const switchObject = async (object: string) => {
     }
     await model.setFromURL(object);
 
-    if (object === 'sofa_B.glb') {
+    if (object === 'model/sofa_B.glb') {
         model.scale.set(1.0, 1.0, 1.0);
     }
-    if (object === 'hay_chair.glb') {
+    if (object === 'model/hay_chair.glb') {
         model.scale.set(0.1, 0.1, 0.1);
     }
-    if (object === 'suzanne.glb') {
+    if (object === 'model/suzanne.glb') {
         model.scale.set(10.0, 10.0, 10.0);
     }
 
@@ -99,9 +99,9 @@ defineProps<{
     </div>
     <div class="controlPanel">
         <div class="controlPanel-buttons">
-            <button @click="switchObject('sofa_B.glb')">Sofa</button>
-            <button @click="switchObject('hay_chair.glb')">Chair</button>
-            <button @click="switchObject('suzanne.glb')">Suzanne</button>
+            <button @click="switchObject('model/sofa_B.glb')">Sofa</button>
+            <button @click="switchObject('model/hay_chair.glb')">Chair</button>
+            <button @click="switchObject('model/suzanne.glb')">Suzanne</button>
         </div>
     </div>
     <div class="infoPanel">
