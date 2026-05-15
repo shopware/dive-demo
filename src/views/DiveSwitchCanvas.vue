@@ -16,23 +16,32 @@ const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : '
 
 const DEFAULT_URL = 'sofa_B.glb';
 const quickView = ref<QuickView | null>(null);
+let disposed = false;
 
 onMounted(async () => {
   updateViewportMode();
   window.addEventListener('resize', updateViewportMode);
 
-  if (!canvas0.value) {
+  if (!canvas0.value || disposed) {
     return;
   }
 
-  if (!quickView.value) {
-    quickView.value = markRaw(await QuickView(DEFAULT_URL, { canvas: canvas0.value }));
+  const view = await QuickView(DEFAULT_URL, { canvas: canvas0.value });
+  if (disposed) {
+    await view.disposeAsync();
+    return;
   }
+
+  quickView.value = markRaw(view);
 });
 
 onUnmounted(() => {
+  disposed = true;
+  window.removeEventListener('resize', updateViewportMode);
+
   if (quickView.value) {
     void quickView.value.disposeAsync();
+    quickView.value = null;
   }
 });
 
@@ -58,8 +67,13 @@ const switchCanvasTo = async (index: number) => {
 
   const previousIndex = activeCanvas.value;
   isSwitchingCanvas.value = true;
+  await nextTick();
 
   try {
+    if (disposed) {
+      return;
+    }
+
     await targetQuickView.mainView.setCanvas(canvas);
     targetQuickView.orbitController.setDomElements(canvas);
     activeCanvas.value = index;
