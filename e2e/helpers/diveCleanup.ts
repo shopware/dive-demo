@@ -18,9 +18,16 @@ async function cleanupDivePage(page: Page) {
                 ? [...diveGlobal.instances]
                 : [];
 
-            await Promise.allSettled(
-                instances.map((instance) => instance.disposeAsync?.()),
-            );
+            const timeout = new Promise<void>((resolve) => {
+                window.setTimeout(resolve, 5_000);
+            });
+
+            await Promise.race([
+                Promise.allSettled(
+                    instances.map((instance) => instance.disposeAsync?.()),
+                ),
+                timeout,
+            ]);
         })
         .catch(() => {});
 

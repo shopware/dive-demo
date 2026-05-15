@@ -91,7 +91,10 @@ onUnmounted(async () => {
 const goToPreset = async (index: number) => {
     if (!orbitController || !animationSystem) return;
 
-    animationSystem.remove(animator?.uuid ?? '');
+    if (animator) {
+        animationSystem.remove(animator.uuid);
+        animator = null;
+    }
 
     animator = await animationSystem.fromTargets(
         [
@@ -112,7 +115,7 @@ const goToPreset = async (index: number) => {
 const setActivePreset = async (index: number) => {
     activePreset.value = index;
     await nextTick();
-    void goToPreset(index).catch(() => undefined);
+    await goToPreset(index);
 };
 </script>
 
