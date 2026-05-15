@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/diveCleanup';
 
 test('loads place-on-floor controls', async ({ page }) => {
     await page.goto('/place-on-floor', { waitUntil: 'domcontentloaded', timeout: 60000 });

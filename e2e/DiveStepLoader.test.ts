@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/diveCleanup';
 
 test('loads STEP loader controls', async ({ page }) => {
     await page.goto('/step-loader', { waitUntil: 'domcontentloaded', timeout: 60000 });

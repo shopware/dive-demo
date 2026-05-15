@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/diveCleanup';
 
 test.describe.configure({ timeout: 120000 });
 
@@ -9,9 +9,13 @@ test('loads clip-animation controls', async ({ page }) => {
     await expect(page.locator('button', { hasText: 'Upload File' })).toBeVisible();
     await expect(page.locator('button', { hasText: 'Export' })).toBeVisible();
 
-    const clipsLabel = page.locator('.controlPanel-label', { hasText: 'Clips' });
-    await expect(clipsLabel).toBeVisible({ timeout: 110000 });
-    await expect(clipsLabel.locator('..').locator('.controlPanel-buttons button')).not.toHaveCount(0);
+    const clipsGroup = page.locator('.controlPanel-group').filter({
+        has: page.locator('.controlPanel-label', { hasText: 'Clips' }),
+    });
+    const clipButtons = clipsGroup.locator('.controlPanel-buttons button');
+
+    await expect(clipsGroup).toBeVisible({ timeout: 110000 });
+    await expect(clipButtons.first()).toBeVisible({ timeout: 110000 });
 });
 
 test('clip playback controls update state', async ({ page }) => {

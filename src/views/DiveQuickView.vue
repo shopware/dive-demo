@@ -16,6 +16,8 @@ const exporter = new AssetExporter();
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
 
 onMounted(async () => {
+  document.addEventListener('click', onClickOutside);
+
   if (!canvas.value) {
     return;
   }
@@ -23,8 +25,6 @@ onMounted(async () => {
   if (!quickView) {
     quickView = await QuickView(DEFAULT_URL, { canvas: canvas.value, displayGrid: true });
   }
-
-  document.addEventListener('click', onClickOutside);
 });
 
 onUnmounted(() => {
@@ -77,7 +77,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="canvasWrapper">
+  <div class="canvasWrapper" @click.capture="onClickOutside">
     <canvas ref="canvas"></canvas>
     <input ref="fileInput" type="file" :accept="exportFormats.join(',')" class="file-input" @change="onFileSelected" />
     <div class="controlPanel controlPanel--bottom">

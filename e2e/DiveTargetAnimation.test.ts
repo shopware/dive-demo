@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/diveCleanup';
 import { fileURLToPath } from 'node:url';
 
 const targetAnimationModelPath = fileURLToPath(new URL('../public/suzanne.glb', import.meta.url));
