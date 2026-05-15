@@ -1,8 +1,21 @@
 import { test, expect } from './helpers/diveCleanup';
+import type { Page } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 
 const switchCanvasModelPath = fileURLToPath(new URL('../public/suzanne.glb', import.meta.url));
 const switchCanvasTimeout = 90000;
+
+const waitForInitialQuickView = async (page: Page) => {
+    await expect(page.locator('.page')).toHaveAttribute('data-quick-view-ready', 'true', {
+        timeout: switchCanvasTimeout,
+    });
+};
+
+test.beforeEach(async ({ page }) => {
+    await page.route('**/sofa_B.glb', async (route) => {
+        await route.fulfill({ path: switchCanvasModelPath, contentType: 'model/gltf-binary' });
+    });
+});
 
 test('loads switch-canvas panels', async ({ page }) => {
     await page.goto('/switch-canvas', { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -11,6 +24,7 @@ test('loads switch-canvas panels', async ({ page }) => {
     await expect(page.locator('.canvasWrapper1')).toBeVisible();
     await expect(page.locator('.canvasWrapper2')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this' })).toHaveCount(3);
+    await waitForInitialQuickView(page);
 });
 
 test('keeps switch buttons visible in compact viewport', async ({ page }) => {
@@ -43,6 +57,8 @@ test('keeps switch buttons visible in compact viewport', async ({ page }) => {
         button.right <= 361 &&
         button.bottom <= 301,
     )).toBe(true);
+
+    await waitForInitialQuickView(page);
 });
 
 test('switches from canvas 0 to canvas 1 and back with use-this buttons', async ({ page }) => {
@@ -57,10 +73,6 @@ test('switches from canvas 0 to canvas 1 and back with use-this buttons', async 
             consoleErrors.push(message.text());
         }
     });
-    await page.route('**/sofa_B.glb', async (route) => {
-        await route.fulfill({ path: switchCanvasModelPath, contentType: 'model/gltf-binary' });
-    });
-
     await page.goto('/switch-canvas', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     const canvas0 = page.locator('.canvasWrapper0');
@@ -68,16 +80,7 @@ test('switches from canvas 0 to canvas 1 and back with use-this buttons', async 
     const useCanvas0 = canvas0.getByRole('button', { name: 'Use this' });
     const useCanvas1 = canvas1.getByRole('button', { name: 'Use this' });
 
-    await page.waitForFunction(() => {
-        const diveGlobal = (window as typeof window & {
-            DIVE?: {
-                instances?: unknown[];
-            };
-        }).DIVE;
-
-        return Array.isArray(diveGlobal?.instances) && diveGlobal.instances.length > 0;
-    }, undefined, { timeout: switchCanvasTimeout });
-
+    await waitForInitialQuickView(page);
     await expect(useCanvas1).toBeEnabled({ timeout: switchCanvasTimeout });
     await expect(useCanvas0).toBeDisabled({ timeout: switchCanvasTimeout });
 

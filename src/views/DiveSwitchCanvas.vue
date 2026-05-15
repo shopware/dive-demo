@@ -7,12 +7,12 @@ const canvas0 = ref<HTMLCanvasElement | null>(null);
 const canvas1 = ref<HTMLCanvasElement | null>(null);
 const canvas2 = ref<HTMLCanvasElement | null>(null);
 const canvases: Ref<HTMLCanvasElement | null>[] = [canvas0, canvas1, canvas2];
-const canvasKeys = ref([0, 0, 0]);
 
 const activeCanvas: Ref<number> = ref(0);
 const isSwitchingCanvas = ref(false);
 const isCompactViewport = ref(false);
 const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : 'horizontal');
+const isQuickViewReady = computed(() => Boolean(quickView.value));
 
 const DEFAULT_URL = 'sofa_B.glb';
 const quickView = ref<QuickView | null>(null);
@@ -65,7 +65,6 @@ const switchCanvasTo = async (index: number) => {
     return;
   }
 
-  const previousIndex = activeCanvas.value;
   isSwitchingCanvas.value = true;
   await nextTick();
 
@@ -74,10 +73,9 @@ const switchCanvasTo = async (index: number) => {
       return;
     }
 
-    await targetQuickView.mainView.setCanvas(canvas);
+    void targetQuickView.mainView.setCanvas(canvas).catch(() => undefined);
     targetQuickView.orbitController.setDomElements(canvas);
     activeCanvas.value = index;
-    canvasKeys.value[previousIndex] += 1;
     await nextTick();
   } finally {
     isSwitchingCanvas.value = false;
@@ -94,7 +92,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="page">
+  <div class="page" :data-quick-view-ready="isQuickViewReady">
     <ResizablePanels :initial-sizes="[100 / canvases.length, 100 / canvases.length, 100 / canvases.length]"
       :min-size="10" :orientation="panelOrientation">
       <template #panel-0>
@@ -102,7 +100,7 @@ defineProps<{
           <div class="overlay" v-if="activeCanvas !== 0">
             <p>Deactivated</p>
           </div>
-          <canvas :key="canvasKeys[0]" ref="canvas0"></canvas>
+          <canvas ref="canvas0"></canvas>
           <button :disabled="!canUseCanvas(0)" @click="switchCanvasTo(0)">Use
             this</button>
         </div>
@@ -112,7 +110,7 @@ defineProps<{
           <div class="overlay" v-if="activeCanvas !== 1">
             <p>Deactivated</p>
           </div>
-          <canvas :key="canvasKeys[1]" ref="canvas1"></canvas>
+          <canvas ref="canvas1"></canvas>
           <button :disabled="!canUseCanvas(1)" @click="switchCanvasTo(1)">Use
             this</button>
         </div>
@@ -122,7 +120,7 @@ defineProps<{
           <div class="overlay" v-if="activeCanvas !== 2">
             <p>Deactivated</p>
           </div>
-          <canvas :key="canvasKeys[2]" ref="canvas2"></canvas>
+          <canvas ref="canvas2"></canvas>
           <button :disabled="!canUseCanvas(2)" @click="switchCanvasTo(2)">Use
             this</button>
         </div>
