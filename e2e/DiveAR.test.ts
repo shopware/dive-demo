@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/diveCleanup';
 
 test('loads AR controls', async ({ page }) => {
     await page.goto('/ar', { waitUntil: 'domcontentloaded', timeout: 60000 });

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/diveCleanup';
 
 test('loads focus-object controls', async ({ page }) => {
     await page.goto('/focus-object', { waitUntil: 'domcontentloaded', timeout: 60000 });

@@ -36,10 +36,23 @@ onUnmounted(() => {
   }
 });
 
-const switchCanvasTo = async (canvas: HTMLCanvasElement | null, index: number) => {
+const canUseCanvas = (index: number) =>
+  Boolean(canvases[index]?.value) &&
+  Boolean(quickView.value) &&
+  !isSwitchingCanvas.value &&
+  activeCanvas.value !== index;
+
+const switchCanvasTo = async (index: number) => {
   const targetQuickView = quickView.value;
 
-  if (!canvas || !targetQuickView || isSwitchingCanvas.value || activeCanvas.value === index) {
+  if (!targetQuickView || isSwitchingCanvas.value || activeCanvas.value === index) {
+    return;
+  }
+
+  await nextTick();
+
+  const canvas = canvases[index]?.value ?? null;
+  if (!canvas) {
     return;
   }
 
@@ -76,7 +89,7 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas :key="canvasKeys[0]" ref="canvas0"></canvas>
-          <button :disabled="!quickView || isSwitchingCanvas || activeCanvas === 0" @click="switchCanvasTo(canvases[0].value, 0)">Use
+          <button :disabled="!canUseCanvas(0)" @click="switchCanvasTo(0)">Use
             this</button>
         </div>
       </template>
@@ -86,7 +99,7 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas :key="canvasKeys[1]" ref="canvas1"></canvas>
-          <button :disabled="!quickView || isSwitchingCanvas || activeCanvas === 1" @click="switchCanvasTo(canvases[1].value, 1)">Use
+          <button :disabled="!canUseCanvas(1)" @click="switchCanvasTo(1)">Use
             this</button>
         </div>
       </template>
@@ -96,7 +109,7 @@ defineProps<{
             <p>Deactivated</p>
           </div>
           <canvas :key="canvasKeys[2]" ref="canvas2"></canvas>
-          <button :disabled="!quickView || isSwitchingCanvas || activeCanvas === 2" @click="switchCanvasTo(canvases[2].value, 2)">Use
+          <button :disabled="!canUseCanvas(2)" @click="switchCanvasTo(2)">Use
             this</button>
         </div>
       </template>
