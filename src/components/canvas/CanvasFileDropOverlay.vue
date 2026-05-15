@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import {
     isMimeTypeSupported,
     isURIFileExtensionSupported,
+    FILE_TYPES
 } from '@shopware-ag/dive';
 
 const props = withDefaults(
@@ -14,7 +15,7 @@ const props = withDefaults(
     {
         disabled: false,
         dropLabel: 'Drop model to load',
-        unsupportedDropLabel: 'Unsupported file type',
+        unsupportedDropLabel: `Unsupported file type. Supported formats are ${Object.keys(FILE_TYPES).join(', ')}.`,
     },
 );
 
