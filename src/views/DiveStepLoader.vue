@@ -14,7 +14,6 @@ const wireframe: Ref<boolean> = ref(false);
 
 const DEFAULT_STEP_URL = 'model/D100.step';
 const STEP_FILE_ACCEPT = '.step,.stp,.iges,.igs';
-const STEP_FILE_EXTENSIONS = new Set(['step', 'stp', 'iges', 'igs']);
 let quickView: QuickView | null = null;
 let disposed = false;
 
