@@ -13,8 +13,8 @@ const timing: Ref<string | null> = ref(null);
 const wireframe: Ref<boolean> = ref(false);
 
 const DEFAULT_STEP_URL = 'model/D100.step';
-const STEP_FILE_ACCEPT = '.step,.stp';
-const STEP_FILE_EXTENSIONS = new Set(['step', 'stp']);
+const STEP_FILE_ACCEPT = '.step,.stp,.iges,.igs';
+const STEP_FILE_EXTENSIONS = new Set(['step', 'stp', 'iges', 'igs']);
 let quickView: QuickView | null = null;
 let disposed = false;
 
@@ -34,29 +34,10 @@ onUnmounted(() => {
   quickView = null;
 });
 
-function getFileExtension(fileName: string) {
-  const cleanName = (fileName.split('/').pop() ?? '').split(/[?#]/)[0];
-  if (!cleanName.includes('.') || cleanName.endsWith('.')) {
-    return '';
-  }
-
-  return cleanName.split('.').pop()?.toLowerCase() ?? '';
-}
-
-function isStepFile(file: File) {
-  return STEP_FILE_EXTENSIONS.has(getFileExtension(file.name));
-}
-
 async function loadFile(file: File) {
   if (!quickView || disposed) {
     return;
   }
-
-  // if (!isStepFile(file)) {
-  //   error.value = 'Only STEP files are supported.';
-  //   timing.value = null;
-  //   return;
-  // }
 
   loading.value = true;
   error.value = null;
@@ -110,7 +91,7 @@ defineProps<{
 
 <template>
   <CanvasFileDropOverlay class="canvasWrapper" :disabled="loading" :accept="STEP_FILE_ACCEPT"
-    drop-label="Drop STEP file to load" unsupported-drop-label="Only STEP files are supported" @loading="loadFile">
+    drop-label="Drop STEP file to load" unsupported-drop-label="Only STEP/IGES files are supported" @loading="loadFile">
     <canvas ref="canvas"></canvas>
     <div v-if="loading" class="loading">Loading STEP file…</div>
     <div v-else-if="error" class="error">{{ error }}</div>

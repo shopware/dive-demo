@@ -2,7 +2,7 @@ import { test, expect } from './helpers/diveCleanup';
 import type { Page } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 
-const switchCanvasModelPath = fileURLToPath(new URL('../public/suzanne.glb', import.meta.url));
+const switchCanvasModelPath = fileURLToPath(new URL('../public/model/suzanne.glb', import.meta.url));
 const switchCanvasTimeout = 90000;
 
 const waitForInitialQuickView = async (page: Page) => {
