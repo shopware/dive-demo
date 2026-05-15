@@ -4,6 +4,7 @@ import { QuickView } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
 import { AnimationSystem, type ClipAnimator, type TAnimatorLoopMode } from '@shopware-ag/dive/animation';
+import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const fileInput: Ref<HTMLInputElement | null> = ref(null);
@@ -73,15 +74,20 @@ async function loadModel(uri: string) {
     setLoopMode('repeat');
 }
 
+function loadFile(file: File) {
+    const url = URL.createObjectURL(file);
+    void loadModel(url).finally(() => {
+        URL.revokeObjectURL(url);
+    });
+}
+
 function onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
-    const url = URL.createObjectURL(file);
-    void loadModel(url).finally(() => {
-        URL.revokeObjectURL(url);
-    });
+    loadFile(file);
+    input.value = '';
 }
 
 async function exportModel(type: FileType) {
@@ -165,45 +171,69 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
 
 <template>
     <div class="page">
-        <div class="canvasWrapper">
+        <CanvasFileDropOverlay class="canvasWrapper" @loading="loadFile">
             <canvas ref="canvas"></canvas>
-            <input ref="fileInput" type="file" accept=".glb,.gltf,.usdz" class="file-input" @change="onFileSelected" />
+            <input
+                ref="fileInput"
+                type="file"
+                accept=".glb,.gltf,.usdz"
+                class="file-input"
+                @change="onFileSelected"
+            />
             <div class="controlPanel controlPanel--top">
                 <div class="controlPanel-buttons">
                     <button @click="fileInput?.click()">Upload File</button>
                     <div ref="exportWrapper" class="export-wrapper">
-                        <button @click="showExportMenu = !showExportMenu">Export</button>
+                        <button @click="showExportMenu = !showExportMenu">
+                            Export
+                        </button>
                         <div v-if="showExportMenu" class="export-menu">
-                            <button v-for="format in exportFormats" :key="format" class="export-option"
-                                @click="exportModel(format)">
+                            <button
+                                v-for="format in exportFormats"
+                                :key="format"
+                                class="export-option"
+                                @click="exportModel(format)"
+                            >
                                 .{{ format }}
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </CanvasFileDropOverlay>
         <div class="controlPanel">
             <div class="controlPanel-group">
                 <span class="controlPanel-label">Clips</span>
                 <div class="controlPanel-buttons">
-                    <button v-for="name in clipNames" :key="name" :class="{ active: currentClip === name }"
-                        @click="playClip(name)">
+                    <button
+                        v-for="name in clipNames"
+                        :key="name"
+                        :class="{ active: currentClip === name }"
+                        @click="playClip(name)"
+                    >
                         {{ name }}
                     </button>
                 </div>
             </div>
             <div class="controlPanel-group">
                 <div class="controlPanel-buttons controlPanel-buttons--center">
-                    <button @click="togglePlayPause" :disabled="!currentClip">{{ isPlaying ? '⏸' : '▶' }}</button>
-                    <button @click="stop" :disabled="!isPlaying && !isPaused">⏹</button>
+                    <button @click="togglePlayPause" :disabled="!currentClip">
+                        {{ isPlaying ? '⏸' : '▶' }}
+                    </button>
+                    <button @click="stop" :disabled="!isPlaying && !isPaused">
+                        ⏹
+                    </button>
                 </div>
             </div>
             <div class="controlPanel-group">
                 <span class="controlPanel-label">Loop</span>
                 <div class="controlPanel-buttons">
-                    <button v-for="mode in (['once', 'repeat', 'pingpong'] as TAnimatorLoopMode[])" :key="mode"
-                        :class="{ active: loopMode === mode }" @click="setLoopMode(mode)">
+                    <button
+                        v-for="mode in (['once', 'repeat', 'pingpong'] as TAnimatorLoopMode[])"
+                        :key="mode"
+                        :class="{ active: loopMode === mode }"
+                        @click="setLoopMode(mode)"
+                    >
                         {{ mode }}
                     </button>
                 </div>

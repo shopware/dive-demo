@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { BoundingBox, DIVEMath, DIVEModel } from '@shopware-ag/dive';
+import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 
@@ -72,6 +73,28 @@ const drawBoundingBox = (model: DIVEModel) => {
     depth.value = DIVEMath.roundExp(bb.size.z, 2);
 }
 
+const loadFile = async (file: File) => {
+    const targetDive = dive.value;
+
+    if (!targetDive) {
+        return;
+    }
+
+    currentBoundingBox.value = null;
+
+    const url = URL.createObjectURL(file);
+
+    try {
+        await targetDive.model.setFromURL(url);
+        targetDive.model.placeOnFloor();
+        targetDive.orbitController.focusObject(targetDive.model);
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+
+    drawBoundingBox(targetDive.model);
+}
+
 const showBoundingBox = () => {
     if (currentBoundingBox.value) {
         currentBoundingBox.value.setBoxHelperVisible(isBoundingBoxVisible.value);
@@ -94,9 +117,9 @@ defineProps<{
 </script>
 
 <template>
-    <div class="canvasWrapper">
+    <CanvasFileDropOverlay class="canvasWrapper" @loading="loadFile">
         <canvas ref="canvas"></canvas>
-    </div>
+    </CanvasFileDropOverlay>
     <div class="controlPanel">
         <div class="controlPanel-buttons">
             <button @click="switchObject('model/sofa_B.glb')">Sofa</button>
@@ -121,7 +144,11 @@ defineProps<{
             </div>
         </div>
         <label class="checkbox-button">
-            <input type="checkbox" v-model="isBoundingBoxVisible" @change="showBoundingBox" />
+            <input
+                type="checkbox"
+                v-model="isBoundingBoxVisible"
+                @change="showBoundingBox"
+            />
             Show bounding volume
         </label>
     </div>

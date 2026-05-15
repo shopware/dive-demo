@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, type Ref } from 'vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
 import type { FileType } from '@shopware-ag/dive';
+import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const fileInput: Ref<HTMLInputElement | null> = ref(null);
@@ -35,20 +36,29 @@ onUnmounted(() => {
   }
 });
 
-async function onFileSelected(event: Event) {
-  if(!canvas.value || !quickView) {
+async function loadFile(file: File) {
+  if (!quickView) {
     return;
   }
 
+  const url = URL.createObjectURL(file);
+
+  try {
+    await quickView.model.setFromURL(url);
+    quickView.model.placeOnFloor();
+    quickView.orbitController.focusObject(quickView.model);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
 
-  const url = URL.createObjectURL(file);
-  await quickView.model.setFromURL(url);
-  quickView.model.placeOnFloor();
-  quickView.orbitController.focusObject(quickView.model);
-  URL.revokeObjectURL(url);
+  await loadFile(file);
+  input.value = '';
 }
 
 async function exportModel(type: FileType) {
@@ -77,34 +87,54 @@ defineProps<{
 </script>
 
 <template>
-  <div class="canvasWrapper" @click.capture="onClickOutside">
-    <canvas ref="canvas"></canvas>
-    <input ref="fileInput" type="file" :accept="exportFormats.join(',')" class="file-input" @change="onFileSelected" />
-    <div class="controlPanel controlPanel--bottom">
-      <div class="controlPanel-buttons">
-        <button @click="fileInput?.click()">Upload File</button>
-        <div ref="exportWrapper" class="export-wrapper">
-          <button @click="showExportMenu = !showExportMenu">Export</button>
-          <div v-if="showExportMenu" class="export-menu export-menu--up">
-            <button v-for="format in exportFormats" :key="format" class="export-option" @click="exportModel(format)">
-              .{{ format }}
-            </button>
-          </div>
+    <CanvasFileDropOverlay
+        class="canvasWrapper"
+        @click.capture="onClickOutside"
+        @loading="loadFile"
+    >
+        <canvas ref="canvas"></canvas>
+        <input
+            ref="fileInput"
+            type="file"
+            :accept="exportFormats.join(',')"
+            class="file-input"
+            @change="onFileSelected"
+        />
+        <div class="controlPanel controlPanel--bottom">
+            <div class="controlPanel-buttons">
+                <button @click="fileInput?.click()">Upload File</button>
+                <div ref="exportWrapper" class="export-wrapper">
+                    <button @click="showExportMenu = !showExportMenu">
+                        Export
+                    </button>
+                    <div
+                        v-if="showExportMenu"
+                        class="export-menu export-menu--up"
+                    >
+                        <button
+                            v-for="format in exportFormats"
+                            :key="format"
+                            class="export-option"
+                            @click="exportModel(format)"
+                        >
+                            .{{ format }}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
+    </CanvasFileDropOverlay>
 </template>
 
 <style scoped>
 .canvasWrapper {
-  position: relative;
-  display: flex;
-  height: 100%;
-  width: 100%;
+    position: relative;
+    display: flex;
+    height: 100%;
+    width: 100%;
 }
 
 .file-input {
-  display: none;
+    display: none;
 }
 </style>
