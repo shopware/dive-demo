@@ -26,6 +26,63 @@ vi.mock('@shopware-ag/dive', () => {
     ]);
 
     return {
+        FILE_TYPES: {
+            glb: {
+                key: 'glb',
+                mimeTypes: ['model/gltf-binary'],
+                extension: 'glb',
+            },
+            gltf: {
+                key: 'gltf',
+                mimeTypes: ['model/gltf+json'],
+                extension: 'gltf',
+            },
+            usdz: {
+                key: 'usdz',
+                mimeTypes: ['model/vnd.usdz+zip'],
+                extension: 'usdz',
+            },
+            step: {
+                key: 'step',
+                mimeTypes: [
+                    'application/step',
+                    'model/step',
+                    'model/step+zip',
+                    'model/step+xml',
+                ],
+                extension: 'step',
+            },
+            stp: {
+                key: 'stp',
+                mimeTypes: [
+                    'application/step',
+                    'model/step',
+                    'model/step+zip',
+                    'model/step+xml',
+                ],
+                extension: 'stp',
+            },
+            iges: {
+                key: 'iges',
+                mimeTypes: [
+                    'application/iges',
+                    'model/iges',
+                    'model/iges+zip',
+                    'model/iges+xml',
+                ],
+                extension: 'iges',
+            },
+            igs: {
+                key: 'igs',
+                mimeTypes: [
+                    'application/iges',
+                    'model/iges',
+                    'model/iges+zip',
+                    'model/iges+xml',
+                ],
+                extension: 'igs',
+            },
+        },
         isMimeTypeSupported: (mimeType: string) =>
             supportedMimeTypes.has(mimeType.toLowerCase()),
         isURIFileExtensionSupported: (uri: string) => {
@@ -227,6 +284,53 @@ describe('CanvasFileDropOverlay', () => {
         );
 
         expect(wrapper.emitted('loading')).toBeUndefined();
+    });
+
+    it('rejects supported model drops that do not match accept', async () => {
+        const wrapper = mount(CanvasFileDropOverlay, {
+            props: {
+                accept: '.step,.stp',
+                unsupportedDropLabel: 'Only STEP files are supported',
+            },
+            slots: {
+                default: '<canvas />',
+            },
+        });
+        const { dataTransfer, event } = createDragEvent('dragenter', 'model.glb', {
+            itemType: 'model/gltf-binary',
+        });
+
+        wrapper.element.dispatchEvent(event);
+        await nextTick();
+
+        const panel = wrapper.find('.canvasFileDropOverlay-panel');
+        expect(panel.text()).toBe('Only STEP files are supported');
+        expect(panel.classes()).toContain(
+            'canvasFileDropOverlay-panel--unsupported',
+        );
+        expect(dataTransfer.dropEffect).toBe('none');
+    });
+
+    it('emits loading only when dropped files match accept', () => {
+        const wrapper = mount(CanvasFileDropOverlay, {
+            props: {
+                accept: '.step,.stp',
+            },
+            slots: {
+                default: '<canvas />',
+            },
+        });
+        const accepted = createDragEvent('drop', 'model.step', {
+            itemType: 'text/plain',
+        });
+        const rejected = createDragEvent('drop', 'model.glb', {
+            itemType: 'model/gltf-binary',
+        });
+
+        wrapper.element.dispatchEvent(rejected.event);
+        wrapper.element.dispatchEvent(accepted.event);
+
+        expect(wrapper.emitted('loading')).toEqual([[accepted.file]]);
     });
 
     it('does not emit loading while disabled', async () => {

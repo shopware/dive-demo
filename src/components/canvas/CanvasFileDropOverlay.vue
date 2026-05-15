@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import {
+    FILE_TYPES,
     isMimeTypeSupported,
     isURIFileExtensionSupported,
-    FILE_TYPES
 } from '@shopware-ag/dive';
+
+type AcceptRules = {
+    extensions: Set<string>;
+    mimeTypes: Set<string>;
+    mimeWildcards: Set<string>;
+    tokens: string[];
+};
 
 const props = withDefaults(
     defineProps<{
+        accept?: string | string[];
         disabled?: boolean;
         dropLabel?: string;
         unsupportedDropLabel?: string;
@@ -15,7 +23,6 @@ const props = withDefaults(
     {
         disabled: false,
         dropLabel: 'Drop model to load',
-        unsupportedDropLabel: `Unsupported file type. Supported formats are ${Object.keys(FILE_TYPES).join(', ')}.`,
     },
 );
 
@@ -32,10 +39,50 @@ const genericFileMimeTypes = new Set([
 const isDraggingFile = ref(false);
 const isUnsupportedDrag = ref(false);
 
+const acceptRules = computed(() => parseAccept(props.accept));
 const showDropPanel = computed(() => !props.disabled && isDraggingFile.value);
-const dropPanelLabel = computed(() =>
-    isUnsupportedDrag.value ? props.unsupportedDropLabel : props.dropLabel,
+const acceptedFormatsLabel = computed(() =>
+    acceptRules.value.tokens.length
+        ? acceptRules.value.tokens.join(', ')
+        : Object.keys(FILE_TYPES).join(', '),
 );
+const dropPanelLabel = computed(() =>
+    isUnsupportedDrag.value
+        ? props.unsupportedDropLabel ??
+            `Unsupported file type. Supported formats are ${acceptedFormatsLabel.value}.`
+        : props.dropLabel,
+);
+
+function parseAccept(accept: string | string[] | undefined): AcceptRules {
+    const rawTokens = Array.isArray(accept) ? accept : (accept ?? '').split(',');
+    const rules: AcceptRules = {
+        extensions: new Set(),
+        mimeTypes: new Set(),
+        mimeWildcards: new Set(),
+        tokens: [],
+    };
+
+    for (const rawToken of rawTokens) {
+        const token = rawToken.trim().toLowerCase();
+        if (!token) {
+            continue;
+        }
+
+        rules.tokens.push(token);
+
+        if (token.startsWith('.')) {
+            rules.extensions.add(token.slice(1));
+        } else if (token.endsWith('/*')) {
+            rules.mimeWildcards.add(token.slice(0, -1));
+        } else if (token.includes('/')) {
+            rules.mimeTypes.add(token);
+        } else {
+            rules.extensions.add(token);
+        }
+    }
+
+    return rules;
+}
 
 function hasDraggedFile(event: DragEvent) {
     return Array.from(event.dataTransfer?.types ?? []).includes('Files');
@@ -62,9 +109,57 @@ function isGenericMimeType(mimeType: string) {
     return genericFileMimeTypes.has(mimeType.toLowerCase());
 }
 
+function hasAcceptRules(rules = acceptRules.value) {
+    return rules.tokens.length > 0;
+}
+
+function getFileExtension(fileName: string) {
+    const cleanName = (fileName.split('/').pop() ?? '').split(/[?#]/)[0];
+    if (!cleanName.includes('.') || cleanName.endsWith('.')) {
+        return '';
+    }
+
+    return cleanName.split('.').pop()?.toLowerCase() ?? '';
+}
+
+function isMimeTypeAcceptedByExtension(mimeType: string, rules = acceptRules.value) {
+    return Array.from(rules.extensions).some((extension) =>
+        (FILE_TYPES[extension as keyof typeof FILE_TYPES]?.mimeTypes ?? []).some(
+            (acceptedMimeType) => acceptedMimeType.toLowerCase() === mimeType,
+        ),
+    );
+}
+
+function isMimeTypeAccepted(mimeType: string, rules = acceptRules.value) {
+    const normalizedMimeType = mimeType.toLowerCase();
+    if (!normalizedMimeType) {
+        return false;
+    }
+
+    return (
+        rules.mimeTypes.has(normalizedMimeType) ||
+        Array.from(rules.mimeWildcards).some((wildcard) =>
+            normalizedMimeType.startsWith(wildcard),
+        ) ||
+        isMimeTypeAcceptedByExtension(normalizedMimeType, rules)
+    );
+}
+
+function isAcceptedFile(file: File) {
+    const rules = acceptRules.value;
+    if (!hasAcceptRules(rules)) {
+        return true;
+    }
+
+    const extension = getFileExtension(file.name);
+    const acceptsExtension = extension ? rules.extensions.has(extension) : false;
+    return acceptsExtension || isMimeTypeAccepted(file.type, rules);
+}
+
 function isSupportedFile(file: File) {
     return (
-        isMimeTypeSupported(file.type) || isURIFileExtensionSupported(file.name)
+        (isMimeTypeSupported(file.type) || isURIFileExtensionSupported(file.name)) &&
+        isAcceptedFile(file)
     );
 }
 
@@ -79,7 +174,15 @@ function getDraggedFileSupport(event: DragEvent): boolean | null {
         return null;
     }
 
-    return isMimeTypeSupported(mimeType);
+    if (!isMimeTypeSupported(mimeType)) {
+        return false;
+    }
+
+    if (!hasAcceptRules()) {
+        return true;
+    }
+
+    return isMimeTypeAccepted(mimeType);
 }
 
 function updateDropEffect(event: DragEvent, support: boolean | null) {
@@ -223,7 +326,7 @@ function onDrop(event: DragEvent) {
     position: absolute;
     inset: 0;
     opacity: 0;
-    animation: canvasFileDropOverlay-contentReveal 180ms ease-out 260ms both;
+    animation: canvasFileDropOverlay-contentReveal 80ms ease-out 160ms both;
 }
 
 .canvasFileDropOverlay-icons {

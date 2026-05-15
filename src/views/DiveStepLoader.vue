@@ -13,6 +13,8 @@ const timing: Ref<string | null> = ref(null);
 const wireframe: Ref<boolean> = ref(false);
 
 const DEFAULT_STEP_URL = 'model/D100.step';
+const STEP_FILE_ACCEPT = '.step,.stp';
+const STEP_FILE_EXTENSIONS = new Set(['step', 'stp']);
 let quickView: QuickView | null = null;
 let disposed = false;
 
@@ -22,7 +24,7 @@ onMounted(async () => {
   }
 
   if (!quickView) {
-    quickView = await QuickView(DEFAULT_STEP_URL, { canvas: canvas.value, displayGrid: true });
+    quickView = await QuickView(DEFAULT_STEP_URL, { canvas: canvas.value });
   }
 });
 
@@ -32,10 +34,29 @@ onUnmounted(() => {
   quickView = null;
 });
 
+function getFileExtension(fileName: string) {
+  const cleanName = (fileName.split('/').pop() ?? '').split(/[?#]/)[0];
+  if (!cleanName.includes('.') || cleanName.endsWith('.')) {
+    return '';
+  }
+
+  return cleanName.split('.').pop()?.toLowerCase() ?? '';
+}
+
+function isStepFile(file: File) {
+  return STEP_FILE_EXTENSIONS.has(getFileExtension(file.name));
+}
+
 async function loadFile(file: File) {
   if (!quickView || disposed) {
     return;
   }
+
+  // if (!isStepFile(file)) {
+  //   error.value = 'Only STEP files are supported.';
+  //   timing.value = null;
+  //   return;
+  // }
 
   loading.value = true;
   error.value = null;
@@ -88,108 +109,94 @@ defineProps<{
 </script>
 
 <template>
-    <CanvasFileDropOverlay
-        class="canvasWrapper"
-        :disabled="loading"
-        @loading="loadFile"
-    >
-        <canvas ref="canvas"></canvas>
-        <div v-if="loading" class="loading">Loading STEP file…</div>
-        <div v-else-if="error" class="error">{{ error }}</div>
-        <div v-if="timing" class="timing">{{ timing }}</div>
-        <div class="controlPanel controlPanel--top-right">
-            <div class="controlPanel-buttons">
-                <label class="checkbox-button">
-                    <input
-                        type="checkbox"
-                        v-model="wireframe"
-                        :disabled="loading"
-                    />
-                    Wireframe
-                </label>
-                <button ref="uploadButton" @click="uploadInput?.click()">
-                    Upload STEP / IGES
-                </button>
-                <input
-                    type="file"
-                    ref="uploadInput"
-                    style="display: none"
-                    @change="onFileSelected"
-                    accept=".step,.stp,.iges,.igs"
-                />
-            </div>
-        </div>
-        <div class="label">occt-import-js</div>
-    </CanvasFileDropOverlay>
+  <CanvasFileDropOverlay class="canvasWrapper" :disabled="loading" :accept="STEP_FILE_ACCEPT"
+    drop-label="Drop STEP file to load" unsupported-drop-label="Only STEP files are supported" @loading="loadFile">
+    <canvas ref="canvas"></canvas>
+    <div v-if="loading" class="loading">Loading STEP file…</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-if="timing" class="timing">{{ timing }}</div>
+    <div class="controlPanel controlPanel--top-right">
+      <div class="controlPanel-buttons">
+        <label class="checkbox-button">
+          <input type="checkbox" v-model="wireframe" :disabled="loading" />
+          Wireframe
+        </label>
+        <button ref="uploadButton" @click="uploadInput?.click()">Upload STEP</button>
+        <input type="file" ref="uploadInput" style="display: none" @change="onFileSelected"
+          :accept="STEP_FILE_ACCEPT" />
+      </div>
+    </div>
+    <div class="label">occt-import-js</div>
+  </CanvasFileDropOverlay>
 </template>
 
 <style scoped>
 .canvasWrapper {
-    display: flex;
-    height: 100%;
-    min-height: 100vh;
-    width: 100%;
-    position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
 }
 
 canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .loading,
 .error {
-    position: absolute;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.5rem 1rem;
-    border-radius: 0.35rem;
-    font-size: 0.875rem;
-    z-index: 10;
-    background-color: var(--ui-panel-bg);
-    border: 1px solid var(--ui-panel-border);
-    color: var(--ui-btn-text);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  border-radius: 0.35rem;
+  font-size: 0.875rem;
+  z-index: 10;
+  background-color: var(--ui-panel-bg);
+  border: 1px solid var(--ui-panel-border);
+  color: var(--ui-btn-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .error {
-    background: rgba(200, 50, 50, 0.85);
-    border-color: rgba(200, 50, 50, 0.5);
-    color: white;
+  background: rgba(200, 50, 50, 0.85);
+  border-color: rgba(200, 50, 50, 0.5);
+  color: white;
 }
 
 .timing {
-    position: absolute;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.5rem 1rem;
-    border-radius: 0.35rem;
-    font-size: 0.875rem;
-    background-color: var(--ui-panel-bg);
-    border: 1px solid var(--ui-panel-border);
-    color: var(--ui-btn-text);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 10;
-    font-variant-numeric: tabular-nums;
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  border-radius: 0.35rem;
+  font-size: 0.875rem;
+  background-color: var(--ui-panel-bg);
+  border: 1px solid var(--ui-panel-border);
+  color: var(--ui-btn-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  font-variant-numeric: tabular-nums;
 }
 
 .label {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.35rem;
-    font-size: 0.75rem;
-    background-color: var(--ui-panel-bg);
-    border: 1px solid var(--ui-panel-border);
-    color: var(--ui-label-text);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 10;
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+  font-size: 0.75rem;
+  background-color: var(--ui-panel-bg);
+  border: 1px solid var(--ui-panel-border);
+  color: var(--ui-label-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
 }
 </style>
