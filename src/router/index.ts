@@ -53,6 +53,11 @@ const router = createRouter({
       path: '/hdr-environment',
       name: 'hdr environment',
       component: () => import('../views/DiveHDREnvironment.vue')
+    },
+    {
+      path: '/materials',
+      name: 'materials',
+      component: () => import('../views/DiveMaterials.vue')
     }
   ]
 })
