@@ -140,6 +140,28 @@ const loadFile = async (file: File) => {
         activePreset.value = 0;
     }
 };
+
+const loadFile = async (file: File) => {
+    if (!dive.value) {
+        return;
+    }
+
+    const url = URL.createObjectURL(file);
+
+    try {
+        await dive.value.model.setFromURL(url);
+        dive.value.model.placeOnFloor();
+        dive.value.orbitController.focusObject(dive.value.model);
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+
+    if (orbitController) {
+        presets[0].position = orbitController.object.position.clone();
+        presets[0].target = orbitController.target.clone();
+        activePreset.value = 0;
+    }
+};
 </script>
 
 <template>
