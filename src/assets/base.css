@@ -37,7 +37,7 @@
   --section-gap: 160px;
 
   /* glassmorphism UI tokens – light mode */
-  --ui-panel-bg: rgba(255, 255, 255, 0.75);
+  --ui-panel-bg: rgba(255, 255, 255, 0.25);
   --ui-panel-border: rgba(0, 0, 0, 0.08);
   --ui-btn-bg: rgba(255, 255, 255, 0.6);
   --ui-btn-bg-hover: rgba(255, 255, 255, 0.85);
@@ -63,7 +63,7 @@ html.dark {
   --color-background-active: #1e3044;
 
   /* glassmorphism UI tokens – dark mode */
-  --ui-panel-bg: rgba(30, 30, 30, 0.9);
+  --ui-panel-bg: rgba(30, 30, 30, 0.5);
   --ui-panel-border: rgba(85, 85, 85, 0.5);
   --ui-btn-bg: rgba(42, 42, 42, 0.8);
   --ui-btn-bg-hover: rgba(58, 58, 58, 0.9);

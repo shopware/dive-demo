@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 type HDROption = {
   label: string;
@@ -13,11 +14,11 @@ const loadingEnvironment = ref(false);
 const environmentError = ref<string | null>(null);
 
 const hdrOptions: HDROption[] = [
-  { label: 'Blocky Studio', url: 'blocky_photo_studio_1k.hdr' },
-  { label: 'Brown Photostudio', url: 'brown_photostudio_02_1k.hdr' },
-  { label: 'Hornkoppe Spring', url: 'horn-koppe_spring_1k.hdr' },
-  { label: 'Qwantani Sunset', url: 'qwantani_sunset_puresky_1k.hdr' },
-  { label: 'Studio Small', url: 'studio_small_09_1k.hdr' },
+  { label: 'Blocky Studio', url: 'hdri/blocky_photo_studio_1k.hdr' },
+  { label: 'Brown Photostudio', url: 'hdri/brown_photostudio_02_1k.hdr' },
+  { label: 'Hornkoppe Spring', url: 'hdri/horn-koppe_spring_1k.hdr' },
+  { label: 'Qwantani Sunset', url: 'hdri/qwantani_sunset_puresky_1k.hdr' },
+  { label: 'Studio Small', url: 'hdri/studio_small_09_1k.hdr' },
 ];
 
 const selectedHDR = ref<string>(hdrOptions[0].url);
@@ -90,7 +91,7 @@ const initializeDive = async () => {
     return;
   }
 
-  const quickView = await QuickView('sofa_B.glb', {
+  const quickView = await QuickView('model/sofa_B.glb', {
     canvas: targetCanvas,
     displayGrid: false,
   });
@@ -106,6 +107,22 @@ const initializeDive = async () => {
   scheduleHDRApply(selectedHDR.value);
 };
 
+const loadFile = async (file: File) => {
+  if (!dive.value || disposed) {
+    return;
+  }
+
+  const url = URL.createObjectURL(file);
+
+  try {
+    await dive.value.model.setFromURL(url);
+    dive.value.model.placeOnFloor();
+    dive.value.orbitController.focusObject(dive.value.model);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
+
 onMounted(() => {
   void initializeDive().catch(() => undefined);
 });
@@ -119,104 +136,123 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="canvasWrapper">
-    <canvas ref="canvas"></canvas>
+    <CanvasFileDropOverlay class="canvasWrapper" @loading="loadFile">
+        <canvas ref="canvas"></canvas>
 
-    <div class="controlPanel controlPanel--top controlPanel--row">
-      <div class="controlPanel-group">
-        <span class="controlPanel-label">HDR Preset</span>
-        <select v-model="selectedHDR" class="hdrSelect" aria-label="HDR Preset">
-          <option v-for="option in hdrOptions" :key="option.url" :value="option.url">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
+        <div class="controlPanel controlPanel--top controlPanel--row">
+            <div class="controlPanel-group">
+                <span class="controlPanel-label">HDR Preset</span>
+                <select
+                    v-model="selectedHDR"
+                    class="hdrSelect"
+                    aria-label="HDR Preset"
+                >
+                    <option
+                        v-for="option in hdrOptions"
+                        :key="option.url"
+                        :value="option.url"
+                    >
+                        {{ option.label }}
+                    </option>
+                </select>
+            </div>
 
-      <div class="controlPanel-group controlPanel-group--wide">
-        <span class="controlPanel-label">Rotation Y</span>
-        <div class="sliderRow">
-          <input v-model="rotationY" type="range" min="-180" max="180" step="1" aria-label="Rotation Y" />
-          <span class="sliderValue">{{ rotationY }}&deg;</span>
+            <div class="controlPanel-group controlPanel-group--wide">
+                <span class="controlPanel-label">Rotation Y</span>
+                <div class="sliderRow">
+                    <input
+                        v-model="rotationY"
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        aria-label="Rotation Y"
+                    />
+                    <span class="sliderValue">{{ rotationY }}&deg;</span>
+                </div>
+            </div>
+
+            <div class="controlPanel-group">
+                <span class="controlPanel-label">Background</span>
+                <label class="checkbox-button">
+                    <input
+                        v-model="useAsBackground"
+                        type="checkbox"
+                        aria-label="Show HDR as background"
+                    />
+                    Show HDR as background
+                </label>
+            </div>
         </div>
-      </div>
 
-      <div class="controlPanel-group">
-        <span class="controlPanel-label">Background</span>
-        <label class="checkbox-button">
-          <input v-model="useAsBackground" type="checkbox" aria-label="Show HDR as background" />
-          Show HDR as background
-        </label>
-      </div>
-    </div>
-
-    <div class="infoBadge">
-      <span>{{ selectedHDRLabel }}</span>
-      <span v-if="loadingEnvironment">Loading HDR…</span>
-      <span v-else-if="environmentError">{{ environmentError }}</span>
-    </div>
-  </div>
+        <div class="infoBadge">
+            <span>{{ selectedHDRLabel }}</span>
+            <span v-if="loadingEnvironment">Loading HDR…</span>
+            <span v-else-if="environmentError">{{ environmentError }}</span>
+        </div>
+    </CanvasFileDropOverlay>
 </template>
 
 <style scoped>
 .canvasWrapper {
-  position: relative;
-  display: flex;
-  height: 100%;
-  width: 100%;
+    position: relative;
+    display: flex;
+    height: 100%;
+    width: 100%;
 }
 
 .controlPanel-group--wide {
-  min-width: 20rem;
+    min-width: 20rem;
 }
 
 .hdrSelect {
-  min-width: 14rem;
-  padding: 0.45rem 0.85rem;
-  border-radius: 0.35rem;
-  border: 1px solid var(--ui-btn-border);
-  background-color: var(--ui-btn-bg);
-  color: var(--ui-btn-text);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+    min-width: 14rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.35rem;
+    border: 1px solid var(--ui-btn-border);
+    background-color: var(--ui-btn-bg);
+    color: var(--ui-btn-text);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .sliderRow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .sliderRow input[type='range'] {
-  width: 100%;
+    width: 100%;
 }
 
 .sliderValue {
-  min-width: 4rem;
-  text-align: right;
-  color: var(--ui-btn-text);
-  font-variant-numeric: tabular-nums;
+    min-width: 4rem;
+    text-align: right;
+    color: var(--ui-btn-text);
+    font-variant-numeric: tabular-nums;
 }
 
 .checkbox-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--ui-btn-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--ui-btn-text);
 }
 
 .infoBadge {
-  position: absolute;
-  left: 1rem;
-  bottom: 1rem;
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.6rem 0.85rem;
-  border-radius: 0.75rem;
-  background-color: var(--ui-panel-bg);
-  border: 1px solid var(--ui-panel-border);
-  color: var(--ui-btn-text);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.75rem;
+    background-color: var(--ui-panel-bg);
+    border: 1px solid var(--ui-panel-border);
+    color: var(--ui-btn-text);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 </style>

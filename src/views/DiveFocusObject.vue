@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { BoundingBox, DIVEMath, DIVEModel } from '@shopware-ag/dive';
+import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 
@@ -19,7 +20,7 @@ onMounted(async () => {
         return;
     }
 
-    dive.value = markRaw(await QuickView('sofa_B.glb', { canvas: canvas.value }));
+    dive.value = markRaw(await QuickView('model/sofa_B.glb', { canvas: canvas.value }));
 
     dive.value.scene.root.children.forEach((model) => {
         if (model instanceof DIVEModel) {
@@ -44,13 +45,13 @@ const switchObject = async (object: string) => {
     }
     await model.setFromURL(object);
 
-    if (object === 'sofa_B.glb') {
+    if (object === 'model/sofa_B.glb') {
         model.scale.set(1.0, 1.0, 1.0);
     }
-    if (object === 'hay_chair.glb') {
+    if (object === 'model/hay_chair.glb') {
         model.scale.set(0.1, 0.1, 0.1);
     }
-    if (object === 'suzanne.glb') {
+    if (object === 'model/suzanne.glb') {
         model.scale.set(10.0, 10.0, 10.0);
     }
 
@@ -70,6 +71,28 @@ const drawBoundingBox = (model: DIVEModel) => {
     width.value = DIVEMath.roundExp(bb.size.x, 2);
     height.value = DIVEMath.roundExp(bb.size.y, 2);
     depth.value = DIVEMath.roundExp(bb.size.z, 2);
+}
+
+const loadFile = async (file: File) => {
+    const targetDive = dive.value;
+
+    if (!targetDive) {
+        return;
+    }
+
+    currentBoundingBox.value = null;
+
+    const url = URL.createObjectURL(file);
+
+    try {
+        await targetDive.model.setFromURL(url);
+        targetDive.model.placeOnFloor();
+        targetDive.orbitController.focusObject(targetDive.model);
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+
+    drawBoundingBox(targetDive.model);
 }
 
 const showBoundingBox = () => {
@@ -94,14 +117,14 @@ defineProps<{
 </script>
 
 <template>
-    <div class="canvasWrapper">
+    <CanvasFileDropOverlay class="canvasWrapper" @loading="loadFile">
         <canvas ref="canvas"></canvas>
-    </div>
+    </CanvasFileDropOverlay>
     <div class="controlPanel">
         <div class="controlPanel-buttons">
-            <button @click="switchObject('sofa_B.glb')">Sofa</button>
-            <button @click="switchObject('hay_chair.glb')">Chair</button>
-            <button @click="switchObject('suzanne.glb')">Suzanne</button>
+            <button @click="switchObject('model/sofa_B.glb')">Sofa</button>
+            <button @click="switchObject('model/hay_chair.glb')">Chair</button>
+            <button @click="switchObject('model/suzanne.glb')">Suzanne</button>
         </div>
     </div>
     <div class="infoPanel">
@@ -121,7 +144,11 @@ defineProps<{
             </div>
         </div>
         <label class="checkbox-button">
-            <input type="checkbox" v-model="isBoundingBoxVisible" @change="showBoundingBox" />
+            <input
+                type="checkbox"
+                v-model="isBoundingBoxVisible"
+                @change="showBoundingBox"
+            />
             Show bounding volume
         </label>
     </div>

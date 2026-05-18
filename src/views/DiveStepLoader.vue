@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Mesh } from 'three';
+import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const uploadButton: Ref<HTMLButtonElement | null> = ref(null);
@@ -11,7 +12,9 @@ const error: Ref<string | null> = ref(null);
 const timing: Ref<string | null> = ref(null);
 const wireframe: Ref<boolean> = ref(false);
 
-const DEFAULT_STEP_URL = 'D100.step';
+const DEFAULT_STEP_URL = 'model/D100.step';
+const STEP_FILE_ACCEPT = '.step,.stp,.iges,.igs';
+const STEP_FILE_EXTENSIONS = new Set(['step', 'stp', 'iges', 'igs']);
 let quickView: QuickView | null = null;
 let disposed = false;
 
@@ -21,7 +24,7 @@ onMounted(async () => {
   }
 
   if (!quickView) {
-    quickView = await QuickView(DEFAULT_STEP_URL, { canvas: canvas.value, displayGrid: true });
+    quickView = await QuickView(DEFAULT_STEP_URL, { canvas: canvas.value });
   }
 });
 
@@ -31,20 +34,39 @@ onUnmounted(() => {
   quickView = null;
 });
 
-async function onFileSelected(event: Event) {
-  if(!canvas.value || !quickView) {
+async function loadFile(file: File) {
+  if (!quickView || disposed) {
     return;
   }
 
+  loading.value = true;
+  error.value = null;
+  timing.value = null;
+
+  const startTime = performance.now();
+  const url = URL.createObjectURL(file);
+
+  try {
+    await quickView.model.setFromURL(url);
+    quickView.model.placeOnFloor();
+    quickView.orbitController.focusObject(quickView.model);
+    setWireframe(wireframe.value);
+    timing.value = `Loaded in ${Math.round(performance.now() - startTime)} ms`;
+  } catch (loadError) {
+    error.value = loadError instanceof Error ? loadError.message : 'Failed to load model.';
+  } finally {
+    URL.revokeObjectURL(url);
+    loading.value = false;
+  }
+}
+
+async function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
 
-  const url = URL.createObjectURL(file);
-  await quickView.model.setFromURL(url);
-  quickView.model.placeOnFloor();
-  quickView.orbitController.focusObject(quickView.model);
-  URL.revokeObjectURL(url);
+  await loadFile(file);
+  input.value = '';
 }
 
 const setWireframe = (enabled: boolean) => {
@@ -68,7 +90,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="canvasWrapper">
+  <CanvasFileDropOverlay class="canvasWrapper" :disabled="loading" :accept="STEP_FILE_ACCEPT"
+    drop-label="Drop STEP file to load" unsupported-drop-label="Only STEP/IGES files are supported" @loading="loadFile">
     <canvas ref="canvas"></canvas>
     <div v-if="loading" class="loading">Loading STEP file…</div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -79,15 +102,13 @@ defineProps<{
           <input type="checkbox" v-model="wireframe" :disabled="loading" />
           Wireframe
         </label>
-        <button ref="uploadButton" @click="uploadInput?.click()">
-          Upload STEP / IGES
-        </button>
+        <button ref="uploadButton" @click="uploadInput?.click()">Upload STEP</button>
         <input type="file" ref="uploadInput" style="display: none" @change="onFileSelected"
-          accept=".step,.stp,.iges,.igs" />
+          :accept="STEP_FILE_ACCEPT" />
       </div>
     </div>
     <div class="label">occt-import-js</div>
-  </div>
+  </CanvasFileDropOverlay>
 </template>
 
 <style scoped>

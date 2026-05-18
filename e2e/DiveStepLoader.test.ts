@@ -5,6 +5,6 @@ test('loads STEP loader controls', async ({ page }) => {
 
     await expect(page.locator('div.canvasWrapper > canvas')).toBeVisible();
     await expect(page.getByText('occt-import-js')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Upload STEP / IGES' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Upload STEP' })).toBeVisible();
     await expect(page.getByLabel('Wireframe')).toBeVisible();
 });

@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { AnimationSystem, type TargetAnimator } from '@shopware-ag/dive/animation';
+import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 import type { OrbitController } from '@shopware-ag/dive/orbitcontroller';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
@@ -57,7 +58,7 @@ const initializeDive = async () => {
     }
 
     const quickView = await QuickView(
-        'sofa_B.glb',
+        'model/sofa_B.glb',
         { canvas: initialCanvas },
     );
 
@@ -117,19 +118,46 @@ const setActivePreset = async (index: number) => {
     await nextTick();
     await goToPreset(index);
 };
+
+const loadFile = async (file: File) => {
+    if (!dive.value) {
+        return;
+    }
+
+    const url = URL.createObjectURL(file);
+
+    try {
+        await dive.value.model.setFromURL(url);
+        dive.value.model.placeOnFloor();
+        dive.value.orbitController.focusObject(dive.value.model);
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+
+    if (orbitController) {
+        presets[0].position = orbitController.object.position.clone();
+        presets[0].target = orbitController.target.clone();
+        activePreset.value = 0;
+    }
+};
 </script>
 
 <template>
     <div class="page">
-        <div class="canvasWrapper">
+        <CanvasFileDropOverlay class="canvasWrapper" @loading="loadFile">
             <canvas ref="canvas"></canvas>
-        </div>
+        </CanvasFileDropOverlay>
         <div class="controlPanel">
             <div class="controlPanel-group">
                 <span class="controlPanel-label">Camera</span>
                 <div class="controlPanel-buttons controlPanel-buttons--center">
-                    <button v-for="(preset, i) in presets" :key="i" :class="{ active: activePreset === i }"
-                        :disabled="!controlsReady" @click="setActivePreset(i)">
+                    <button
+                        v-for="(preset, i) in presets"
+                        :key="i"
+                        :class="{ active: activePreset === i }"
+                        :disabled="!controlsReady"
+                        @click="setActivePreset(i)"
+                    >
                         {{ preset.label }}
                     </button>
                 </div>

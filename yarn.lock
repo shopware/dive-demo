@@ -541,13 +541,13 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.16.1.tgz#4f97581e114fc79f246cee3723a5c4edd3b62415"
   integrity sha512-TvZbIpeKqGQQ7X0zSCvPH9riMSFQFSggnfBjFZ1mEoILW+UuXCKwOoPcgjMwiUtRqFZ8jWhPJc4um14vC6I4ag==
 
-"@shopware-ag/dive@3.0.4-beta.10":
-  version "3.0.4-beta.10"
-  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-3.0.4-beta.10.tgz#71e55f77c618e4de60e9cabff5fb4a7157e2cb6a"
-  integrity sha512-C6kSHLwpNTcE+bDopedspd+0kLdnZYbngM9db1mG6BdUHh4wXrTkfDz6TutfCmVNVP1v5nRspluq0Wc7mrf7xQ==
+"@shopware-ag/dive@3.0.9":
+  version "3.0.9"
+  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-3.0.9.tgz#65bdc88797b1672fc728309063c6316ab250d412"
+  integrity sha512-yun/Ve1qZCSI2NYirqNQC4uw09f1nvR48MuyCZMrlBYk6JCEInmjJtjjjsTOjSV7firZuPSNE1xZS1Pv5SfUKA==
   dependencies:
     "@tweenjs/tween.js" "^25.0.0"
-    lodash "^4.17.21"
+    lodash "^4.18.1"
     occt-import-js "^0.0.23"
     three "^0.183.0"
     three-spritetext "^1.8.2"
@@ -2420,6 +2420,11 @@ lodash@^4.17.21:
   version "4.17.23"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.23.tgz#f113b0378386103be4f6893388c73d0bde7f2c5a"
   integrity sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==
+
+lodash@^4.18.1:
+  version "4.18.1"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.18.1.tgz#ff2b66c1f6326d59513de2407bf881439812771c"
+  integrity sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==
 
 loupe@^2.3.6, loupe@^2.3.7:
   version "2.3.7"
