@@ -1,12 +1,29 @@
 import { expect, test as base, type Page } from '@playwright/test';
 
+async function withCleanupTimeout<T>(promise: Promise<T>, timeoutMs: number) {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+        await Promise.race([
+            promise.catch(() => undefined),
+            new Promise<void>((resolve) => {
+                timeout = setTimeout(resolve, timeoutMs);
+            }),
+        ]);
+    } finally {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+    }
+}
+
 async function cleanupDivePage(page: Page) {
     if (page.isClosed()) {
         return;
     }
 
-    await page
-        .evaluate(async () => {
+    await withCleanupTimeout(
+        page.evaluate(async () => {
             const diveGlobal = (window as typeof window & {
                 DIVE?: {
                     instances?: Array<{
@@ -18,26 +35,21 @@ async function cleanupDivePage(page: Page) {
                 ? [...diveGlobal.instances]
                 : [];
 
-            const timeout = new Promise<void>((resolve) => {
-                window.setTimeout(resolve, 5_000);
-            });
-
-            await Promise.race([
-                Promise.allSettled(
-                    instances.map((instance) => instance.disposeAsync?.()),
-                ),
-                timeout,
-            ]);
-        })
-        .catch(() => {});
+            await Promise.allSettled(
+                instances.map((instance) => instance.disposeAsync?.()),
+            );
+        }),
+        5_000,
+    );
 
     if (!page.isClosed()) {
-        await page
-            .goto('about:blank', {
+        await withCleanupTimeout(
+            page.goto('about:blank', {
                 timeout: 10_000,
                 waitUntil: 'domcontentloaded',
-            })
-            .catch(() => {});
+            }),
+            5_000,
+        );
     }
 }
 
