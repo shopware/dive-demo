@@ -15,7 +15,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@shopware-ag/dive": "3.0.9",
+    "@shopware-ag/dive": "3.0.10",
     "@tweakpane/core": "^2.0.5",
     "monaco-editor": "^0.52.2",
     "monaco-editor-vue3": "^0.1.10",
