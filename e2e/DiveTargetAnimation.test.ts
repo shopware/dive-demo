@@ -1,7 +1,7 @@
 import { test, expect } from './helpers/diveCleanup';
 import { fileURLToPath } from 'node:url';
 
-const targetAnimationModelPath = fileURLToPath(new URL('../public/suzanne.glb', import.meta.url));
+const targetAnimationModelPath = fileURLToPath(new URL('../public/model/suzanne.glb', import.meta.url));
 
 test('loads target-animation preset controls', async ({ page }) => {
     await page.goto('/target-animation', { waitUntil: 'domcontentloaded', timeout: 60000 });
