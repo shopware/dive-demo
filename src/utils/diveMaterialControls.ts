@@ -35,7 +35,6 @@ export type DiveInspectableMaterial = MeshStandardMaterial & {
 
 export type DiveMaterialModel = Object3D & {
     material?: DiveInspectableMaterial | null;
-    _material?: DiveInspectableMaterial | null;
 };
 
 export type DiveMaterialMapControl = {
@@ -70,7 +69,7 @@ export function resolveDiveMaterials(
     const materials = findMeshMaterials(model);
     if (materials.length) return materials.filter(hasDiveMaterialMap);
 
-    const fallbackMaterial = model._material ?? model.material ?? null;
+    const fallbackMaterial = model.material ?? null;
 
     return fallbackMaterial &&
         isInspectableMaterial(fallbackMaterial) &&
