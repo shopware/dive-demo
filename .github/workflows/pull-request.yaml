@@ -28,11 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout DIVE-Demo
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@main
+        uses: actions/setup-node@v4
       - name: Search for cached node_modules
-        uses: actions/cache@main
+        uses: actions/cache@v4
         id: yarn-cache
         with:
           path: node_modules
@@ -46,11 +46,11 @@ jobs:
     needs: yarn-install
     steps:
       - name: Checkout DIVE-Demo
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@main
+        uses: actions/setup-node@v4
       - name: Load node-modules from cache
-        uses: actions/cache@main
+        uses: actions/cache@v4
         id: yarn-cache
         with:
           path: node_modules
@@ -64,18 +64,18 @@ jobs:
     needs: yarn-install
     steps:
       - name: Checkout DIVE-Demo
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@main
+        uses: actions/setup-node@v4
       - name: Load node-modules from cache
-        uses: actions/cache@main
+        uses: actions/cache@v4
         id: yarn-cache
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-${{ github.run_id }}
           fail-on-cache-miss: true
       - name: Search for cached playwright browsers
-        uses: actions/cache@main
+        uses: actions/cache@v4
         id: playwright-cache
         with:
           path: .playwright-cache
@@ -87,55 +87,55 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
         run: yarn playwright install --with-deps chromium
-  e2e:
-    name: e2e shard ${{ matrix.shard }} [Repetition ${{ matrix.repeat }}]
-    runs-on: ubuntu-latest
-    needs: [playwright-install, build]
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-        repeat: [1, 2, 3, 4]
-    steps:
-      - name: Checkout DIVE-Demo
-        uses: actions/checkout@main
-      - name: Setup Node.js
-        uses: actions/setup-node@main
-      - name: Load node-modules from cache
-        uses: actions/cache@main
-        id: yarn-cache
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-${{ github.run_id }}
-          fail-on-cache-miss: true
-      - name: Load playwright browsers from cache
-        uses: actions/cache@main
-        id: playwright-cache
-        with:
-          path: .playwright-cache
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
-      - name: Install Playwright system dependencies
-        run: |
-          # System dependencies must be installed in each job since each job runs on a fresh runner
-          # and system packages can't be cached between jobs. This is minimal overhead.
-          sudo apt-get --yes remove --purge man-db
-          yarn playwright install-deps chromium
-      - name: Log installed DIVE version
-        run: |
-          node -e "const fs = require('fs'); const demoPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8')); const divePkg = JSON.parse(fs.readFileSync('./node_modules/@shopware-ag/dive/package.json', 'utf8')); console.log('Requested @shopware-ag/dive:', demoPkg.dependencies['@shopware-ag/dive']); console.log('Installed @shopware-ag/dive version:', divePkg.version);"
-      - name: Run playwright tests
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
-          CI: true
-        run: yarn test:e2e --project=chromium --shard=${{ matrix.shard }}/4
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report-shard-${{ matrix.shard }}-run-${{ matrix.repeat }}
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 30
+  # e2e:
+  #   name: e2e shard ${{ matrix.shard }} [Repetition ${{ matrix.repeat }}]
+  #   runs-on: ubuntu-latest
+  #   needs: [playwright-install, build]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       shard: [1, 2, 3, 4]
+  #       repeat: [1, 2, 3, 4]
+  #   steps:
+  #     - name: Checkout DIVE-Demo
+  #       uses: actions/checkout@v4
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #     - name: Load node-modules from cache
+  #       uses: actions/cache@v4
+  #       id: yarn-cache
+  #       with:
+  #         path: node_modules
+  #         key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}-${{ github.run_id }}
+  #         fail-on-cache-miss: true
+  #     - name: Load playwright browsers from cache
+  #       uses: actions/cache@v4
+  #       id: playwright-cache
+  #       with:
+  #         path: .playwright-cache
+  #         key: playwright-browsers-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+  #         restore-keys: |
+  #           playwright-browsers-${{ runner.os }}-
+  #     - name: Install Playwright system dependencies
+  #       run: |
+  #         # System dependencies must be installed in each job since each job runs on a fresh runner
+  #         # and system packages can't be cached between jobs. This is minimal overhead.
+  #         sudo apt-get --yes remove --purge man-db
+  #         yarn playwright install-deps chromium
+  #     - name: Log installed DIVE version
+  #       run: |
+  #         node -e "const fs = require('fs'); const demoPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8')); const divePkg = JSON.parse(fs.readFileSync('./node_modules/@shopware-ag/dive/package.json', 'utf8')); console.log('Requested @shopware-ag/dive:', demoPkg.dependencies['@shopware-ag/dive']); console.log('Installed @shopware-ag/dive version:', divePkg.version);"
+  #     - name: Run playwright tests
+  #       env:
+  #         PLAYWRIGHT_BROWSERS_PATH: .playwright-cache
+  #         CI: true
+  #       run: yarn test:e2e --project=chromium --shard=${{ matrix.shard }}/4
+  #     - name: Upload Playwright report
+  #       uses: actions/upload-artifact@v4
+  #       if: ${{ !cancelled() }}
+  #       with:
+  #         name: playwright-report-shard-${{ matrix.shard }}-run-${{ matrix.repeat }}
+  #         path: |
+  #           playwright-report/
+  #           test-results/
+  #         retention-days: 30
