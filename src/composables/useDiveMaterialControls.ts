@@ -88,18 +88,24 @@ export function useDiveMaterialControls({
 
     function bindMaterialPane(materialPane: MaterialPane) {
         DIVE_MATERIAL_MAPS.forEach((layer) => {
-            const folder = materialPane.pane.addFolder({ title: layer.title });
+            const hasTexture = Boolean(
+                materialPane.state.sourceTextures[layer.key],
+            );
+            const folder = materialPane.pane.addFolder({
+                title: layer.title,
+                expanded: hasTexture,
+            });
             const control = materialPane.state.controls[layer.key];
             const use = folder
                 .addBinding(control, 'use', {
                     label: 'Use',
-                    disabled: !materialPane.state.sourceTextures[layer.key],
+                    disabled: !hasTexture,
                 })
                 .on('change', () => applyAndRefresh(materialPane));
             const only = folder
                 .addBinding(control, 'only', {
                     label: 'Only',
-                    disabled: !materialPane.state.sourceTextures[layer.key],
+                    disabled: !hasTexture,
                 })
                 .on('change', (event) => {
                     setOnlyMaterialMap(
