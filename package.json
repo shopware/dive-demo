@@ -15,10 +15,12 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@shopware-ag/dive": "3.0.9",
+    "@shopware-ag/dive": "3.0.10",
+    "@tweakpane/core": "^2.0.5",
     "monaco-editor": "^0.52.2",
     "monaco-editor-vue3": "^0.1.10",
     "pinia": "^2.1.7",
+    "tweakpane": "^4.0.5",
     "vite-plugin-restart": "^1.0.0",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3"

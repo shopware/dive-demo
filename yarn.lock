@@ -541,10 +541,10 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.16.1.tgz#4f97581e114fc79f246cee3723a5c4edd3b62415"
   integrity sha512-TvZbIpeKqGQQ7X0zSCvPH9riMSFQFSggnfBjFZ1mEoILW+UuXCKwOoPcgjMwiUtRqFZ8jWhPJc4um14vC6I4ag==
 
-"@shopware-ag/dive@3.0.9":
-  version "3.0.9"
-  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-3.0.9.tgz#65bdc88797b1672fc728309063c6316ab250d412"
-  integrity sha512-yun/Ve1qZCSI2NYirqNQC4uw09f1nvR48MuyCZMrlBYk6JCEInmjJtjjjsTOjSV7firZuPSNE1xZS1Pv5SfUKA==
+"@shopware-ag/dive@3.0.10":
+  version "3.0.10"
+  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-3.0.10.tgz#adaed137ccd0090671e1cbb1d5a4cd8bcd32bb79"
+  integrity sha512-BzuOdA+i5PpnVucwADsbC5wgq7OYldJSr7ePBNtnndCW2uKxz216HEDJySrnhDvJwTeExD8lrsWma8JFKZ/Esg==
   dependencies:
     "@tweenjs/tween.js" "^25.0.0"
     lodash "^4.18.1"
@@ -561,6 +561,11 @@
   version "20.1.9"
   resolved "https://registry.yarnpkg.com/@tsconfig/node20/-/node20-20.1.9.tgz#29716bc9ce538f0e5b5fea30b6481a0b0b7955df"
   integrity sha512-IjlTv1RsvnPtUcjTqtVsZExKVq+KQx4g5pCP5tI7rAs6Xesl2qFwSz/tPDBC4JajkL/MlezBu3gPUwqRHl+RIg==
+
+"@tweakpane/core@^2.0.5":
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/@tweakpane/core/-/core-2.0.5.tgz#bae776cd530b31f5e5424641411d4b20c3baed8e"
+  integrity sha512-punBgD5rKCF5vcNo6BsSOXiDR/NSs9VM7SG65QSLJIxfRaGgj54ree9zQW6bO3pNFf3AogiGgaNODUVQRk9YqQ==
 
 "@tweenjs/tween.js@^25.0.0":
   version "25.0.0"
@@ -3699,6 +3704,11 @@ tty-browserify@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/tty-browserify/-/tty-browserify-0.0.1.tgz#3f05251ee17904dfd0677546670db9651682b811"
   integrity sha512-C3TaO7K81YvjCgQH9Q1S3R3P3BtN3RIM8n+OvX4il1K1zgE8ZhI0op7kClgkxtutIE8hQrcrHBXvIheqKUUCxw==
+
+tweakpane@^4.0.5:
+  version "4.0.5"
+  resolved "https://registry.yarnpkg.com/tweakpane/-/tweakpane-4.0.5.tgz#696572c4294c48a11cc0a3c487ea89ad1491e09a"
+  integrity sha512-rxEXdSI+ArlG1RyO6FghC4ZUX8JkEfz8F3v1JuteXSV0pEtHJzyo07fcDG+NsJfN5L39kSbCYbB9cBGHyuI/tQ==
 
 type-check@^0.4.0, type-check@~0.4.0:
   version "0.4.0"
