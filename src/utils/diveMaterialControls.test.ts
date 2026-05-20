@@ -4,6 +4,7 @@ import {
     applyDiveMaterialState,
     createDiveMaterialState,
     resolveDiveMaterial,
+    resolveDiveMaterials,
     resetDiveMaterialState,
     setOnlyMaterialMap,
     setUseAsDiffuseMode,
@@ -24,6 +25,10 @@ function createMaterial() {
     return material;
 }
 
+function createMaterialWithoutMaps() {
+    return new MeshStandardMaterial() as DiveInspectableMaterial;
+}
+
 describe('diveMaterialControls', () => {
     it('resolves the current mesh material before a stale model material', () => {
         const staleMaterial = createMaterial();
@@ -33,6 +38,34 @@ describe('diveMaterialControls', () => {
         model.add(new Mesh(new BoxGeometry(), currentMaterial));
 
         expect(resolveDiveMaterial(model)).toBe(currentMaterial);
+    });
+
+    it('resolves every unique mesh material in the model', () => {
+        const firstMaterial = createMaterial();
+        const secondMaterial = createMaterial();
+        const materialWithoutMaps = createMaterialWithoutMaps();
+        const model = new Object3D() as DiveMaterialModel;
+
+        model.add(new Mesh(new BoxGeometry(), firstMaterial));
+        model.add(
+            new Mesh(new BoxGeometry(), [firstMaterial, secondMaterial]),
+        );
+        model.add(new Mesh(new BoxGeometry(), materialWithoutMaps));
+
+        expect(resolveDiveMaterials(model)).toEqual([
+            firstMaterial,
+            secondMaterial,
+        ]);
+    });
+
+    it('ignores stale fallback material when the current model has mesh materials without maps', () => {
+        const staleMaterial = createMaterial();
+        const materialWithoutMaps = createMaterialWithoutMaps();
+        const model = new Object3D() as DiveMaterialModel;
+        model.material = staleMaterial;
+        model.add(new Mesh(new BoxGeometry(), materialWithoutMaps));
+
+        expect(resolveDiveMaterials(model)).toEqual([]);
     });
 
     it('disables every other map when one map is used exclusively', () => {

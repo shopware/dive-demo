@@ -59,9 +59,24 @@ export type DiveMaterialState = {
 export function resolveDiveMaterial(
     model: DiveMaterialModel | null | undefined,
 ) {
-    if (!model) return null;
+    return resolveDiveMaterials(model)[0] ?? null;
+}
 
-    return findFirstMeshMaterial(model) ?? model._material ?? model.material ?? null;
+export function resolveDiveMaterials(
+    model: DiveMaterialModel | null | undefined,
+) {
+    if (!model) return [];
+
+    const materials = findMeshMaterials(model);
+    if (materials.length) return materials.filter(hasDiveMaterialMap);
+
+    const fallbackMaterial = model._material ?? model.material ?? null;
+
+    return fallbackMaterial &&
+        isInspectableMaterial(fallbackMaterial) &&
+        hasDiveMaterialMap(fallbackMaterial)
+        ? [fallbackMaterial]
+        : [];
 }
 
 export function createDiveMaterialState(
@@ -153,23 +168,33 @@ function createMapRecord<Value>(
     );
 }
 
-function findFirstMeshMaterial(model: Object3D) {
-    let result: DiveInspectableMaterial | null = null;
+function findMeshMaterials(model: Object3D) {
+    const materials: DiveInspectableMaterial[] = [];
 
     model.traverse((child) => {
-        if (result) return;
-        if (!('isMesh' in child) || !child.isMesh) return;
+        if (!isMaterialMesh(child)) return;
 
-        const material = (child as { material?: Material | Material[] })
-            .material;
-        const firstMaterial = Array.isArray(material) ? material[0] : material;
+        const childMaterials = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
 
-        if (isInspectableMaterial(firstMaterial)) {
-            result = firstMaterial;
-        }
+        childMaterials.forEach((material) => {
+            if (
+                isInspectableMaterial(material) &&
+                !materials.includes(material)
+            ) {
+                materials.push(material);
+            }
+        });
     });
 
-    return result;
+    return materials;
+}
+
+function isMaterialMesh(
+    object: Object3D,
+): object is Object3D & { material?: Material | Material[] } {
+    return 'isMesh' in object && object.isMesh === true;
 }
 
 function isInspectableMaterial(
@@ -178,4 +203,8 @@ function isInspectableMaterial(
     if (!material) return false;
 
     return DIVE_MATERIAL_MAPS.every((layer) => layer.key in material);
+}
+
+function hasDiveMaterialMap(material: DiveInspectableMaterial) {
+    return DIVE_MATERIAL_MAPS.some((layer) => Boolean(material[layer.key]));
 }

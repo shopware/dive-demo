@@ -4,7 +4,7 @@ import {
     applyDiveMaterialState,
     createDiveMaterialState,
     DIVE_MATERIAL_MAPS,
-    resolveDiveMaterial,
+    resolveDiveMaterials,
     resetDiveMaterialState,
     setOnlyMaterialMap,
     setUseAsDiffuseMode,
@@ -20,6 +20,13 @@ type BindingSet = {
     useAsDiffuse: BindingApi<unknown, boolean>;
 };
 
+type MaterialPane = {
+    pane: Pane;
+    material: DiveInspectableMaterial;
+    state: DiveMaterialState;
+    bindings: Map<DiveMaterialMapKey, BindingSet>;
+};
+
 type DiveMaterialControlsOptions = {
     getModel: () => DiveMaterialModel | null | undefined;
     title?: string;
@@ -29,45 +36,77 @@ export function useDiveMaterialControls({
     getModel,
     title = 'Material',
 }: DiveMaterialControlsOptions) {
-    let pane: Pane | null = null;
-    let material: DiveInspectableMaterial | null = null;
-    let state: DiveMaterialState | null = null;
-    const bindings = new Map<DiveMaterialMapKey, BindingSet>();
+    let paneContainer: HTMLDivElement | null = null;
+    let materialPanes: MaterialPane[] = [];
 
     function rebuildPane() {
         disposePane();
 
-        material = resolveDiveMaterial(getModel());
-        if (!material) return;
+        const materials = resolveDiveMaterials(getModel());
+        if (!materials.length) return;
 
-        state = createDiveMaterialState(material);
-        applyDiveMaterialState(material, state);
-        pane = new Pane({ title });
+        paneContainer = createPaneContainer();
+        materials.forEach((material, index) => {
+            if (!paneContainer) return;
 
+            const state = createDiveMaterialState(material);
+            applyDiveMaterialState(material, state);
+
+            const pane = new Pane({
+                title: getPaneTitle(material, index, materials.length),
+                container: paneContainer,
+            });
+            pane.element.style.width = '100%';
+
+            const materialPane = {
+                pane,
+                material,
+                state,
+                bindings: new Map<DiveMaterialMapKey, BindingSet>(),
+            };
+
+            materialPanes.push(materialPane);
+            bindMaterialPane(materialPane);
+            syncBindings(materialPane);
+            pane.refresh();
+        });
+    }
+
+    function disposePane() {
+        materialPanes.forEach((materialPane) => materialPane.pane.dispose());
+        materialPanes = [];
+        paneContainer?.remove();
+        paneContainer = null;
+    }
+
+    function resetMaterial() {
+        materialPanes.forEach((materialPane) => {
+            resetDiveMaterialState(materialPane.state);
+            applyAndRefresh(materialPane);
+        });
+    }
+
+    function bindMaterialPane(materialPane: MaterialPane) {
         DIVE_MATERIAL_MAPS.forEach((layer) => {
-            if (!pane || !state) return;
-
-            const folder = pane.addFolder({ title: layer.title });
-            const control = state.controls[layer.key];
+            const folder = materialPane.pane.addFolder({ title: layer.title });
+            const control = materialPane.state.controls[layer.key];
             const use = folder
                 .addBinding(control, 'use', {
                     label: 'Use',
-                    disabled: !state.sourceTextures[layer.key],
+                    disabled: !materialPane.state.sourceTextures[layer.key],
                 })
-                .on('change', applyAndRefresh);
+                .on('change', () => applyAndRefresh(materialPane));
             const only = folder
                 .addBinding(control, 'only', {
                     label: 'Only',
-                    disabled: !state.sourceTextures[layer.key],
+                    disabled: !materialPane.state.sourceTextures[layer.key],
                 })
                 .on('change', (event) => {
-                    if (!state) return;
-
                     setOnlyMaterialMap(
-                        state,
+                        materialPane.state,
                         event.value ? layer.key : null,
                     );
-                    applyAndRefresh();
+                    applyAndRefresh(materialPane);
                 });
             const useAsDiffuse = folder
                 .addBinding(control, 'useAsDiffuse', {
@@ -75,55 +114,70 @@ export function useDiveMaterialControls({
                     disabled: true,
                 })
                 .on('change', (event) => {
-                    if (!state) return;
-
-                    setUseAsDiffuseMode(state, layer.key, event.value);
-                    applyAndRefresh();
+                    setUseAsDiffuseMode(
+                        materialPane.state,
+                        layer.key,
+                        event.value,
+                    );
+                    applyAndRefresh(materialPane);
                 });
 
-            bindings.set(layer.key, { use, only, useAsDiffuse });
+            materialPane.bindings.set(layer.key, {
+                use,
+                only,
+                useAsDiffuse,
+            });
         });
-
-        syncBindings();
-        pane.refresh();
     }
 
-    function disposePane() {
-        pane?.dispose();
-        pane = null;
-        material = null;
-        state = null;
-        bindings.clear();
+    function applyAndRefresh(materialPane: MaterialPane) {
+        applyDiveMaterialState(materialPane.material, materialPane.state);
+        syncBindings(materialPane);
+        materialPane.pane.refresh();
     }
 
-    function resetMaterial() {
-        if (!material || !state) return;
-
-        resetDiveMaterialState(state);
-        applyAndRefresh();
-    }
-
-    function applyAndRefresh() {
-        if (!material || !state) return;
-
-        applyDiveMaterialState(material, state);
-        syncBindings();
-        pane?.refresh();
-    }
-
-    function syncBindings() {
-        if (!state) return;
-
+    function syncBindings(materialPane: MaterialPane) {
         DIVE_MATERIAL_MAPS.forEach((layer) => {
-            const layerBindings = bindings.get(layer.key);
+            const layerBindings = materialPane.bindings.get(layer.key);
             if (!layerBindings) return;
 
-            const hasTexture = Boolean(state?.sourceTextures[layer.key]);
+            const hasTexture = Boolean(
+                materialPane.state.sourceTextures[layer.key],
+            );
 
             layerBindings.use.disabled = !hasTexture;
             layerBindings.only.disabled = !hasTexture;
             layerBindings.useAsDiffuse.disabled = !hasTexture;
         });
+    }
+
+    function createPaneContainer() {
+        const container = document.createElement('div');
+        container.className = 'dive-material-panes';
+        container.style.position = 'absolute';
+        container.style.top = '8px';
+        container.style.right = '8px';
+        container.style.zIndex = '10';
+        container.style.width = '300px';
+        container.style.maxHeight = 'calc(100% - 16px)';
+        container.style.overflowY = 'auto';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '8px';
+        document.body.appendChild(container);
+
+        return container;
+    }
+
+    function getPaneTitle(
+        material: DiveInspectableMaterial,
+        index: number,
+        materialCount: number,
+    ) {
+        const baseTitle =
+            materialCount > 1 ? `${title} ${index + 1}` : title;
+
+        return material.name ? `${baseTitle}: ${material.name}` : baseTitle;
     }
 
     return {

@@ -57,6 +57,7 @@ async function loadFile(file: File) {
 
     const url = URL.createObjectURL(file);
     materialControls.resetMaterial();
+    materialControls.disposePane();
 
     try {
         await quickView.model.setFromURL(url);
