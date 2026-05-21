@@ -87,6 +87,12 @@ export function useDiveMaterialControls({
     }
 
     function bindMaterialPane(materialPane: MaterialPane) {
+        materialPane.pane
+            .addBinding(materialPane.state, 'baseColor', {
+                label: 'Base Color',
+            })
+            .on('change', () => applyAndRefresh(materialPane));
+
         DIVE_MATERIAL_MAPS.forEach((layer) => {
             const hasTexture = Boolean(
                 materialPane.state.sourceTextures[layer.key],

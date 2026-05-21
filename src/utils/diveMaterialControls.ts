@@ -51,6 +51,8 @@ export type DiveMaterialMapControls = Record<
 export type DiveMaterialTextureStore = Record<DiveMaterialMapKey, Texture | null>;
 
 export type DiveMaterialState = {
+    baseColor: string;
+    sourceBaseColor: string;
     controls: DiveMaterialMapControls;
     sourceTextures: DiveMaterialTextureStore;
 };
@@ -81,7 +83,11 @@ export function resolveDiveMaterials(
 export function createDiveMaterialState(
     material: DiveInspectableMaterial,
 ): DiveMaterialState {
+    const baseColor = getMaterialBaseColor(material);
+
     return {
+        baseColor,
+        sourceBaseColor: baseColor,
         controls: createMapRecord(() => ({
             use: true,
             only: false,
@@ -124,6 +130,8 @@ export function setUseAsDiffuseMode(
 }
 
 export function resetDiveMaterialState(state: DiveMaterialState) {
+    state.baseColor = state.sourceBaseColor;
+
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];
         control.use = true;
@@ -139,6 +147,8 @@ export function applyDiveMaterialState(
     const onlyKey = getOnlyMaterialMap(state);
     const diffuseOverrideKey = getDiffuseMaterialMap(state);
 
+    material.color.setStyle(state.baseColor);
+
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];
         const layerIsActive = !onlyKey || onlyKey === layer.key;
@@ -153,6 +163,10 @@ export function applyDiveMaterialState(
     }
 
     material.needsUpdate = true;
+}
+
+function getMaterialBaseColor(material: DiveInspectableMaterial) {
+    return `#${material.color.getHexString()}`;
 }
 
 function createMapRecord<Value>(

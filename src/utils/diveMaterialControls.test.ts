@@ -126,11 +126,23 @@ describe('diveMaterialControls', () => {
         expect(state.controls.roughnessMap.useAsDiffuse).toBe(true);
     });
 
+    it('applies the configured base color to the material', () => {
+        const material = createMaterial();
+        const state = createDiveMaterialState(material);
+
+        state.baseColor = '#336699';
+        applyDiveMaterialState(material, state);
+
+        expect(material.color.getHexString()).toBe('336699');
+    });
+
     it('resets preview state back to all original maps', () => {
         const material = createMaterial();
+        material.color.setStyle('#884422');
         const state = createDiveMaterialState(material);
         const originalMap = material.map;
 
+        state.baseColor = '#336699';
         state.controls.roughnessMap.use = false;
         setOnlyMaterialMap(state, 'normalMap');
         setUseAsDiffuseMode(state, 'normalMap', true);
@@ -140,6 +152,8 @@ describe('diveMaterialControls', () => {
         applyDiveMaterialState(material, state);
 
         expect(material.map).toBe(originalMap);
+        expect(material.color.getHexString()).toBe('884422');
+        expect(state.baseColor).toBe('#884422');
         expect(material.roughnessMap).toBe(state.sourceTextures.roughnessMap);
         expect(state.controls.normalMap.only).toBe(false);
         expect(state.controls.normalMap.useAsDiffuse).toBe(false);
