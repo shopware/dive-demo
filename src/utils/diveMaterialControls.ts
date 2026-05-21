@@ -1,5 +1,10 @@
 import type { Material, MeshStandardMaterial, Object3D, Texture } from 'three';
 
+export type DiveMaterialNormalScale = {
+    x: number;
+    y: number;
+};
+
 export const DIVE_MATERIAL_MAPS = [
     {
         key: 'map',
@@ -53,6 +58,25 @@ export type DiveMaterialTextureStore = Record<DiveMaterialMapKey, Texture | null
 export type DiveMaterialState = {
     baseColor: string;
     sourceBaseColor: string;
+    roughness: number;
+    sourceRoughness: number;
+    metalness: number;
+    sourceMetalness: number;
+    alpha: number;
+    sourceAlpha: number;
+    alphaTest: number;
+    sourceAlphaTest: number;
+    normalScale: DiveMaterialNormalScale;
+    sourceNormalScale: DiveMaterialNormalScale;
+    aoIntensity: number;
+    sourceAoIntensity: number;
+    emissiveColor: string;
+    sourceEmissiveColor: string;
+    emissiveIntensity: number;
+    sourceEmissiveIntensity: number;
+    envMapIntensity: number;
+    sourceEnvMapIntensity: number;
+    sourceTransparent: boolean;
     controls: DiveMaterialMapControls;
     sourceTextures: DiveMaterialTextureStore;
 };
@@ -84,10 +108,31 @@ export function createDiveMaterialState(
     material: DiveInspectableMaterial,
 ): DiveMaterialState {
     const baseColor = getMaterialBaseColor(material);
+    const emissiveColor = getMaterialEmissiveColor(material);
+    const normalScale = getMaterialNormalScale(material);
 
     return {
         baseColor,
         sourceBaseColor: baseColor,
+        roughness: material.roughness,
+        sourceRoughness: material.roughness,
+        metalness: material.metalness,
+        sourceMetalness: material.metalness,
+        alpha: material.opacity,
+        sourceAlpha: material.opacity,
+        alphaTest: material.alphaTest,
+        sourceAlphaTest: material.alphaTest,
+        normalScale: { ...normalScale },
+        sourceNormalScale: normalScale,
+        aoIntensity: material.aoMapIntensity,
+        sourceAoIntensity: material.aoMapIntensity,
+        emissiveColor,
+        sourceEmissiveColor: emissiveColor,
+        emissiveIntensity: material.emissiveIntensity,
+        sourceEmissiveIntensity: material.emissiveIntensity,
+        envMapIntensity: material.envMapIntensity,
+        sourceEnvMapIntensity: material.envMapIntensity,
+        sourceTransparent: material.transparent,
         controls: createMapRecord(() => ({
             use: true,
             only: false,
@@ -131,6 +176,15 @@ export function setUseAsDiffuseMode(
 
 export function resetDiveMaterialState(state: DiveMaterialState) {
     state.baseColor = state.sourceBaseColor;
+    state.roughness = state.sourceRoughness;
+    state.metalness = state.sourceMetalness;
+    state.alpha = state.sourceAlpha;
+    state.alphaTest = state.sourceAlphaTest;
+    state.normalScale = { ...state.sourceNormalScale };
+    state.aoIntensity = state.sourceAoIntensity;
+    state.emissiveColor = state.sourceEmissiveColor;
+    state.emissiveIntensity = state.sourceEmissiveIntensity;
+    state.envMapIntensity = state.sourceEnvMapIntensity;
 
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];
@@ -148,6 +202,15 @@ export function applyDiveMaterialState(
     const diffuseOverrideKey = getDiffuseMaterialMap(state);
 
     material.color.setStyle(state.baseColor);
+    material.roughness = state.roughness;
+    material.metalness = state.metalness;
+    material.opacity = state.alpha;
+    material.alphaTest = state.alphaTest;
+    material.normalScale.set(state.normalScale.x, state.normalScale.y);
+    material.aoMapIntensity = state.aoIntensity;
+    material.emissive.setStyle(state.emissiveColor);
+    material.emissiveIntensity = state.emissiveIntensity;
+    material.envMapIntensity = state.envMapIntensity;
 
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];
@@ -162,11 +225,28 @@ export function applyDiveMaterialState(
         material.map = state.sourceTextures[diffuseOverrideKey];
     }
 
+    material.transparent =
+        state.sourceTransparent ||
+        state.alpha < 1 ||
+        Boolean(material.alphaMap);
     material.needsUpdate = true;
 }
 
 function getMaterialBaseColor(material: DiveInspectableMaterial) {
     return `#${material.color.getHexString()}`;
+}
+
+function getMaterialEmissiveColor(material: DiveInspectableMaterial) {
+    return `#${material.emissive.getHexString()}`;
+}
+
+function getMaterialNormalScale(
+    material: DiveInspectableMaterial,
+): DiveMaterialNormalScale {
+    return {
+        x: material.normalScale.x,
+        y: material.normalScale.y,
+    };
 }
 
 function createMapRecord<Value>(
