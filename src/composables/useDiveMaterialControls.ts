@@ -293,9 +293,9 @@ export function useDiveMaterialControls({
         container.style.position = 'fixed';
         container.style.top = '8px';
         container.style.right = '8px';
-        container.style.bottom = '8px';
         container.style.zIndex = '20';
         container.style.width = 'min(320px, calc(100vw - 16px))';
+        container.style.maxHeight = 'calc(100vh - 16px)';
         container.style.minHeight = '0';
         container.style.overflowY = 'auto';
         container.style.overflowX = 'hidden';
