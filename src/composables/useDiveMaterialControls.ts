@@ -6,7 +6,7 @@ import {
     DIVE_MATERIAL_MAPS,
     resolveDiveMaterials,
     resetDiveMaterialState,
-    setOnlyMaterialMap,
+    setMaterialMapUse,
     setUseAsDiffuseMode,
     type DiveInspectableMaterial,
     type DiveMaterialMapKey,
@@ -16,7 +16,6 @@ import {
 
 type BindingSet = {
     use: BindingApi<unknown, boolean>;
-    only: BindingApi<unknown, boolean>;
     useAsDiffuse: BindingApi<unknown, boolean>;
 };
 
@@ -110,31 +109,10 @@ export function useDiveMaterialControls({
                     disabled: !hasTexture,
                 })
                 .on('change', (event) => {
-                    if (!event.value) {
-                        if (control.only) {
-                            setOnlyMaterialMap(materialPane.state, null);
-                        }
-
-                        if (control.useAsDiffuse) {
-                            setUseAsDiffuseMode(
-                                materialPane.state,
-                                layer.key,
-                                false,
-                            );
-                        }
-                    }
-
-                    applyAndRefresh(materialPane);
-                });
-            const only = folder
-                .addBinding(control, 'only', {
-                    label: 'Exclusively',
-                    disabled: !hasTexture,
-                })
-                .on('change', (event) => {
-                    setOnlyMaterialMap(
+                    setMaterialMapUse(
                         materialPane.state,
-                        event.value ? layer.key : null,
+                        layer.key,
+                        event.value,
                     );
                     applyAndRefresh(materialPane);
                 });
@@ -154,7 +132,6 @@ export function useDiveMaterialControls({
 
             materialPane.bindings.set(layer.key, {
                 use,
-                only,
                 useAsDiffuse,
             });
         });
@@ -278,7 +255,6 @@ export function useDiveMaterialControls({
             );
 
             layerBindings.use.disabled = !hasTexture;
-            layerBindings.only.disabled = !hasTexture;
             layerBindings.useAsDiffuse.disabled = !hasTexture;
         });
     }

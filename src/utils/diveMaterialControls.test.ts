@@ -6,7 +6,7 @@ import {
     resolveDiveMaterial,
     resolveDiveMaterials,
     resetDiveMaterialState,
-    setOnlyMaterialMap,
+    setMaterialMapUse,
     setUseAsDiffuseMode,
     type DiveMaterialModel,
     type DiveInspectableMaterial,
@@ -69,24 +69,7 @@ describe('diveMaterialControls', () => {
         expect(resolveDiveMaterials(model)).toEqual([]);
     });
 
-    it('disables every other map when one map is used exclusively', () => {
-        const material = createMaterial();
-        const state = createDiveMaterialState(material);
-        const originalNormalMap = material.normalMap;
-
-        setOnlyMaterialMap(state, 'normalMap');
-        applyDiveMaterialState(material, state);
-
-        expect(material.map).toBeNull();
-        expect(material.normalMap).toBe(originalNormalMap);
-        expect(material.roughnessMap).toBeNull();
-        expect(material.metalnessMap).toBeNull();
-        expect(material.alphaMap).toBeNull();
-        expect(material.aoMap).toBeNull();
-        expect(material.emissiveMap).toBeNull();
-    });
-
-    it('uses any selected map as diffuse preview without only mode', () => {
+    it('uses any selected map only as diffuse preview', () => {
         const material = createMaterial();
         const state = createDiveMaterialState(material);
         const originalNormalMap = material.normalMap;
@@ -95,23 +78,7 @@ describe('diveMaterialControls', () => {
         applyDiveMaterialState(material, state);
 
         expect(material.map).toBe(originalNormalMap);
-        expect(material.normalMap).toBe(originalNormalMap);
-    });
-
-    it('keeps the diffuse replacement when exclusive mode is cleared', () => {
-        const material = createMaterial();
-        const state = createDiveMaterialState(material);
-        const originalNormalMap = material.normalMap;
-
-        setOnlyMaterialMap(state, 'normalMap');
-        setUseAsDiffuseMode(state, 'normalMap', true);
-        applyDiveMaterialState(material, state);
-
-        setOnlyMaterialMap(state, null);
-        applyDiveMaterialState(material, state);
-
-        expect(material.map).toBe(originalNormalMap);
-        expect(material.normalMap).toBe(state.sourceTextures.normalMap);
+        expect(material.normalMap).toBeNull();
     });
 
     it('only allows one diffuse replacement at a time', () => {
@@ -133,26 +100,31 @@ describe('diveMaterialControls', () => {
         const state = createDiveMaterialState(material);
         const originalEmissiveMap = material.emissiveMap;
 
+        state.emissiveColor = '#ffffff';
+        state.emissiveIntensity = 2;
         setUseAsDiffuseMode(state, 'emissiveMap', true);
         applyDiveMaterialState(material, state);
 
         expect(material.map).toBe(originalEmissiveMap);
-        expect(material.emissiveMap).toBe(originalEmissiveMap);
+        expect(material.emissiveMap).toBeNull();
+        expect(material.emissive.getHexString()).toBe('000000');
+        expect(material.emissiveIntensity).toBe(0);
     });
 
-    it('does not remove every map when the exclusive map is disabled', () => {
+    it('disables emissive contribution while any map is used as a diffuse preview', () => {
         const material = createMaterial();
         const state = createDiveMaterialState(material);
-        const originalMap = material.map;
         const originalNormalMap = material.normalMap;
 
-        setOnlyMaterialMap(state, 'emissiveMap');
-        state.controls.emissiveMap.use = false;
+        state.emissiveColor = '#ffffff';
+        state.emissiveIntensity = 4;
+        setUseAsDiffuseMode(state, 'normalMap', true);
         applyDiveMaterialState(material, state);
 
-        expect(material.map).toBe(originalMap);
-        expect(material.normalMap).toBe(originalNormalMap);
+        expect(material.map).toBe(originalNormalMap);
         expect(material.emissiveMap).toBeNull();
+        expect(material.emissive.getHexString()).toBe('000000');
+        expect(material.emissiveIntensity).toBe(0);
     });
 
     it('does not use a disabled map as a diffuse preview', () => {
@@ -166,6 +138,32 @@ describe('diveMaterialControls', () => {
 
         expect(material.map).toBe(originalMap);
         expect(material.emissiveMap).toBeNull();
+    });
+
+    it('keeps emissive values synced when the emissive map is disabled', () => {
+        const material = createMaterial();
+        const state = createDiveMaterialState(material);
+
+        state.emissiveColor = '#ffffff';
+        state.emissiveIntensity = 4;
+        state.controls.emissiveMap.use = false;
+        setMaterialMapUse(state, 'emissiveMap', false);
+        applyDiveMaterialState(material, state);
+
+        expect(state.controls.emissiveMap.use).toBe(false);
+        expect(state.emissiveColor).toBe('#ffffff');
+        expect(state.emissiveIntensity).toBe(4);
+        expect(material.emissiveMap).toBeNull();
+        expect(material.emissive.getHexString()).toBe('ffffff');
+        expect(material.emissiveIntensity).toBe(4);
+
+        state.emissiveColor = '#112233';
+        state.emissiveIntensity = 1.25;
+        applyDiveMaterialState(material, state);
+
+        expect(material.emissiveMap).toBeNull();
+        expect(material.emissive.getHexString()).toBe('112233');
+        expect(material.emissiveIntensity).toBe(1.25);
     });
 
     it('applies the configured base color to the material', () => {
@@ -235,7 +233,6 @@ describe('diveMaterialControls', () => {
         state.emissiveColor = '#778899';
         state.emissiveIntensity = 3;
         state.controls.roughnessMap.use = false;
-        setOnlyMaterialMap(state, 'normalMap');
         setUseAsDiffuseMode(state, 'normalMap', true);
         applyDiveMaterialState(material, state);
 
@@ -256,7 +253,6 @@ describe('diveMaterialControls', () => {
         expect(material.emissiveIntensity).toBe(1.5);
         expect(material.roughnessMap).toBe(state.sourceTextures.roughnessMap);
         expect(material.emissiveMap).toBe(originalEmissiveMap);
-        expect(state.controls.normalMap.only).toBe(false);
         expect(state.controls.normalMap.useAsDiffuse).toBe(false);
     });
 });
