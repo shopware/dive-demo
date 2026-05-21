@@ -106,7 +106,7 @@ export function useDiveMaterialControls({
 
             const use = folder
                 .addBinding(control, 'use', {
-                    label: 'Use',
+                    label: 'Use Map',
                     disabled: !hasTexture,
                 })
                 .on('change', (event) => {
@@ -128,7 +128,7 @@ export function useDiveMaterialControls({
                 });
             const only = folder
                 .addBinding(control, 'only', {
-                    label: 'Only',
+                    label: 'Exclusively',
                     disabled: !hasTexture,
                 })
                 .on('change', (event) => {
@@ -169,7 +169,7 @@ export function useDiveMaterialControls({
             case 'map':
                 folder
                     .addBinding(materialPane.state, 'baseColor', {
-                        label: 'Base Color',
+                        label: 'Color',
                     })
                     .on('change', () => applyAndRefresh(materialPane));
                 break;
@@ -195,7 +195,7 @@ export function useDiveMaterialControls({
             case 'roughnessMap':
                 folder
                     .addBinding(materialPane.state, 'roughness', {
-                        label: 'Base Roughness',
+                        label: 'Roughness',
                         min: 0,
                         max: 1,
                         step: 0.01,
@@ -206,7 +206,7 @@ export function useDiveMaterialControls({
             case 'metalnessMap':
                 folder
                     .addBinding(materialPane.state, 'metalness', {
-                        label: 'Base Metalness',
+                        label: 'Metalness',
                         min: 0,
                         max: 1,
                         step: 0.01,
@@ -217,7 +217,7 @@ export function useDiveMaterialControls({
             case 'alphaMap':
                 folder
                     .addBinding(materialPane.state, 'alpha', {
-                        label: 'Base Alpha',
+                        label: 'Alpha',
                         min: 0,
                         max: 1,
                         step: 0.01,
