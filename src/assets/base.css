@@ -416,14 +416,30 @@ body .tp-fldv_i::before {
 }
 
 .dive-material-panes {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  min-height: 0;
   padding: 8px 0 8px 8px;
   border: 1px solid var(--ui-panel-border);
   border-radius: var(--tp-base-border-radius);
   background-color: var(--tp-base-background-color);
   background-clip: padding-box;
   box-shadow: 0 0.75rem 2rem var(--tp-base-shadow-color);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  scrollbar-gutter: auto;
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }

@@ -290,22 +290,6 @@ export function useDiveMaterialControls({
     function createPaneContainer() {
         const container = document.createElement('div');
         container.className = 'dive-material-panes';
-        container.style.position = 'fixed';
-        container.style.top = '8px';
-        container.style.right = '8px';
-        container.style.zIndex = '20';
-        container.style.width = 'min(320px, calc(100vw - 16px))';
-        container.style.maxHeight = 'calc(100vh - 16px)';
-        container.style.minHeight = '0';
-        container.style.overflowY = 'auto';
-        container.style.overflowX = 'hidden';
-        container.style.overscrollBehavior = 'contain';
-        container.style.scrollbarGutter = 'auto';
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
-        container.style.gap = '8px';
-        container.style.pointerEvents = 'auto';
-        container.style.setProperty('-webkit-overflow-scrolling', 'touch');
         container.addEventListener('scroll', revealPaneScrollbar, {
             passive: true,
         });
