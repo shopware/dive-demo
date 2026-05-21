@@ -1,4 +1,4 @@
-import type { BindingApi } from '@tweakpane/core';
+import type { BindingApi, FolderApi } from '@tweakpane/core';
 import { Pane } from 'tweakpane';
 import {
     applyDiveMaterialState,
@@ -93,17 +93,17 @@ export function useDiveMaterialControls({
     }
 
     function bindMaterialPane(materialPane: MaterialPane) {
-        bindBaseMaterialProperties(materialPane);
-
         DIVE_MATERIAL_MAPS.forEach((layer) => {
             const hasTexture = Boolean(
                 materialPane.state.sourceTextures[layer.key],
             );
             const folder = materialPane.pane.addFolder({
                 title: layer.title,
-                expanded: hasTexture,
             });
             const control = materialPane.state.controls[layer.key];
+
+            bindLayerMaterialProperties(folder, materialPane, layer.key);
+
             const use = folder
                 .addBinding(control, 'use', {
                     label: 'Use',
@@ -160,89 +160,106 @@ export function useDiveMaterialControls({
         });
     }
 
-    function bindBaseMaterialProperties(materialPane: MaterialPane) {
-        materialPane.pane
-            .addBinding(materialPane.state, 'baseColor', {
-                label: 'Base Color',
-            })
-            .on('change', () => applyAndRefresh(materialPane));
+    function bindLayerMaterialProperties(
+        folder: FolderApi,
+        materialPane: MaterialPane,
+        key: DiveMaterialMapKey,
+    ) {
+        switch (key) {
+            case 'map':
+                folder
+                    .addBinding(materialPane.state, 'baseColor', {
+                        label: 'Base Color',
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
 
-        materialPane.pane
-            .addBinding(materialPane.state, 'roughness', {
-                label: 'Roughness',
-                min: 0,
-                max: 1,
-                step: 0.01,
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'metalness', {
-                label: 'Metalness',
-                min: 0,
-                max: 1,
-                step: 0.01,
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'alpha', {
-                label: 'Alpha',
-                min: 0,
-                max: 1,
-                step: 0.01,
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'alphaTest', {
-                label: 'Alpha Test',
-                min: 0,
-                max: 1,
-                step: 0.01,
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'normalScale', {
-                label: 'Normal Scale',
-                x: {
-                    min: -2,
-                    max: 2,
-                    step: 0.01,
-                },
-                y: {
-                    min: -2,
-                    max: 2,
-                    step: 0.01,
-                },
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'aoIntensity', {
-                label: 'AO Intensity',
-                min: 0,
-                max: 1,
-                step: 0.01,
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'emissiveColor', {
-                label: 'Emissive Color',
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'emissiveIntensity', {
-                label: 'Emissive Intensity',
-                min: 0,
-                max: 5,
-                step: 0.01,
-            })
-            .on('change', () => applyAndRefresh(materialPane));
-        materialPane.pane
-            .addBinding(materialPane.state, 'envMapIntensity', {
-                label: 'Env Intensity',
-                min: 0,
-                max: 5,
-                step: 0.01,
-            })
-            .on('change', () => applyAndRefresh(materialPane));
+            case 'normalMap':
+                folder
+                    .addBinding(materialPane.state, 'normalScale', {
+                        label: 'Intensity',
+                        x: {
+                            min: -2,
+                            max: 2,
+                            step: 0.01,
+                        },
+                        y: {
+                            min: -2,
+                            max: 2,
+                            step: 0.01,
+                        },
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'roughnessMap':
+                folder
+                    .addBinding(materialPane.state, 'roughness', {
+                        label: 'Base Roughness',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'metalnessMap':
+                folder
+                    .addBinding(materialPane.state, 'metalness', {
+                        label: 'Base Metalness',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'alphaMap':
+                folder
+                    .addBinding(materialPane.state, 'alpha', {
+                        label: 'Base Alpha',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                folder
+                    .addBinding(materialPane.state, 'alphaTest', {
+                        label: 'Alpha Test',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'aoMap':
+                folder
+                    .addBinding(materialPane.state, 'aoIntensity', {
+                        label: 'Intensity',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'emissiveMap':
+                folder
+                    .addBinding(materialPane.state, 'emissiveColor', {
+                        label: 'Color',
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                folder
+                    .addBinding(materialPane.state, 'emissiveIntensity', {
+                        label: 'Intensity',
+                        min: 0,
+                        max: 5,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+        }
     }
 
     function applyAndRefresh(materialPane: MaterialPane) {

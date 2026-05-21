@@ -78,8 +78,6 @@ export type DiveMaterialState = {
     sourceEmissiveColor: string;
     emissiveIntensity: number;
     sourceEmissiveIntensity: number;
-    envMapIntensity: number;
-    sourceEnvMapIntensity: number;
     sourceTransparent: boolean;
     controls: DiveMaterialMapControls;
     sourceTextures: DiveMaterialTextureStore;
@@ -134,8 +132,6 @@ export function createDiveMaterialState(
         sourceEmissiveColor: emissiveColor,
         emissiveIntensity: material.emissiveIntensity,
         sourceEmissiveIntensity: material.emissiveIntensity,
-        envMapIntensity: material.envMapIntensity,
-        sourceEnvMapIntensity: material.envMapIntensity,
         sourceTransparent: material.transparent,
         controls: createMapRecord(() => ({
             use: true,
@@ -201,7 +197,6 @@ export function resetDiveMaterialState(state: DiveMaterialState) {
     state.aoIntensity = state.sourceAoIntensity;
     state.emissiveColor = state.sourceEmissiveColor;
     state.emissiveIntensity = state.sourceEmissiveIntensity;
-    state.envMapIntensity = state.sourceEnvMapIntensity;
 
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];
@@ -227,7 +222,6 @@ export function applyDiveMaterialState(
     material.aoMapIntensity = state.aoIntensity;
     material.emissive.setStyle(state.emissiveColor);
     material.emissiveIntensity = state.emissiveIntensity;
-    material.envMapIntensity = state.envMapIntensity;
 
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];

@@ -193,7 +193,6 @@ describe('diveMaterialControls', () => {
         state.aoIntensity = 0.35;
         state.emissiveColor = '#445566';
         state.emissiveIntensity = 2.5;
-        state.envMapIntensity = 1.5;
         applyDiveMaterialState(material, state);
 
         expect(material.roughness).toBe(0.25);
@@ -206,7 +205,6 @@ describe('diveMaterialControls', () => {
         expect(material.aoMapIntensity).toBe(0.35);
         expect(material.emissive.getHexString()).toBe('445566');
         expect(material.emissiveIntensity).toBe(2.5);
-        expect(material.envMapIntensity).toBe(1.5);
     });
 
     it('resets preview state back to all original maps', () => {
@@ -220,7 +218,6 @@ describe('diveMaterialControls', () => {
         material.aoMapIntensity = 0.45;
         material.emissive.setStyle('#223344');
         material.emissiveIntensity = 1.5;
-        material.envMapIntensity = 0.7;
         const state = createDiveMaterialState(material);
         const originalMap = material.map;
         const originalEmissiveMap = material.emissiveMap;
@@ -237,7 +234,6 @@ describe('diveMaterialControls', () => {
         state.aoIntensity = 0.9;
         state.emissiveColor = '#778899';
         state.emissiveIntensity = 3;
-        state.envMapIntensity = 2;
         state.controls.roughnessMap.use = false;
         setOnlyMaterialMap(state, 'normalMap');
         setUseAsDiffuseMode(state, 'normalMap', true);
@@ -258,7 +254,6 @@ describe('diveMaterialControls', () => {
         expect(material.aoMapIntensity).toBe(0.45);
         expect(material.emissive.getHexString()).toBe('223344');
         expect(material.emissiveIntensity).toBe(1.5);
-        expect(material.envMapIntensity).toBe(0.7);
         expect(material.roughnessMap).toBe(state.sourceTextures.roughnessMap);
         expect(material.emissiveMap).toBe(originalEmissiveMap);
         expect(state.controls.normalMap.only).toBe(false);
