@@ -38,6 +38,7 @@ export function useDiveMaterialControls({
 }: DiveMaterialControlsOptions) {
     let paneContainer: HTMLDivElement | null = null;
     let materialPanes: MaterialPane[] = [];
+    let paneScrollbarHideTimeout: number | null = null;
 
     function rebuildPane() {
         disposePane();
@@ -57,6 +58,7 @@ export function useDiveMaterialControls({
                 container: paneContainer,
             });
             pane.element.style.width = '100%';
+            pane.element.style.flex = '0 0 auto';
 
             const materialPane = {
                 pane,
@@ -75,6 +77,10 @@ export function useDiveMaterialControls({
     function disposePane() {
         materialPanes.forEach((materialPane) => materialPane.pane.dispose());
         materialPanes = [];
+        if (paneScrollbarHideTimeout !== null) {
+            window.clearTimeout(paneScrollbarHideTimeout);
+            paneScrollbarHideTimeout = null;
+        }
         paneContainer?.remove();
         paneContainer = null;
     }
@@ -103,7 +109,23 @@ export function useDiveMaterialControls({
                     label: 'Use',
                     disabled: !hasTexture,
                 })
-                .on('change', () => applyAndRefresh(materialPane));
+                .on('change', (event) => {
+                    if (!event.value) {
+                        if (control.only) {
+                            setOnlyMaterialMap(materialPane.state, null);
+                        }
+
+                        if (control.useAsDiffuse) {
+                            setUseAsDiffuseMode(
+                                materialPane.state,
+                                layer.key,
+                                false,
+                            );
+                        }
+                    }
+
+                    applyAndRefresh(materialPane);
+                });
             const only = folder
                 .addBinding(control, 'only', {
                     label: 'Only',
@@ -202,7 +224,7 @@ export function useDiveMaterialControls({
             .on('change', () => applyAndRefresh(materialPane));
         materialPane.pane
             .addBinding(materialPane.state, 'emissiveColor', {
-                label: 'Emissive',
+                label: 'Emissive Color',
             })
             .on('change', () => applyAndRefresh(materialPane));
         materialPane.pane
@@ -247,19 +269,53 @@ export function useDiveMaterialControls({
     function createPaneContainer() {
         const container = document.createElement('div');
         container.className = 'dive-material-panes';
-        container.style.position = 'absolute';
+        container.style.position = 'fixed';
         container.style.top = '8px';
         container.style.right = '8px';
-        container.style.zIndex = '10';
-        container.style.width = '300px';
-        container.style.maxHeight = 'calc(100% - 16px)';
+        container.style.bottom = '8px';
+        container.style.zIndex = '20';
+        container.style.width = 'min(320px, calc(100vw - 16px))';
+        container.style.minHeight = '0';
         container.style.overflowY = 'auto';
+        container.style.overflowX = 'hidden';
+        container.style.overscrollBehavior = 'contain';
+        container.style.scrollbarGutter = 'auto';
         container.style.display = 'flex';
         container.style.flexDirection = 'column';
         container.style.gap = '8px';
+        container.style.pointerEvents = 'auto';
+        container.style.setProperty('-webkit-overflow-scrolling', 'touch');
+        container.addEventListener('scroll', revealPaneScrollbar, {
+            passive: true,
+        });
+        container.addEventListener('wheel', stopPaneScrollPropagation, {
+            passive: true,
+        });
+        container.addEventListener('touchmove', stopPaneScrollPropagation, {
+            passive: true,
+        });
         document.body.appendChild(container);
 
         return container;
+    }
+
+    function stopPaneScrollPropagation(event: Event) {
+        event.stopPropagation();
+    }
+
+    function revealPaneScrollbar() {
+        if (!paneContainer) return;
+
+        paneContainer.classList.add('is-scrolling');
+
+        if (paneScrollbarHideTimeout !== null) {
+            window.clearTimeout(paneScrollbarHideTimeout);
+        }
+
+        paneScrollbarHideTimeout = window.setTimeout(() => {
+            paneContainer?.classList.remove('is-scrolling');
+            paneScrollbarHideTimeout = null;
+        }, 800);
     }
 
     function getPaneTitle(

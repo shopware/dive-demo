@@ -30,6 +30,10 @@ export const DIVE_MATERIAL_MAPS = [
         key: 'aoMap',
         title: 'Ambient Occlusion',
     },
+    {
+        key: 'emissiveMap',
+        title: 'Emissive',
+    },
 ] as const;
 
 export type DiveMaterialMapKey = (typeof DIVE_MATERIAL_MAPS)[number]['key'];
@@ -143,14 +147,27 @@ export function createDiveMaterialState(
 }
 
 export function getOnlyMaterialMap(state: DiveMaterialState) {
-    return DIVE_MATERIAL_MAPS.find((layer) => state.controls[layer.key].only)
-        ?.key ?? null;
+    return DIVE_MATERIAL_MAPS.find((layer) => {
+        const control = state.controls[layer.key];
+
+        return (
+            control.only &&
+            control.use &&
+            Boolean(state.sourceTextures[layer.key])
+        );
+    })?.key ?? null;
 }
 
 export function getDiffuseMaterialMap(state: DiveMaterialState) {
-    return DIVE_MATERIAL_MAPS.find(
-        (layer) => state.controls[layer.key].useAsDiffuse,
-    )?.key ?? null;
+    return DIVE_MATERIAL_MAPS.find((layer) => {
+        const control = state.controls[layer.key];
+
+        return (
+            control.useAsDiffuse &&
+            control.use &&
+            Boolean(state.sourceTextures[layer.key])
+        );
+    })?.key ?? null;
 }
 
 export function setOnlyMaterialMap(
