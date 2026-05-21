@@ -1,12 +1,14 @@
-import type { BindingApi } from '@tweakpane/core';
+import type { BindingApi, FolderApi } from '@tweakpane/core';
 import { Pane } from 'tweakpane';
 import {
     applyDiveMaterialState,
     createDiveMaterialState,
     DIVE_MATERIAL_MAPS,
+    markEmissiveColorChangedManually,
+    markEmissiveIntensityChangedManually,
     resolveDiveMaterials,
     resetDiveMaterialState,
-    setOnlyMaterialMap,
+    setMaterialMapUse,
     setUseAsDiffuseMode,
     type DiveInspectableMaterial,
     type DiveMaterialMapKey,
@@ -16,7 +18,6 @@ import {
 
 type BindingSet = {
     use: BindingApi<unknown, boolean>;
-    only: BindingApi<unknown, boolean>;
     useAsDiffuse: BindingApi<unknown, boolean>;
 };
 
@@ -25,6 +26,7 @@ type MaterialPane = {
     material: DiveInspectableMaterial;
     state: DiveMaterialState;
     bindings: Map<DiveMaterialMapKey, BindingSet>;
+    isRefreshing: boolean;
 };
 
 type DiveMaterialControlsOptions = {
@@ -38,6 +40,7 @@ export function useDiveMaterialControls({
 }: DiveMaterialControlsOptions) {
     let paneContainer: HTMLDivElement | null = null;
     let materialPanes: MaterialPane[] = [];
+    let paneScrollbarHideTimeout: number | null = null;
 
     function rebuildPane() {
         disposePane();
@@ -57,24 +60,30 @@ export function useDiveMaterialControls({
                 container: paneContainer,
             });
             pane.element.style.width = '100%';
+            pane.element.style.flex = '0 0 auto';
 
             const materialPane = {
                 pane,
                 material,
                 state,
                 bindings: new Map<DiveMaterialMapKey, BindingSet>(),
+                isRefreshing: false,
             };
 
             materialPanes.push(materialPane);
             bindMaterialPane(materialPane);
             syncBindings(materialPane);
-            pane.refresh();
+            refreshPane(materialPane);
         });
     }
 
     function disposePane() {
         materialPanes.forEach((materialPane) => materialPane.pane.dispose());
         materialPanes = [];
+        if (paneScrollbarHideTimeout !== null) {
+            window.clearTimeout(paneScrollbarHideTimeout);
+            paneScrollbarHideTimeout = null;
+        }
         paneContainer?.remove();
         paneContainer = null;
     }
@@ -93,24 +102,21 @@ export function useDiveMaterialControls({
             );
             const folder = materialPane.pane.addFolder({
                 title: layer.title,
-                expanded: hasTexture,
             });
             const control = materialPane.state.controls[layer.key];
+
+            bindLayerMaterialProperties(folder, materialPane, layer.key);
+
             const use = folder
                 .addBinding(control, 'use', {
-                    label: 'Use',
-                    disabled: !hasTexture,
-                })
-                .on('change', () => applyAndRefresh(materialPane));
-            const only = folder
-                .addBinding(control, 'only', {
-                    label: 'Only',
+                    label: 'Use Map',
                     disabled: !hasTexture,
                 })
                 .on('change', (event) => {
-                    setOnlyMaterialMap(
+                    setMaterialMapUse(
                         materialPane.state,
-                        event.value ? layer.key : null,
+                        layer.key,
+                        event.value,
                     );
                     applyAndRefresh(materialPane);
                 });
@@ -130,16 +136,141 @@ export function useDiveMaterialControls({
 
             materialPane.bindings.set(layer.key, {
                 use,
-                only,
                 useAsDiffuse,
             });
         });
     }
 
+    function bindLayerMaterialProperties(
+        folder: FolderApi,
+        materialPane: MaterialPane,
+        key: DiveMaterialMapKey,
+    ) {
+        switch (key) {
+            case 'map':
+                folder
+                    .addBinding(materialPane.state, 'baseColor', {
+                        label: 'Color',
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'normalMap':
+                folder
+                    .addBinding(materialPane.state, 'normalScale', {
+                        label: 'Intensity',
+                        x: {
+                            min: -2,
+                            max: 2,
+                            step: 0.01,
+                        },
+                        y: {
+                            min: -2,
+                            max: 2,
+                            step: 0.01,
+                        },
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'roughnessMap':
+                folder
+                    .addBinding(materialPane.state, 'roughness', {
+                        label: 'Roughness',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'metalnessMap':
+                folder
+                    .addBinding(materialPane.state, 'metalness', {
+                        label: 'Metalness',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'alphaMap':
+                folder
+                    .addBinding(materialPane.state, 'alpha', {
+                        label: 'Alpha',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                folder
+                    .addBinding(materialPane.state, 'alphaTest', {
+                        label: 'Alpha Test',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'aoMap':
+                folder
+                    .addBinding(materialPane.state, 'aoIntensity', {
+                        label: 'Intensity',
+                        min: 0,
+                        max: 1,
+                        step: 0.01,
+                    })
+                    .on('change', () => applyAndRefresh(materialPane));
+                break;
+
+            case 'emissiveMap':
+                folder
+                    .addBinding(materialPane.state, 'emissiveColor', {
+                        label: 'Color',
+                    })
+                    .on('change', () => {
+                        if (materialPane.isRefreshing) return;
+
+                        markEmissiveColorChangedManually(
+                            materialPane.state,
+                        );
+                        applyAndRefresh(materialPane);
+                    });
+                folder
+                    .addBinding(materialPane.state, 'emissiveIntensity', {
+                        label: 'Intensity',
+                        min: 0,
+                        max: 5,
+                        step: 0.01,
+                    })
+                    .on('change', () => {
+                        if (materialPane.isRefreshing) return;
+
+                        markEmissiveIntensityChangedManually(
+                            materialPane.state,
+                        );
+                        applyAndRefresh(materialPane);
+                    });
+                break;
+        }
+    }
+
     function applyAndRefresh(materialPane: MaterialPane) {
         applyDiveMaterialState(materialPane.material, materialPane.state);
         syncBindings(materialPane);
-        materialPane.pane.refresh();
+        refreshPane(materialPane);
+    }
+
+    function refreshPane(materialPane: MaterialPane) {
+        materialPane.isRefreshing = true;
+
+        try {
+            materialPane.pane.refresh();
+        } finally {
+            materialPane.isRefreshing = false;
+        }
     }
 
     function syncBindings(materialPane: MaterialPane) {
@@ -152,7 +283,6 @@ export function useDiveMaterialControls({
             );
 
             layerBindings.use.disabled = !hasTexture;
-            layerBindings.only.disabled = !hasTexture;
             layerBindings.useAsDiffuse.disabled = !hasTexture;
         });
     }
@@ -160,19 +290,37 @@ export function useDiveMaterialControls({
     function createPaneContainer() {
         const container = document.createElement('div');
         container.className = 'dive-material-panes';
-        container.style.position = 'absolute';
-        container.style.top = '8px';
-        container.style.right = '8px';
-        container.style.zIndex = '10';
-        container.style.width = '300px';
-        container.style.maxHeight = 'calc(100% - 16px)';
-        container.style.overflowY = 'auto';
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
-        container.style.gap = '8px';
+        container.addEventListener('scroll', revealPaneScrollbar, {
+            passive: true,
+        });
+        container.addEventListener('wheel', stopPaneScrollPropagation, {
+            passive: true,
+        });
+        container.addEventListener('touchmove', stopPaneScrollPropagation, {
+            passive: true,
+        });
         document.body.appendChild(container);
 
         return container;
+    }
+
+    function stopPaneScrollPropagation(event: Event) {
+        event.stopPropagation();
+    }
+
+    function revealPaneScrollbar() {
+        if (!paneContainer) return;
+
+        paneContainer.classList.add('is-scrolling');
+
+        if (paneScrollbarHideTimeout !== null) {
+            window.clearTimeout(paneScrollbarHideTimeout);
+        }
+
+        paneScrollbarHideTimeout = window.setTimeout(() => {
+            paneContainer?.classList.remove('is-scrolling');
+            paneScrollbarHideTimeout = null;
+        }, 800);
     }
 
     function getPaneTitle(
