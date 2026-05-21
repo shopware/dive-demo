@@ -4,6 +4,8 @@ import {
     applyDiveMaterialState,
     createDiveMaterialState,
     DIVE_MATERIAL_MAPS,
+    markEmissiveColorChangedManually,
+    markEmissiveIntensityChangedManually,
     resolveDiveMaterials,
     resetDiveMaterialState,
     setMaterialMapUse,
@@ -24,6 +26,7 @@ type MaterialPane = {
     material: DiveInspectableMaterial;
     state: DiveMaterialState;
     bindings: Map<DiveMaterialMapKey, BindingSet>;
+    isRefreshing: boolean;
 };
 
 type DiveMaterialControlsOptions = {
@@ -64,12 +67,13 @@ export function useDiveMaterialControls({
                 material,
                 state,
                 bindings: new Map<DiveMaterialMapKey, BindingSet>(),
+                isRefreshing: false,
             };
 
             materialPanes.push(materialPane);
             bindMaterialPane(materialPane);
             syncBindings(materialPane);
-            pane.refresh();
+            refreshPane(materialPane);
         });
     }
 
@@ -226,7 +230,14 @@ export function useDiveMaterialControls({
                     .addBinding(materialPane.state, 'emissiveColor', {
                         label: 'Color',
                     })
-                    .on('change', () => applyAndRefresh(materialPane));
+                    .on('change', () => {
+                        if (materialPane.isRefreshing) return;
+
+                        markEmissiveColorChangedManually(
+                            materialPane.state,
+                        );
+                        applyAndRefresh(materialPane);
+                    });
                 folder
                     .addBinding(materialPane.state, 'emissiveIntensity', {
                         label: 'Intensity',
@@ -234,7 +245,14 @@ export function useDiveMaterialControls({
                         max: 5,
                         step: 0.01,
                     })
-                    .on('change', () => applyAndRefresh(materialPane));
+                    .on('change', () => {
+                        if (materialPane.isRefreshing) return;
+
+                        markEmissiveIntensityChangedManually(
+                            materialPane.state,
+                        );
+                        applyAndRefresh(materialPane);
+                    });
                 break;
         }
     }
@@ -242,7 +260,17 @@ export function useDiveMaterialControls({
     function applyAndRefresh(materialPane: MaterialPane) {
         applyDiveMaterialState(materialPane.material, materialPane.state);
         syncBindings(materialPane);
-        materialPane.pane.refresh();
+        refreshPane(materialPane);
+    }
+
+    function refreshPane(materialPane: MaterialPane) {
+        materialPane.isRefreshing = true;
+
+        try {
+            materialPane.pane.refresh();
+        } finally {
+            materialPane.isRefreshing = false;
+        }
     }
 
     function syncBindings(materialPane: MaterialPane) {

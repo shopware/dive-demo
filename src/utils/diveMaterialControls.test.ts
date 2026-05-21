@@ -3,6 +3,7 @@ import { BoxGeometry, Mesh, MeshStandardMaterial, Object3D, Texture } from 'thre
 import {
     applyDiveMaterialState,
     createDiveMaterialState,
+    markEmissiveIntensityChangedManually,
     resolveDiveMaterial,
     resolveDiveMaterials,
     resetDiveMaterialState,
@@ -10,6 +11,7 @@ import {
     setUseAsDiffuseMode,
     type DiveMaterialModel,
     type DiveInspectableMaterial,
+    markEmissiveColorChangedManually,
 } from './diveMaterialControls';
 
 function createMaterial() {
@@ -140,7 +142,7 @@ describe('diveMaterialControls', () => {
         expect(material.emissiveMap).toBeNull();
     });
 
-    it('keeps emissive values synced when the emissive map is disabled', () => {
+    it('resets and restores emissive values when the emissive map is toggled', () => {
         const material = createMaterial();
         const state = createDiveMaterialState(material);
 
@@ -151,17 +153,57 @@ describe('diveMaterialControls', () => {
         applyDiveMaterialState(material, state);
 
         expect(state.controls.emissiveMap.use).toBe(false);
-        expect(state.emissiveColor).toBe('#ffffff');
-        expect(state.emissiveIntensity).toBe(4);
+        expect(state.emissiveColor).toBe('#000000');
+        expect(state.emissiveIntensity).toBe(0);
         expect(material.emissiveMap).toBeNull();
-        expect(material.emissive.getHexString()).toBe('ffffff');
-        expect(material.emissiveIntensity).toBe(4);
+        expect(material.emissive.getHexString()).toBe('000000');
+        expect(material.emissiveIntensity).toBe(0);
 
-        state.emissiveColor = '#112233';
-        state.emissiveIntensity = 1.25;
+        state.controls.emissiveMap.use = true;
+        setMaterialMapUse(state, 'emissiveMap', true);
         applyDiveMaterialState(material, state);
 
+        expect(state.controls.emissiveMap.use).toBe(true);
+        expect(state.emissiveColor).toBe('#ffffff');
+        expect(state.emissiveIntensity).toBe(4);
+        expect(material.emissiveMap).toBe(state.sourceTextures.emissiveMap);
+        expect(material.emissive.getHexString()).toBe('ffffff');
+        expect(material.emissiveIntensity).toBe(4);
+    });
+
+    it('keeps manual emissive values after the emissive map is disabled', () => {
+        const material = createMaterial();
+        const state = createDiveMaterialState(material);
+
+        state.emissiveColor = '#ffffff';
+        state.emissiveIntensity = 4;
+        state.controls.emissiveMap.use = false;
+        setMaterialMapUse(state, 'emissiveMap', false);
+        applyDiveMaterialState(material, state);
+
+        state.emissiveColor = '#112233';
+        markEmissiveColorChangedManually(state);
+        applyDiveMaterialState(material, state);
+
+        expect(material.emissive.getHexString()).toBe('112233');
+        expect(material.emissiveIntensity).toBe(0);
+
+        state.emissiveIntensity = 1.25;
+        markEmissiveIntensityChangedManually(state);
+        applyDiveMaterialState(material, state);
+
+        expect(state.controls.emissiveMap.use).toBe(false);
         expect(material.emissiveMap).toBeNull();
+        expect(material.emissive.getHexString()).toBe('112233');
+        expect(material.emissiveIntensity).toBe(1.25);
+
+        state.controls.emissiveMap.use = true;
+        setMaterialMapUse(state, 'emissiveMap', true);
+        applyDiveMaterialState(material, state);
+
+        expect(state.emissiveColor).toBe('#112233');
+        expect(state.emissiveIntensity).toBe(1.25);
+        expect(material.emissiveMap).toBe(state.sourceTextures.emissiveMap);
         expect(material.emissive.getHexString()).toBe('112233');
         expect(material.emissiveIntensity).toBe(1.25);
     });

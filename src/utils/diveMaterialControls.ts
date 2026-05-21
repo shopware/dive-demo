@@ -80,6 +80,10 @@ export type DiveMaterialState = {
     sourceEmissiveColor: string;
     emissiveIntensity: number;
     sourceEmissiveIntensity: number;
+    storedEmissiveColor: string;
+    restoreEmissiveColorOnMapEnable: boolean;
+    storedEmissiveIntensity: number;
+    restoreEmissiveIntensityOnMapEnable: boolean;
     sourceTransparent: boolean;
     controls: DiveMaterialMapControls;
     sourceTextures: DiveMaterialTextureStore;
@@ -134,6 +138,10 @@ export function createDiveMaterialState(
         sourceEmissiveColor: emissiveColor,
         emissiveIntensity: material.emissiveIntensity,
         sourceEmissiveIntensity: material.emissiveIntensity,
+        storedEmissiveColor: emissiveColor,
+        restoreEmissiveColorOnMapEnable: false,
+        storedEmissiveIntensity: material.emissiveIntensity,
+        restoreEmissiveIntensityOnMapEnable: false,
         sourceTransparent: material.transparent,
         controls: createMapRecord(() => ({
             use: true,
@@ -178,6 +186,46 @@ export function setMaterialMapUse(
     if (!enabled) {
         control.useAsDiffuse = false;
     }
+
+    if (key !== 'emissiveMap') return;
+
+    if (enabled) {
+        if (state.restoreEmissiveColorOnMapEnable || state.restoreEmissiveIntensityOnMapEnable) {
+            state.emissiveColor = state.storedEmissiveColor;
+            state.restoreEmissiveColorOnMapEnable = false;
+            state.emissiveIntensity = state.storedEmissiveIntensity;
+            state.restoreEmissiveIntensityOnMapEnable = false;
+        }
+        return;
+    }
+
+    if (!state.restoreEmissiveColorOnMapEnable && !state.restoreEmissiveIntensityOnMapEnable) {
+        state.storedEmissiveColor = state.emissiveColor;
+        state.restoreEmissiveColorOnMapEnable = true;
+        state.storedEmissiveIntensity = state.emissiveIntensity;
+        state.restoreEmissiveIntensityOnMapEnable = true;
+    }
+
+    state.emissiveColor = DISABLED_EMISSIVE_COLOR;
+    state.emissiveIntensity = DISABLED_EMISSIVE_INTENSITY;
+}
+
+export function markEmissiveColorChangedManually(
+    state: DiveMaterialState,
+) {
+    if (state.controls.emissiveMap.use) return;
+
+    state.storedEmissiveColor = state.emissiveColor;
+    state.restoreEmissiveColorOnMapEnable = false;
+}
+
+export function markEmissiveIntensityChangedManually(
+    state: DiveMaterialState,
+) {
+    if (state.controls.emissiveMap.use) return;
+
+    state.storedEmissiveIntensity = state.emissiveIntensity;
+    state.restoreEmissiveIntensityOnMapEnable = false;
 }
 
 export function resetDiveMaterialState(state: DiveMaterialState) {
@@ -190,6 +238,10 @@ export function resetDiveMaterialState(state: DiveMaterialState) {
     state.aoIntensity = state.sourceAoIntensity;
     state.emissiveColor = state.sourceEmissiveColor;
     state.emissiveIntensity = state.sourceEmissiveIntensity;
+    state.storedEmissiveColor = state.sourceEmissiveColor;
+    state.restoreEmissiveColorOnMapEnable = false;
+    state.storedEmissiveIntensity = state.sourceEmissiveIntensity;
+    state.restoreEmissiveIntensityOnMapEnable = false;
 
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];
@@ -212,7 +264,7 @@ export function applyDiveMaterialState(
     material.normalScale.set(state.normalScale.x, state.normalScale.y);
     material.aoMapIntensity = state.aoIntensity;
 
-    if (diffuseOverrideKey) {
+    if (diffuseOverrideKey || state.restoreEmissiveColorOnMapEnable) {
         material.emissive.setStyle(DISABLED_EMISSIVE_COLOR);
         material.emissiveIntensity = DISABLED_EMISSIVE_INTENSITY;
     } else {
