@@ -48,6 +48,39 @@
   --ui-active-bg: #0066cc;
   --ui-active-border: #0088ff;
   --ui-active-text: #fff;
+
+  /* tweakpane glass theme */
+  --tp-base-background-color: var(--ui-panel-bg);
+  --tp-base-border-radius: 0.75rem;
+  --tp-base-font-family: inherit;
+  --tp-base-font-size: 0.8rem;
+  --tp-base-shadow-color: rgba(0, 0, 0, 0.16);
+  --tp-blade-border-radius: 0.35rem;
+  --tp-blade-horizontal-padding: 0.45rem;
+  --tp-blade-value-width: 150px;
+  --tp-button-background-color: var(--ui-btn-bg);
+  --tp-button-background-color-active: var(--ui-active-bg);
+  --tp-button-background-color-focus: var(--ui-btn-bg-hover);
+  --tp-button-background-color-hover: var(--ui-btn-bg-hover);
+  --tp-button-foreground-color: var(--ui-btn-text);
+  --tp-container-background-color: rgba(255, 255, 255, 0.28);
+  --tp-container-background-color-active: rgba(255, 255, 255, 0.7);
+  --tp-container-background-color-focus: rgba(255, 255, 255, 0.6);
+  --tp-container-background-color-hover: rgba(255, 255, 255, 0.46);
+  --tp-container-foreground-color: var(--ui-btn-text);
+  --tp-container-horizontal-padding: 0.45rem;
+  --tp-container-vertical-padding: 0.45rem;
+  --tp-container-unit-spacing: 0.35rem;
+  --tp-container-unit-size: 1.75rem;
+  --tp-input-background-color: rgba(255, 255, 255, 0.48);
+  --tp-input-background-color-active: rgba(255, 255, 255, 0.82);
+  --tp-input-background-color-focus: rgba(255, 255, 255, 0.72);
+  --tp-input-background-color-hover: rgba(255, 255, 255, 0.62);
+  --tp-input-foreground-color: var(--ui-btn-text);
+  --tp-label-foreground-color: var(--ui-label-text);
+  --tp-monitor-background-color: rgba(255, 255, 255, 0.42);
+  --tp-monitor-foreground-color: var(--ui-btn-text);
+  --tp-groove-foreground-color: var(--ui-panel-border);
 }
 
 html.dark {
@@ -74,6 +107,17 @@ html.dark {
   --ui-active-bg: #0066cc;
   --ui-active-border: #0088ff;
   --ui-active-text: #fff;
+
+  --tp-base-shadow-color: rgba(0, 0, 0, 0.3);
+  --tp-container-background-color: rgba(255, 255, 255, 0.08);
+  --tp-container-background-color-active: rgba(255, 255, 255, 0.18);
+  --tp-container-background-color-focus: rgba(255, 255, 255, 0.16);
+  --tp-container-background-color-hover: rgba(255, 255, 255, 0.12);
+  --tp-input-background-color: rgba(0, 0, 0, 0.22);
+  --tp-input-background-color-active: rgba(255, 255, 255, 0.16);
+  --tp-input-background-color-focus: rgba(255, 255, 255, 0.13);
+  --tp-input-background-color-hover: rgba(255, 255, 255, 0.1);
+  --tp-monitor-background-color: rgba(0, 0, 0, 0.28);
 }
 
 *,
@@ -294,6 +338,77 @@ button.active:hover:not(:disabled) {
   -webkit-backdrop-filter: blur(8px);
   color: var(--ui-btn-text);
   font-size: 0.8rem;
+}
+
+/* ── Global tweakpane glass theme ── */
+
+body .tp-rotv,
+body .tp-popv {
+  border: 1px solid var(--ui-panel-border);
+  border-radius: var(--tp-base-border-radius);
+  background-color: var(--tp-base-background-color);
+  background-clip: padding-box;
+  box-shadow: 0 0.75rem 2rem var(--tp-base-shadow-color);
+  font-family: var(--tp-base-font-family);
+  font-size: var(--tp-base-font-size);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.25;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+body .tp-rotv {
+  overflow: hidden;
+}
+
+body .tp-rotv_b,
+body .tp-fldv_b {
+  font-weight: 600;
+}
+
+body .tp-lblv {
+  min-height: var(--tp-container-unit-size);
+}
+
+body .tp-lblv_l {
+  padding-left: 0.2rem;
+}
+
+body .tp-txtv_i,
+body .tp-coltxtv_ms,
+body .tp-colswv,
+body .tp-ckbv_w,
+body .tp-p2dv_b,
+body .tp-btnv_b,
+body .tp-lstv_s {
+  box-shadow: inset 0 0 0 1px var(--ui-btn-border);
+}
+
+body .tp-txtv_i:hover,
+body .tp-coltxtv_ms:hover,
+body .tp-colswv:hover,
+body .tp-ckbv_i:hover + .tp-ckbv_w,
+body .tp-p2dv_b:hover,
+body .tp-btnv_b:hover,
+body .tp-lstv_s:hover {
+  box-shadow: inset 0 0 0 1px var(--ui-btn-border-hover);
+}
+
+body .tp-sldv_t::before,
+body .tp-sldv_k::before {
+  height: 3px;
+}
+
+body .tp-sldv_k::after {
+  box-shadow:
+    inset 0 0 0 1px var(--ui-btn-border),
+    0 0.15rem 0.45rem rgba(0, 0, 0, 0.18);
+}
+
+body .tp-fldv_i::before {
+  width: 2px;
+  opacity: 0.7;
 }
 
 /* ── Checkbox button (label that looks like a button) ── */
