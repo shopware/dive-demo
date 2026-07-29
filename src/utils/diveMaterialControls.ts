@@ -7,6 +7,20 @@ export type DiveMaterialNormalScale = {
 
 const DISABLED_EMISSIVE_COLOR = '#000000';
 const DISABLED_EMISSIVE_INTENSITY = 0;
+const DIFFUSE_PREVIEW_NEUTRAL_VALUES = {
+    baseColor: '#ffffff',
+    roughness: 1,
+    metalness: 0,
+    alpha: 1,
+    alphaTest: 0,
+    normalScale: {
+        x: 1,
+        y: 1,
+    },
+    aoIntensity: 1,
+    emissiveColor: DISABLED_EMISSIVE_COLOR,
+    emissiveIntensity: DISABLED_EMISSIVE_INTENSITY,
+} satisfies DiveMaterialPropertySnapshot;
 
 export const DIVE_MATERIAL_MAPS = [
     {
@@ -61,6 +75,18 @@ export type DiveMaterialMapControls = Record<
 
 export type DiveMaterialTextureStore = Record<DiveMaterialMapKey, Texture | null>;
 
+export type DiveMaterialPropertySnapshot = {
+    baseColor: string;
+    roughness: number;
+    metalness: number;
+    alpha: number;
+    alphaTest: number;
+    normalScale: DiveMaterialNormalScale;
+    aoIntensity: number;
+    emissiveColor: string;
+    emissiveIntensity: number;
+};
+
 export type DiveMaterialState = {
     baseColor: string;
     sourceBaseColor: string;
@@ -84,6 +110,7 @@ export type DiveMaterialState = {
     restoreEmissiveColorOnMapEnable: boolean;
     storedEmissiveIntensity: number;
     restoreEmissiveIntensityOnMapEnable: boolean;
+    diffusePreviewRestore: DiveMaterialPropertySnapshot | null;
     sourceTransparent: boolean;
     controls: DiveMaterialMapControls;
     sourceTextures: DiveMaterialTextureStore;
@@ -142,6 +169,7 @@ export function createDiveMaterialState(
         restoreEmissiveColorOnMapEnable: false,
         storedEmissiveIntensity: material.emissiveIntensity,
         restoreEmissiveIntensityOnMapEnable: false,
+        diffusePreviewRestore: null,
         sourceTransparent: material.transparent,
         controls: createMapRecord(() => ({
             use: true,
@@ -155,11 +183,7 @@ export function getDiffuseMaterialMap(state: DiveMaterialState) {
     return DIVE_MATERIAL_MAPS.find((layer) => {
         const control = state.controls[layer.key];
 
-        return (
-            control.useAsDiffuse &&
-            control.use &&
-            Boolean(state.sourceTextures[layer.key])
-        );
+        return control.useAsDiffuse && Boolean(state.sourceTextures[layer.key]);
     })?.key ?? null;
 }
 
@@ -168,10 +192,24 @@ export function setUseAsDiffuseMode(
     key: DiveMaterialMapKey,
     enabled: boolean,
 ) {
+    const wasPreviewing = Boolean(getDiffuseMaterialMap(state));
+
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         state.controls[layer.key].useAsDiffuse =
             enabled && layer.key === key;
     });
+
+    const isPreviewing = Boolean(getDiffuseMaterialMap(state));
+
+    if (isPreviewing) {
+        if (!wasPreviewing) {
+            state.diffusePreviewRestore = captureMaterialProperties(state);
+            applyMaterialProperties(state, DIFFUSE_PREVIEW_NEUTRAL_VALUES);
+        }
+        return;
+    }
+
+    restoreDiffusePreviewProperties(state);
 }
 
 export function setMaterialMapUse(
@@ -183,31 +221,29 @@ export function setMaterialMapUse(
 
     control.use = enabled;
 
-    if (!enabled) {
-        control.useAsDiffuse = false;
-    }
-
     if (key !== 'emissiveMap') return;
+
+    const emissiveTarget = state.diffusePreviewRestore ?? state;
 
     if (enabled) {
         if (state.restoreEmissiveColorOnMapEnable || state.restoreEmissiveIntensityOnMapEnable) {
-            state.emissiveColor = state.storedEmissiveColor;
+            emissiveTarget.emissiveColor = state.storedEmissiveColor;
             state.restoreEmissiveColorOnMapEnable = false;
-            state.emissiveIntensity = state.storedEmissiveIntensity;
+            emissiveTarget.emissiveIntensity = state.storedEmissiveIntensity;
             state.restoreEmissiveIntensityOnMapEnable = false;
         }
         return;
     }
 
     if (!state.restoreEmissiveColorOnMapEnable && !state.restoreEmissiveIntensityOnMapEnable) {
-        state.storedEmissiveColor = state.emissiveColor;
+        state.storedEmissiveColor = emissiveTarget.emissiveColor;
         state.restoreEmissiveColorOnMapEnable = true;
-        state.storedEmissiveIntensity = state.emissiveIntensity;
+        state.storedEmissiveIntensity = emissiveTarget.emissiveIntensity;
         state.restoreEmissiveIntensityOnMapEnable = true;
     }
 
-    state.emissiveColor = DISABLED_EMISSIVE_COLOR;
-    state.emissiveIntensity = DISABLED_EMISSIVE_INTENSITY;
+    emissiveTarget.emissiveColor = DISABLED_EMISSIVE_COLOR;
+    emissiveTarget.emissiveIntensity = DISABLED_EMISSIVE_INTENSITY;
 }
 
 export function markEmissiveColorChangedManually(
@@ -242,6 +278,7 @@ export function resetDiveMaterialState(state: DiveMaterialState) {
     state.restoreEmissiveColorOnMapEnable = false;
     state.storedEmissiveIntensity = state.sourceEmissiveIntensity;
     state.restoreEmissiveIntensityOnMapEnable = false;
+    state.diffusePreviewRestore = null;
 
     DIVE_MATERIAL_MAPS.forEach((layer) => {
         const control = state.controls[layer.key];
@@ -273,26 +310,62 @@ export function applyDiveMaterialState(
     }
 
     DIVE_MATERIAL_MAPS.forEach((layer) => {
+        if (diffuseOverrideKey) {
+            material[layer.key] = null;
+            return;
+        }
+
         const control = state.controls[layer.key];
-        const layerIsDiffusePreview = diffuseOverrideKey === layer.key;
-        const layerIsMutedForDiffusePreview =
-            Boolean(diffuseOverrideKey) &&
-            (layerIsDiffusePreview || layer.key === 'emissiveMap');
         material[layer.key] =
-            control.use && !layerIsMutedForDiffusePreview
-                ? state.sourceTextures[layer.key]
-                : null;
+            control.use ? state.sourceTextures[layer.key] : null;
     });
 
     if (diffuseOverrideKey) {
         material.map = state.sourceTextures[diffuseOverrideKey];
     }
 
-    material.transparent =
-        state.sourceTransparent ||
-        state.alpha < 1 ||
-        Boolean(material.alphaMap);
+    material.transparent = diffuseOverrideKey
+        ? false
+        : state.sourceTransparent || state.alpha < 1 || Boolean(material.alphaMap);
     material.needsUpdate = true;
+}
+
+function captureMaterialProperties(
+    state: DiveMaterialState,
+): DiveMaterialPropertySnapshot {
+    return {
+        baseColor: state.baseColor,
+        roughness: state.roughness,
+        metalness: state.metalness,
+        alpha: state.alpha,
+        alphaTest: state.alphaTest,
+        normalScale: { ...state.normalScale },
+        aoIntensity: state.aoIntensity,
+        emissiveColor: state.emissiveColor,
+        emissiveIntensity: state.emissiveIntensity,
+    };
+}
+
+function applyMaterialProperties(
+    state: DiveMaterialState | DiveMaterialPropertySnapshot,
+    snapshot: DiveMaterialPropertySnapshot,
+) {
+    state.baseColor = snapshot.baseColor;
+    state.roughness = snapshot.roughness;
+    state.metalness = snapshot.metalness;
+    state.alpha = snapshot.alpha;
+    state.alphaTest = snapshot.alphaTest;
+    state.normalScale = { ...snapshot.normalScale };
+    state.aoIntensity = snapshot.aoIntensity;
+    state.emissiveColor = snapshot.emissiveColor;
+    state.emissiveIntensity = snapshot.emissiveIntensity;
+}
+
+function restoreDiffusePreviewProperties(state: DiveMaterialState) {
+    if (!state.diffusePreviewRestore) return;
+
+    applyMaterialProperties(state, state.diffusePreviewRestore);
+    state.diffusePreviewRestore = null;
 }
 
 function getMaterialBaseColor(material: DiveInspectableMaterial) {

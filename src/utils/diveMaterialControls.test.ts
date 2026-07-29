@@ -3,6 +3,7 @@ import { BoxGeometry, Mesh, MeshStandardMaterial, Object3D, Texture } from 'thre
 import {
     applyDiveMaterialState,
     createDiveMaterialState,
+    DIVE_MATERIAL_MAPS,
     markEmissiveIntensityChangedManually,
     resolveDiveMaterial,
     resolveDiveMaterials,
@@ -30,6 +31,31 @@ function createMaterial() {
 
 function createMaterialWithoutMaps() {
     return new MeshStandardMaterial() as DiveInspectableMaterial;
+}
+
+function expectOnlyDiffusePreviewMap(
+    material: DiveInspectableMaterial,
+    texture: Texture | null,
+) {
+    DIVE_MATERIAL_MAPS.forEach((layer) => {
+        expect(material[layer.key]).toBe(layer.key === 'map' ? texture : null);
+    });
+}
+
+function expectNeutralDiffusePreviewProperties(
+    material: DiveInspectableMaterial,
+) {
+    expect(material.color.getHexString()).toBe('ffffff');
+    expect(material.roughness).toBe(1);
+    expect(material.metalness).toBe(0);
+    expect(material.opacity).toBe(1);
+    expect(material.transparent).toBe(false);
+    expect(material.alphaTest).toBe(0);
+    expect(material.normalScale.x).toBe(1);
+    expect(material.normalScale.y).toBe(1);
+    expect(material.aoMapIntensity).toBe(1);
+    expect(material.emissive.getHexString()).toBe('000000');
+    expect(material.emissiveIntensity).toBe(0);
 }
 
 describe('diveMaterialControls', () => {
@@ -80,7 +106,7 @@ describe('diveMaterialControls', () => {
         applyDiveMaterialState(material, state);
 
         expect(material.map).toBe(originalNormalMap);
-        expect(material.normalMap).toBeNull();
+        expectOnlyDiffusePreviewMap(material, originalNormalMap);
     });
 
     it('only allows one diffuse replacement at a time', () => {
@@ -108,7 +134,7 @@ describe('diveMaterialControls', () => {
         applyDiveMaterialState(material, state);
 
         expect(material.map).toBe(originalEmissiveMap);
-        expect(material.emissiveMap).toBeNull();
+        expectOnlyDiffusePreviewMap(material, originalEmissiveMap);
         expect(material.emissive.getHexString()).toBe('000000');
         expect(material.emissiveIntensity).toBe(0);
     });
@@ -124,22 +150,105 @@ describe('diveMaterialControls', () => {
         applyDiveMaterialState(material, state);
 
         expect(material.map).toBe(originalNormalMap);
-        expect(material.emissiveMap).toBeNull();
+        expectOnlyDiffusePreviewMap(material, originalNormalMap);
         expect(material.emissive.getHexString()).toBe('000000');
         expect(material.emissiveIntensity).toBe(0);
     });
 
-    it('does not use a disabled map as a diffuse preview', () => {
+    it('uses a disabled map as a diffuse preview', () => {
         const material = createMaterial();
         const state = createDiveMaterialState(material);
-        const originalMap = material.map;
+        const originalRoughnessMap = material.roughnessMap;
 
-        setUseAsDiffuseMode(state, 'emissiveMap', true);
-        state.controls.emissiveMap.use = false;
+        setMaterialMapUse(state, 'roughnessMap', false);
+        setUseAsDiffuseMode(state, 'roughnessMap', true);
         applyDiveMaterialState(material, state);
 
-        expect(material.map).toBe(originalMap);
-        expect(material.emissiveMap).toBeNull();
+        expect(state.controls.roughnessMap.use).toBe(false);
+        expect(material.map).toBe(originalRoughnessMap);
+        expectOnlyDiffusePreviewMap(material, originalRoughnessMap);
+    });
+
+    it('neutralizes material properties during diffuse preview and restores them after', () => {
+        const material = createMaterial();
+        material.transparent = true;
+        const state = createDiveMaterialState(material);
+
+        state.baseColor = '#336699';
+        state.roughness = 0.25;
+        state.metalness = 0.75;
+        state.alpha = 0.4;
+        state.alphaTest = 0.1;
+        state.normalScale = {
+            x: 0.5,
+            y: -0.75,
+        };
+        state.aoIntensity = 0.35;
+        state.emissiveColor = '#445566';
+        state.emissiveIntensity = 2.5;
+
+        setUseAsDiffuseMode(state, 'normalMap', true);
+        applyDiveMaterialState(material, state);
+
+        expect(state.baseColor).toBe('#ffffff');
+        expect(state.roughness).toBe(1);
+        expect(state.metalness).toBe(0);
+        expect(state.alpha).toBe(1);
+        expect(state.alphaTest).toBe(0);
+        expect(state.normalScale).toEqual({
+            x: 1,
+            y: 1,
+        });
+        expect(state.aoIntensity).toBe(1);
+        expect(state.emissiveColor).toBe('#000000');
+        expect(state.emissiveIntensity).toBe(0);
+        expectNeutralDiffusePreviewProperties(material);
+
+        setUseAsDiffuseMode(state, 'normalMap', false);
+        applyDiveMaterialState(material, state);
+
+        expect(state.baseColor).toBe('#336699');
+        expect(material.color.getHexString()).toBe('336699');
+        expect(material.roughness).toBe(0.25);
+        expect(material.metalness).toBe(0.75);
+        expect(material.opacity).toBe(0.4);
+        expect(material.transparent).toBe(true);
+        expect(material.alphaTest).toBe(0.1);
+        expect(material.normalScale.x).toBe(0.5);
+        expect(material.normalScale.y).toBe(-0.75);
+        expect(material.aoMapIntensity).toBe(0.35);
+        expect(material.emissive.getHexString()).toBe('445566');
+        expect(material.emissiveIntensity).toBe(2.5);
+    });
+
+    it('does not overwrite restored properties when switching diffuse preview maps', () => {
+        const material = createMaterial();
+        const state = createDiveMaterialState(material);
+        const originalRoughnessMap = material.roughnessMap;
+
+        state.baseColor = '#336699';
+        state.roughness = 0.25;
+        state.emissiveColor = '#445566';
+        state.emissiveIntensity = 2.5;
+
+        setUseAsDiffuseMode(state, 'normalMap', true);
+        setUseAsDiffuseMode(state, 'roughnessMap', true);
+        applyDiveMaterialState(material, state);
+
+        expect(material.map).toBe(originalRoughnessMap);
+        expectOnlyDiffusePreviewMap(material, originalRoughnessMap);
+
+        setUseAsDiffuseMode(state, 'roughnessMap', false);
+        applyDiveMaterialState(material, state);
+
+        expect(state.baseColor).toBe('#336699');
+        expect(state.roughness).toBe(0.25);
+        expect(state.emissiveColor).toBe('#445566');
+        expect(state.emissiveIntensity).toBe(2.5);
+        expect(material.color.getHexString()).toBe('336699');
+        expect(material.roughness).toBe(0.25);
+        expect(material.emissive.getHexString()).toBe('445566');
+        expect(material.emissiveIntensity).toBe(2.5);
     });
 
     it('resets and restores emissive values when the emissive map is toggled', () => {
@@ -296,5 +405,6 @@ describe('diveMaterialControls', () => {
         expect(material.roughnessMap).toBe(state.sourceTextures.roughnessMap);
         expect(material.emissiveMap).toBe(originalEmissiveMap);
         expect(state.controls.normalMap.useAsDiffuse).toBe(false);
+        expect(state.diffusePreviewRestore).toBeNull();
     });
 });
