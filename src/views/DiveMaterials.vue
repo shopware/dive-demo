@@ -2,10 +2,9 @@
 import { ref, onMounted, onUnmounted, type Ref } from 'vue';
 import {
     QuickView,
-    type QuickView as QuickViewType,
 } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
-import type { FileType } from '@shopware-ag/dive';
+import { type FileType } from '@shopware-ag/dive';
 import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 import { useDiveMaterialControls } from '@/composables/useDiveMaterialControls';
 
@@ -15,7 +14,7 @@ const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
 
 const DEFAULT_URL = 'model/DamagedHelmet.glb';
-let quickView: QuickViewType | null = null;
+let quickView: QuickView | null = null;
 const exporter = new AssetExporter();
 const materialControls = useDiveMaterialControls({
     getModel: () => quickView?.model,
@@ -31,7 +30,6 @@ onMounted(async () => {
     if (!quickView) {
         quickView = await QuickView(DEFAULT_URL, {
             canvas: canvas.value,
-            displayGrid: true,
         });
         quickView.mainView.renderer.environment.setUseAsBackground(true);
     }
@@ -60,9 +58,7 @@ async function loadFile(file: File) {
     materialControls.disposePane();
 
     try {
-        await quickView.model.setFromURL(url);
-        quickView.model.placeOnFloor();
-        quickView.orbitController.focusObject(quickView.model);
+        await quickView.load(url);
     } finally {
         URL.revokeObjectURL(url);
     }
@@ -82,6 +78,8 @@ async function onFileSelected(event: Event) {
 async function exportModel(type: FileType) {
     showExportMenu.value = false;
     if (!quickView) return;
+
+    if (!quickView.model) return;
 
     const buffer = await exporter.export(quickView.model, type);
     const blob = new Blob([buffer]);

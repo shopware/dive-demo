@@ -1,18 +1,35 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
-import { DIVEModel, BoundingBox } from '@shopware-ag/dive';
+import { BoundingBoxComponent } from '@shopware-ag/dive';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { Toolbox } from '@shopware-ag/dive/toolbox';
+import { useGridTheme } from '@/composables/useGridTheme';
 import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 const dive: Ref<QuickView | null> = ref(null);
 let toolbox: Toolbox | null = null;
 
-const addBoundingBox = (model: DIVEModel) => {
-    const bb = new BoundingBox(model);
-    bb.setBoxHelperVisible(false);
-    model.add(bb);
+let boundingBox: BoundingBoxComponent | null = null;
+
+const { applyGridTheme } = useGridTheme(() => dive.value?.scene, {
+    withFloor: true,
+});
+
+const drawBoundingBox = () => {
+    const node = dive.value?.model;
+    if (!node) {
+        return;
+    }
+
+    // a component measures the node it is attached to, so it goes on the model
+    if (boundingBox) {
+        node.removeComponent(boundingBox);
+        boundingBox.dispose();
+    }
+
+    boundingBox = node.addComponent(new BoundingBoxComponent());
+    boundingBox.setBoxHelperVisible(false);
 }
 
 const onKeyDown = (event: KeyboardEvent) => {
@@ -37,26 +54,29 @@ onMounted(async () => {
         return;
     }
 
-    dive.value = markRaw(await QuickView('model/sofa_B.glb', { canvas: canvas.value, displayFloor: true }));
+    dive.value = markRaw(await QuickView('model/sofa_B.glb', {
+        canvas: canvas.value,
+        displayGrid: true,
+        displayFloor: true,
+    }));
+    applyGridTheme();
 
     toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
     toolbox.enableTool('transform');
 
-    const model = dive.value.scene.root.children.find((child) => 'isDIVEModel' in child) as DIVEModel;
-    toolbox.selectionState.select(model);
+    // the node QuickView built, rather than hunting for it in the scene
+    const node = dive.value.model;
+    if (node) {
+        toolbox.selectionState.select(node);
+    }
 
     window.addEventListener('keydown', onKeyDown);
 
-
-
-    dive.value.scene.root.children.forEach((child) => {
-        if (child instanceof DIVEModel) {
-            addBoundingBox(child);
-        }
-    });
+    drawBoundingBox();
 })
 
 onUnmounted(() => {
+    boundingBox = null;
     window.removeEventListener('keydown', onKeyDown);
     toolbox?.dispose();
     toolbox = null;
@@ -74,23 +94,21 @@ const loadFile = async (file: File) => {
     const url = URL.createObjectURL(file);
 
     try {
-        await targetDive.model.setFromURL(url);
-        targetDive.model.placeOnFloor();
-        targetDive.orbitController.focusObject(targetDive.model);
+        await targetDive.load(url);
     } finally {
         URL.revokeObjectURL(url);
     }
 
-    addBoundingBox(targetDive.model);
-    toolbox?.selectionState.select(targetDive.model);
+    drawBoundingBox();
+
+    const node = targetDive.model;
+    if (node) {
+        toolbox?.selectionState.select(node);
+    }
 }
 
 const placeOnFloor = () => {
-    dive.value?.scene.root.children.forEach((child) => {
-        if (child instanceof DIVEModel) {
-            child.dropIt();
-        }
-    });
+    dive.value?.model?.dropIt();
 }
 
 defineProps<{

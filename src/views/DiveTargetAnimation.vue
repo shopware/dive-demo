@@ -72,7 +72,7 @@ const initializeDive = async () => {
     animationSystem = new AnimationSystem();
     dive.value.clock.addTicker(animationSystem);
 
-    presets[0].position = orbitController.object.position.clone();
+    presets[0].position = orbitController.object.owner.position.clone();
     presets[0].target = orbitController.target.clone();
     activePreset.value = 0;
     controlsReady.value = true;
@@ -99,7 +99,7 @@ const goToPreset = async (index: number) => {
 
     animator = await animationSystem.fromTargets(
         [
-            { object: orbitController.object.position, to: { ...presets[index].position } },
+            { object: orbitController.object.owner.position, to: { ...presets[index].position } },
             { object: orbitController.target, to: { ...presets[index].target } },
         ],
         800, // ms
@@ -127,15 +127,13 @@ const loadFile = async (file: File) => {
     const url = URL.createObjectURL(file);
 
     try {
-        await dive.value.model.setFromURL(url);
-        dive.value.model.placeOnFloor();
-        dive.value.orbitController.focusObject(dive.value.model);
+        await dive.value.load(url);
     } finally {
         URL.revokeObjectURL(url);
     }
 
     if (orbitController) {
-        presets[0].position = orbitController.object.position.clone();
+        presets[0].position = orbitController.object.owner.position.clone();
         presets[0].target = orbitController.target.clone();
         activePreset.value = 0;
     }
@@ -151,13 +149,8 @@ const loadFile = async (file: File) => {
             <div class="controlPanel-group">
                 <span class="controlPanel-label">Camera</span>
                 <div class="controlPanel-buttons controlPanel-buttons--center">
-                    <button
-                        v-for="(preset, i) in presets"
-                        :key="i"
-                        :class="{ active: activePreset === i }"
-                        :disabled="!controlsReady"
-                        @click="setActivePreset(i)"
-                    >
+                    <button v-for="(preset, i) in presets" :key="i" :class="{ active: activePreset === i }"
+                        :disabled="!controlsReady" @click="setActivePreset(i)">
                         {{ preset.label }}
                     </button>
                 </div>

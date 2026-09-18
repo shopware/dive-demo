@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, type Ref, markRaw, nextTick } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
-import type { FileType } from '@shopware-ag/dive';
+import { ModelComponent, type FileType } from '@shopware-ag/dive';
 import { AnimationSystem, type ClipAnimator, type TAnimatorLoopMode } from '@shopware-ag/dive/animation';
 import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
@@ -49,12 +49,19 @@ async function loadModel(uri: string) {
     animationSystem = new AnimationSystem();
     dive.clock.addTicker(animationSystem);
 
-    if (!dive.model.animations.length) {
+    // the clips sit on the component that loaded them, the node is the mixer root
+    const node = dive.model;
+    if (!node) {
+        return;
+    }
+
+    const clips = node.requireComponent(ModelComponent).animations;
+    if (!clips.length) {
         return;
     }
 
     // create new animator
-    animator = await animationSystem.fromClips(dive.model, dive.model.animations);
+    animator = await animationSystem.fromClips(node, clips);
     clipNames.value = animator.clipNames;
 
     // set up event listeners
@@ -93,7 +100,7 @@ function onFileSelected(event: Event) {
 async function exportModel(type: FileType) {
     showExportMenu.value = false;
 
-    if (!dive) return;
+    if (!dive?.model) return;
 
     const buffer = await exporter.export(dive.model, type);
     const blob = new Blob([buffer]);
@@ -173,13 +180,7 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
     <div class="page">
         <CanvasFileDropOverlay class="canvasWrapper" @loading="loadFile">
             <canvas ref="canvas"></canvas>
-            <input
-                ref="fileInput"
-                type="file"
-                accept=".glb,.gltf,.usdz"
-                class="file-input"
-                @change="onFileSelected"
-            />
+            <input ref="fileInput" type="file" accept=".glb,.gltf,.usdz" class="file-input" @change="onFileSelected" />
             <div class="controlPanel controlPanel--top">
                 <div class="controlPanel-buttons">
                     <button @click="fileInput?.click()">Upload File</button>
@@ -188,12 +189,8 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
                             Export
                         </button>
                         <div v-if="showExportMenu" class="export-menu">
-                            <button
-                                v-for="format in exportFormats"
-                                :key="format"
-                                class="export-option"
-                                @click="exportModel(format)"
-                            >
+                            <button v-for="format in exportFormats" :key="format" class="export-option"
+                                @click="exportModel(format)">
                                 .{{ format }}
                             </button>
                         </div>
@@ -205,12 +202,8 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
             <div class="controlPanel-group">
                 <span class="controlPanel-label">Clips</span>
                 <div class="controlPanel-buttons">
-                    <button
-                        v-for="name in clipNames"
-                        :key="name"
-                        :class="{ active: currentClip === name }"
-                        @click="playClip(name)"
-                    >
+                    <button v-for="name in clipNames" :key="name" :class="{ active: currentClip === name }"
+                        @click="playClip(name)">
                         {{ name }}
                     </button>
                 </div>
@@ -228,12 +221,8 @@ const setLoopMode = (mode: TAnimatorLoopMode) => {
             <div class="controlPanel-group">
                 <span class="controlPanel-label">Loop</span>
                 <div class="controlPanel-buttons">
-                    <button
-                        v-for="mode in (['once', 'repeat', 'pingpong'] as TAnimatorLoopMode[])"
-                        :key="mode"
-                        :class="{ active: loopMode === mode }"
-                        @click="setLoopMode(mode)"
-                    >
+                    <button v-for="mode in (['once', 'repeat', 'pingpong'] as TAnimatorLoopMode[])" :key="mode"
+                        :class="{ active: loopMode === mode }" @click="setLoopMode(mode)">
                         {{ mode }}
                     </button>
                 </div>

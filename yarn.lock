@@ -541,16 +541,15 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.16.1.tgz#4f97581e114fc79f246cee3723a5c4edd3b62415"
   integrity sha512-TvZbIpeKqGQQ7X0zSCvPH9riMSFQFSggnfBjFZ1mEoILW+UuXCKwOoPcgjMwiUtRqFZ8jWhPJc4um14vC6I4ag==
 
-"@shopware-ag/dive@3.0.10":
-  version "3.0.10"
-  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-3.0.10.tgz#adaed137ccd0090671e1cbb1d5a4cd8bcd32bb79"
-  integrity sha512-BzuOdA+i5PpnVucwADsbC5wgq7OYldJSr7ePBNtnndCW2uKxz216HEDJySrnhDvJwTeExD8lrsWma8JFKZ/Esg==
+"@shopware-ag/dive@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@shopware-ag/dive/-/dive-4.0.2.tgz#b00394324c58acbb46b582460a2c46801121b663"
+  integrity sha512-hgki7aUPl4Q1kJOS/QryPbEzwotwTeWJS1vCmsKWSSGRqJs4eUxHlG9YPTIxwgnDAr2l4/k1Y13C9NMlL8g+Sg==
   dependencies:
     "@tweenjs/tween.js" "^25.0.0"
     lodash "^4.18.1"
     occt-import-js "^0.0.23"
-    three "^0.183.0"
-    three-spritetext "^1.8.2"
+    three "^0.186.0"
 
 "@sinclair/typebox@^0.27.8":
   version "0.27.10"
@@ -3625,15 +3624,10 @@ text-table@^0.2.0:
   resolved "https://registry.yarnpkg.com/text-table/-/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
   integrity sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==
 
-three-spritetext@^1.8.2:
-  version "1.10.0"
-  resolved "https://registry.yarnpkg.com/three-spritetext/-/three-spritetext-1.10.0.tgz#479717cbf7ea64ee2e5879952bb5e15f608bf13d"
-  integrity sha512-t08iP1FCU1lQh8T5MmCpdijKgas8GDHJE0LqMGBuVu3xqMMpFnEZhTlih7FlxLPQizHIGoumUSpfOlY1GO/Tgg==
-
-three@^0.183.0:
-  version "0.183.2"
-  resolved "https://registry.yarnpkg.com/three/-/three-0.183.2.tgz#606e3195bf210ef8d1eaaca2ab8c59d92d2bbc18"
-  integrity sha512-di3BsL2FEQ1PA7Hcvn4fyJOlxRRgFYBpMTcyOgkwJIaDOdJMebEFPA+t98EvjuljDx4hNulAGwF6KIjtwI5jgQ==
+three@^0.186.0:
+  version "0.186.0"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.186.0.tgz#08f70ce80dffa9247a567b421165bec630e86f8d"
+  integrity sha512-cr/fIM2ddMSVbYVgkfD4jLJv7Fh/8ZTjvo+7gQeSVGUZHxpx9FDwoL5iC7hUz/LiRA8wMbqfnb90xKfm1/HHkQ==
 
 timers-browserify@^2.0.4:
   version "2.0.12"

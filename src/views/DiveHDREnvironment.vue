@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { computed, markRaw, nextTick, onMounted, onUnmounted, ref, type Ref, watch } from 'vue';
+import { QuickView } from '@shopware-ag/dive/quickview';
 import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 type HDROption = {
@@ -9,7 +9,7 @@ type HDROption = {
 };
 
 const canvas = ref<HTMLCanvasElement | null>(null);
-const dive = ref<QuickViewType | null>(null);
+const dive: Ref<QuickView | null> = ref(null);
 const loadingEnvironment = ref(false);
 const environmentError = ref<string | null>(null);
 
@@ -115,9 +115,7 @@ const loadFile = async (file: File) => {
   const url = URL.createObjectURL(file);
 
   try {
-    await dive.value.model.setFromURL(url);
-    dive.value.model.placeOnFloor();
-    dive.value.orbitController.focusObject(dive.value.model);
+    await dive.value.load(url);
   } finally {
     URL.revokeObjectURL(url);
   }

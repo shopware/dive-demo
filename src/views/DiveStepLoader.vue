@@ -46,9 +46,7 @@ async function loadFile(file: File) {
   const url = URL.createObjectURL(file);
 
   try {
-    await quickView.model.setFromURL(url);
-    quickView.model.placeOnFloor();
-    quickView.orbitController.focusObject(quickView.model);
+    await quickView.load(url);
     setWireframe(wireframe.value);
     timing.value = `Loaded in ${Math.round(performance.now() - startTime)} ms`;
   } catch (loadError) {
