@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref } from 'vue';
-import { QuickView, type QuickView as QuickViewType } from '@shopware-ag/dive/quickview';
+import { QuickView } from '@shopware-ag/dive/quickview';
 import { AssetExporter } from '@shopware-ag/dive/assetexporter';
-import type { FileType } from '@shopware-ag/dive';
+import { type FileType } from '@shopware-ag/dive';
+import { useGridTheme } from '@/composables/useGridTheme';
 import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
@@ -11,10 +12,12 @@ const exportWrapper: Ref<HTMLElement | null> = ref(null);
 const showExportMenu = ref(false);
 
 const DEFAULT_URL = 'model/sofa_B.glb';
-let quickView: QuickViewType | null = null;
+let quickView: QuickView | null = null;
 const exporter = new AssetExporter();
 
 const exportFormats: FileType[] = ['glb', 'gltf', 'usdz'];
+
+const { applyGridTheme } = useGridTheme(() => quickView?.scene);
 
 onMounted(async () => {
   document.addEventListener('click', onClickOutside);
@@ -25,6 +28,7 @@ onMounted(async () => {
 
   if (!quickView) {
     quickView = await QuickView(DEFAULT_URL, { canvas: canvas.value, displayGrid: true });
+    applyGridTheme();
   }
 });
 
@@ -44,9 +48,7 @@ async function loadFile(file: File) {
   const url = URL.createObjectURL(file);
 
   try {
-    await quickView.model.setFromURL(url);
-    quickView.model.placeOnFloor();
-    quickView.orbitController.focusObject(quickView.model);
+    await quickView.load(url);
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -64,6 +66,8 @@ async function onFileSelected(event: Event) {
 async function exportModel(type: FileType) {
   showExportMenu.value = false;
   if (!quickView) return;
+
+  if (!quickView.model) return;
 
   const buffer = await exporter.export(quickView.model, type);
   const blob = new Blob([buffer]);
@@ -87,54 +91,36 @@ defineProps<{
 </script>
 
 <template>
-    <CanvasFileDropOverlay
-        class="canvasWrapper"
-        @click.capture="onClickOutside"
-        @loading="loadFile"
-    >
-        <canvas ref="canvas"></canvas>
-        <input
-            ref="fileInput"
-            type="file"
-            :accept="exportFormats.join(',')"
-            class="file-input"
-            @change="onFileSelected"
-        />
-        <div class="controlPanel controlPanel--bottom">
-            <div class="controlPanel-buttons">
-                <button @click="fileInput?.click()">Upload File</button>
-                <div ref="exportWrapper" class="export-wrapper">
-                    <button @click="showExportMenu = !showExportMenu">
-                        Export
-                    </button>
-                    <div
-                        v-if="showExportMenu"
-                        class="export-menu export-menu--up"
-                    >
-                        <button
-                            v-for="format in exportFormats"
-                            :key="format"
-                            class="export-option"
-                            @click="exportModel(format)"
-                        >
-                            .{{ format }}
-                        </button>
-                    </div>
-                </div>
-            </div>
+  <CanvasFileDropOverlay class="canvasWrapper" @click.capture="onClickOutside" @loading="loadFile">
+    <canvas ref="canvas"></canvas>
+    <input ref="fileInput" type="file" :accept="exportFormats.join(',')" class="file-input" @change="onFileSelected" />
+    <div class="controlPanel controlPanel--bottom">
+      <div class="controlPanel-buttons">
+        <button @click="fileInput?.click()">Upload File</button>
+        <div ref="exportWrapper" class="export-wrapper">
+          <button @click="showExportMenu = !showExportMenu">
+            Export
+          </button>
+          <div v-if="showExportMenu" class="export-menu export-menu--up">
+            <button v-for="format in exportFormats" :key="format" class="export-option" @click="exportModel(format)">
+              .{{ format }}
+            </button>
+          </div>
         </div>
-    </CanvasFileDropOverlay>
+      </div>
+    </div>
+  </CanvasFileDropOverlay>
 </template>
 
 <style scoped>
 .canvasWrapper {
-    position: relative;
-    display: flex;
-    height: 100%;
-    width: 100%;
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 100%;
 }
 
 .file-input {
-    display: none;
+  display: none;
 }
 </style>

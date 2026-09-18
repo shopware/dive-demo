@@ -81,9 +81,7 @@ async function loadFile(file: File) {
   const nextModelUrl = URL.createObjectURL(file);
 
   try {
-    await quickView.model.setFromURL(nextModelUrl);
-    quickView.model.placeOnFloor();
-    quickView.orbitController.focusObject(quickView.model);
+    await quickView.load(nextModelUrl);
   } catch (error) {
     URL.revokeObjectURL(nextModelUrl);
     throw error;

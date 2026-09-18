@@ -32,9 +32,7 @@ async function loadFile(file: File) {
   const url = URL.createObjectURL(file);
 
   try {
-    await dive.value.model.setFromURL(url);
-    dive.value.model.placeOnFloor();
-    dive.value.orbitController.focusObject(dive.value.model);
+    await dive.value.load(url);
   } finally {
     URL.revokeObjectURL(url);
   }

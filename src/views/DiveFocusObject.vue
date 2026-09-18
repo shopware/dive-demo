@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, type Ref, markRaw } from 'vue';
 import { QuickView } from '@shopware-ag/dive/quickview';
-import { BoundingBox, DIVEMath, DIVEModel } from '@shopware-ag/dive';
+import { ModelComponent, BoundingBoxComponent, DIVEMath } from '@shopware-ag/dive';
+import { useGridTheme } from '@/composables/useGridTheme';
 import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
+import { Euler } from 'three/webgpu';
 
 const canvas: Ref<HTMLCanvasElement | null> = ref(null)
 
@@ -13,23 +15,24 @@ const height: Ref<number> = ref(0)
 const depth: Ref<number> = ref(0)
 
 const isBoundingBoxVisible: Ref<boolean> = ref(false)
-const currentBoundingBox: Ref<BoundingBox | null> = ref(null)
+
+let boundingBox: BoundingBoxComponent | null = null;
+
+const { applyGridTheme } = useGridTheme(() => dive.value?.scene);
 
 onMounted(async () => {
     if (!canvas.value) {
         return;
     }
 
-    dive.value = markRaw(await QuickView('model/sofa_B.glb', { canvas: canvas.value }));
+    dive.value = markRaw(await QuickView('model/sofa_B.glb', { canvas: canvas.value, displayGrid: true }));
+    applyGridTheme();
 
-    dive.value.scene.root.children.forEach((model) => {
-        if (model instanceof DIVEModel) {
-            drawBoundingBox(model);
-        }
-    });
+    drawBoundingBox();
 })
 
 onUnmounted(() => {
+    boundingBox = null;
     void dive.value?.disposeAsync();
     dive.value = null;
 });
@@ -39,38 +42,51 @@ const switchObject = async (object: string) => {
         return;
     }
 
-    const model = dive.value.scene.root.children.find((child) => child instanceof DIVEModel) as DIVEModel | undefined;
-    if (!model) {
+    // the transform lives on the node, the geometry in its model component
+    const node = dive.value.model;
+    if (!node) {
         return;
     }
-    await model.setFromURL(object);
+
+    // not load(), because the scaling below has to happen before framing
+    await node.requireComponent(ModelComponent).setFromURL(object);
 
     if (object === 'model/sofa_B.glb') {
-        model.scale.set(1.0, 1.0, 1.0);
+        node.scale.set(1.0, 1.0, 1.0);
+        node.setRotationFromEuler(new Euler(0, Math.PI / 4, 0));
     }
     if (object === 'model/hay_chair.glb') {
-        model.scale.set(0.1, 0.1, 0.1);
+        node.scale.set(0.1, 0.1, 0.1);
     }
     if (object === 'model/suzanne.glb') {
-        model.scale.set(10.0, 10.0, 10.0);
+        node.scale.set(10.0, 10.0, 10.0);
     }
 
-    dive.value.orbitController.focusObject(model);
+    dive.value.orbitController.focusObject(node);
 
-    drawBoundingBox(model);
+    drawBoundingBox();
 }
 
-const drawBoundingBox = (model: DIVEModel) => {
-    const bb = new BoundingBox(model);
-    currentBoundingBox.value = bb;
-    bb.setBoxHelperVisible(isBoundingBoxVisible.value);
-    bb.setSphereHelperVisible(isBoundingBoxVisible.value);
-    bb.scale.set(1 / model.scale.x, 1 / model.scale.y, 1 / model.scale.z);
-    model.add(bb);
+const drawBoundingBox = () => {
+    const node = dive.value?.model;
+    if (!node) {
+        return;
+    }
 
-    width.value = DIVEMath.roundExp(bb.size.x, 2);
-    height.value = DIVEMath.roundExp(bb.size.y, 2);
-    depth.value = DIVEMath.roundExp(bb.size.z, 2);
+    // a component measures the node it is attached to, so it goes on the model
+    if (boundingBox) {
+        node.removeComponent(boundingBox);
+        boundingBox.dispose();
+    }
+
+    boundingBox = node.addComponent(new BoundingBoxComponent());
+    boundingBox.setOriented(true);
+    boundingBox.setBoxHelperVisible(isBoundingBoxVisible.value);
+    boundingBox.setSphereHelperVisible(isBoundingBoxVisible.value);
+
+    width.value = DIVEMath.roundExp(boundingBox.size.x, 2);
+    height.value = DIVEMath.roundExp(boundingBox.size.y, 2);
+    depth.value = DIVEMath.roundExp(boundingBox.size.z, 2);
 }
 
 const loadFile = async (file: File) => {
@@ -80,35 +96,20 @@ const loadFile = async (file: File) => {
         return;
     }
 
-    currentBoundingBox.value = null;
-
     const url = URL.createObjectURL(file);
 
     try {
-        await targetDive.model.setFromURL(url);
-        targetDive.model.placeOnFloor();
-        targetDive.orbitController.focusObject(targetDive.model);
+        await targetDive.load(url);
     } finally {
         URL.revokeObjectURL(url);
     }
 
-    drawBoundingBox(targetDive.model);
+    drawBoundingBox();
 }
 
 const showBoundingBox = () => {
-    if (currentBoundingBox.value) {
-        currentBoundingBox.value.setBoxHelperVisible(isBoundingBoxVisible.value);
-        currentBoundingBox.value.setSphereHelperVisible(isBoundingBoxVisible.value);
-        return;
-    }
-    if (!dive.value) {
-        return;
-    }
-    const model = dive.value.scene.root.children.find((child) => child instanceof DIVEModel) as DIVEModel | undefined;
-    if (!model) {
-        return;
-    }
-    drawBoundingBox(model);
+    boundingBox?.setBoxHelperVisible(isBoundingBoxVisible.value);
+    boundingBox?.setSphereHelperVisible(false);
 }
 
 defineProps<{
@@ -144,11 +145,7 @@ defineProps<{
             </div>
         </div>
         <label class="checkbox-button">
-            <input
-                type="checkbox"
-                v-model="isBoundingBoxVisible"
-                @change="showBoundingBox"
-            />
+            <input type="checkbox" v-model="isBoundingBoxVisible" @change="showBoundingBox" />
             Show bounding volume
         </label>
     </div>

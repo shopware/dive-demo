@@ -16,7 +16,9 @@ const panelOrientation = computed(() => isCompactViewport.value ? 'vertical' : '
 const isQuickViewReady = computed(() => Boolean(quickView.value));
 
 const DEFAULT_URL = 'model/sofa_B.glb';
-const quickView = ref<QuickView | null>(null);
+// annotated rather than ref<T>(), which deep-unwraps the type and stops a
+// DIVENode from matching itself
+const quickView: Ref<QuickView | null> = ref(null);
 let disposed = false;
 
 onMounted(async () => {
@@ -98,9 +100,7 @@ const loadFile = async (file: File, index: number) => {
   const url = URL.createObjectURL(file);
 
   try {
-    await targetQuickView.model.setFromURL(url);
-    targetQuickView.model.placeOnFloor();
-    targetQuickView.orbitController.focusObject(targetQuickView.model);
+    await targetQuickView.load(url);
   } finally {
     URL.revokeObjectURL(url);
   }
