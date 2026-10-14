@@ -55,6 +55,16 @@ const router = createRouter({
       component: () => import('../views/DiveHDREnvironment.vue')
     },
     {
+      path: '/soft-shadow',
+      name: 'soft shadow',
+      component: () => import('../views/DiveSoftShadow.vue')
+    },
+    {
+      path: '/gyro',
+      name: 'gyro',
+      component: () => import('../views/DiveGyro.vue')
+    },
+    {
       path: '/materials',
       name: 'materials',
       component: () => import('../views/DiveMaterials.vue')

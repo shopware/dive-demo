@@ -77,7 +77,7 @@ const switchCanvasTo = async (index: number) => {
     }
 
     void targetQuickView.mainView.setCanvas(canvas).catch(() => undefined);
-    targetQuickView.orbitController.setDomElements(canvas);
+    targetQuickView.pointerInput.setElement(canvas);
     activeCanvas.value = index;
     await nextTick();
   } finally {
