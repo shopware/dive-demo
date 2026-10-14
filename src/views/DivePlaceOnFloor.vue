@@ -61,7 +61,7 @@ onMounted(async () => {
     }));
     applyGridTheme();
 
-    toolbox = new Toolbox(dive.value.scene, dive.value.orbitController);
+    toolbox = new Toolbox(dive.value.scene, dive.value.orbitController, canvas.value);
     toolbox.enableTool('transform');
 
     // the node QuickView built, rather than hunting for it in the scene
