@@ -119,6 +119,7 @@ onUnmounted(() => window.removeEventListener('resize', onResize));
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background-color: var(--color-background);
     z-index: 1000;
     display: flex;

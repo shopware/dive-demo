@@ -154,7 +154,6 @@ defineProps<{
     position: relative;
     display: flex;
     height: 100%;
-    min-height: 100vh;
     width: 100%;
 }
 
@@ -166,7 +165,7 @@ canvas {
 
 .ar-launch {
     position: absolute;
-    bottom: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
 }
