@@ -12,6 +12,7 @@
 
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
 }
 
 a,
@@ -38,6 +39,7 @@ a,
     display: flex;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     grid-template-columns: 1fr 1fr;
     padding: 0;
     flex-direction: row;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, onUnmounted } from 'vue';
-import { ARSystem } from '@shopware-ag/dive/ar';
+import { ARSystem, ARError } from '@shopware-ag/dive/ar';
 import { QuickView } from '@shopware-ag/dive/quickview';
 import CanvasFileDropOverlay from '@/components/canvas/CanvasFileDropOverlay.vue';
 
@@ -15,6 +15,7 @@ const selectedScale = ref<typeof scaleOptions[number]>('auto');
 
 const showPlacementMenu = ref(false);
 const showScaleMenu = ref(false);
+const arErrorMessage = ref<string | null>(null);
 
 const DEFAULT_MODEL_URL = 'model/hay_chair.glb';
 
@@ -95,8 +96,28 @@ async function loadFile(file: File) {
   currentModelUrl = nextModelUrl;
 }
 
-function launchAR() {
-  arSystem?.launch(currentModelUrl, { arPlacement: selectedPlacement.value, arScale: selectedScale.value });
+async function launchAR() {
+  if (!arSystem) return;
+
+  arErrorMessage.value = null;
+
+  try {
+    await arSystem.launch(currentModelUrl, { arPlacement: selectedPlacement.value, arScale: selectedScale.value });
+  } catch (error) {
+    arErrorMessage.value = getARErrorMessage(error);
+  }
+}
+
+function getARErrorMessage(error: unknown): string {
+  if (error instanceof ARError) {
+    return error.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Failed to launch AR.';
 }
 
 defineProps<{
@@ -146,6 +167,10 @@ defineProps<{
             </div>
         </div>
         <button class="ar-launch" @click="launchAR">AR</button>
+        <div v-if="arErrorMessage" class="ar-error" role="alert">
+            <span>{{ arErrorMessage }}</span>
+            <button class="ar-error-close" aria-label="Close" @click="arErrorMessage = null">&times;</button>
+        </div>
     </CanvasFileDropOverlay>
 </template>
 
@@ -154,7 +179,6 @@ defineProps<{
     position: relative;
     display: flex;
     height: 100%;
-    min-height: 100vh;
     width: 100%;
 }
 
@@ -166,8 +190,39 @@ canvas {
 
 .ar-launch {
     position: absolute;
-    bottom: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
+}
+
+.ar-error {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    max-width: min(20rem, calc(100% - 2rem));
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    border: 1px solid rgba(200, 50, 50, 0.5);
+    border-radius: 0.35rem;
+    background: rgba(200, 50, 50, 0.85);
+    color: white;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.ar-error-close {
+    flex: none;
+    padding: 0 0.35rem;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
 }
 </style>
